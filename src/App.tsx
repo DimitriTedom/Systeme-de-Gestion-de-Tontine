@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Navbar } from '@/components/Navbar';
 import Dashboard from '@/pages/Dashboard';
@@ -18,7 +18,6 @@ export default function App() {
           <Navbar />
           <main className="flex-1">
             <div className="container mx-auto">
-              <SidebarTrigger className="md:hidden mb-4" />
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/members" element={<Members />} />

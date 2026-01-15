@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CreditCard,
   FolderKanban,
+  PanelLeftClose,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -18,6 +19,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 
 export function AppSidebar() {
@@ -66,18 +68,23 @@ export function AppSidebar() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex items-center gap-2"
+              className="flex items-center justify-between gap-2"
             >
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
-                <img 
-                  src="/logo.jpeg" 
-                  alt="Tontine Logo" 
-                  className="w-7 h-7 object-contain rounded"
-                />
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
+                  <img 
+                    src="/logo.jpeg" 
+                    alt="Tontine Logo" 
+                    className="w-7 h-7 object-contain rounded"
+                  />
+                </div>
+                <SidebarGroupLabel className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                  {t('app.name')}
+                </SidebarGroupLabel>
               </div>
-              <SidebarGroupLabel className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                {t('app.name')}
-              </SidebarGroupLabel>
+              <SidebarTrigger className="ml-auto hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-md transition-colors">
+                <PanelLeftClose className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </SidebarTrigger>
             </motion.div>
           </div>
           <SidebarGroupContent>
