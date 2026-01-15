@@ -1,99 +1,97 @@
-# 🚀 React + TypeScript + Vite Frontend Template by SnowDev
+# Système de Gestion de Tontine (Tontine Management System)
 
 <div align="center">
 
-![React](https://img.shields.io/badge/React-18.3.1-blue?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue?logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-5.4.8-purple?logo=vite)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.13-cyan?logo=tailwindcss)
-![License](https://img.shields.io/badge/License-MIT-green)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.4.8-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.13-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-**A modern, production-ready React frontend template with all the tools you need to build amazing client-side applications.**
+**A modern web application for managing community savings groups (Tontines) with financial tracking, member management, and analytics**
 
-![Hero Section](./public/herosection.png)
+Created by **@DimitriTedom (SnowDev)** for **Worketyamo-Students**
 
-[🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🛠️ Features](#️-features) • [🐳 Docker](#-docker-support)
+[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [Documentation](#-project-structure)
 
 </div>
 
 ---
 
-## �️ Template Preview
-
-Get a glimpse of what you'll be working with:
-
-### Hero Section & Technology Showcase
-![Hero Section](./public/herosection.png)
-*Beautiful welcome page showcasing all included technologies and dependencies*
-
-### Quick Start Guide & Development Tools
-![Quick Start & Development Tools](./public/quickstart-developmenttools.png)
-*Comprehensive development tools section with helper scripts and workflow guidance*
-
-### Development Workflow Overview
-![Development Workflow](./public/from%20development%20workflow.png)
-*Visual representation of the complete development process from setup to deployment*
-
----
-
-## �📋 Table of Contents
+## 📚 Table of Contents
 
 - [🎯 Overview](#-overview)
 - [✨ Features](#-features)
-- [🛠️ Tech Stack](#️-tech-stack)
+- [🛠️ Tech Stack](#-tech-stack)
 - [🚀 Quick Start](#-quick-start)
 - [📁 Project Structure](#-project-structure)
-- [🔧 Configuration](#-configuration)
-- [🐳 Docker Support](#-docker-support)
+- [🎨 UI/UX Highlights](#-uiux-highlights)
 - [📜 Available Scripts](#-available-scripts)
-- [🎨 Styling & Components](#-styling--components)
-- [🔒 Environment Variables](#-environment-variables)
-- [🧪 Testing](#-testing)
-- [🚀 Deployment](#-deployment)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
 ## 🎯 Overview
 
-This template is a comprehensive starter kit for building modern React frontend applications. Created by **@DimitriTedom (SnowDev)** for the developer community at **Worketyamo-Students**, it integrates the best practices and most popular tools in the React ecosystem for client-side development.
+**Système de Gestion de Tontine** is a comprehensive web application designed to manage **tontines** (community savings and credit associations). Built with modern web technologies, it provides an intuitive interface for tracking contributions, managing members, processing credit requests, monitoring projects, and analyzing financial data.
 
 Perfect for:
-- 🏢 Enterprise frontend applications
-- 📱 SaaS dashboards and interfaces
-- 🛍️ E-commerce frontend experiences
-- 📊 Data visualization and admin panels
-- 🎨 Portfolio and marketing websites
-- 🌐 Progressive Web Apps (PWAs)
+- 💰 Community savings groups and associations
+- 🏦 Microfinance organizations
+- 👥 ROSCAs (Rotating Savings and Credit Associations)
+- 📊 Financial cooperatives
+- 🌍 Development projects with community funding
 
 ## ✨ Features
 
-### 🏗️ Core Features
-- ⚡ **Lightning Fast**: Powered by Vite for instant hot reload
-- 🎯 **Type Safe**: Full TypeScript support with strict configuration
-- 🎨 **Modern UI**: Pre-built components with ShadCN/UI
-- 📱 **Responsive**: Mobile-first design with TailwindCSS
-- 🔄 **State Management**: Zustand for simple and powerful state management
-- 🎭 **Icon Library**: Comprehensive icon set with React Icons
+### 📊 **Dashboard & Analytics**
+- Real-time financial overview with key metrics
+- Interactive area charts with gradient visualization
+- Contribution trends and analytics
+- Recent activity tracking
+- Responsive cards with emerald accent colors
 
-### 🛠️ Developer Experience
-- 🔧 **Pre-configured**: ESLint, Prettier, and TypeScript ready
-- 🐳 **Docker Ready**: Multi-stage Dockerfile with optimization
-- 📝 **Environment Templates**: Comprehensive .env.template
-- 🎨 **Custom Tailwind Layers**: Organized CSS with base, components, and utilities
-- 🔒 **Security**: Best practices for secure applications
+### 👥 **Member Management**
+- Complete member directory with search functionality
+- Financial summary for each member (contributions, credits, penalties)
+- Add/edit member information
+- Member activity history
+- Avatar display with fallback initials
 
-### 🚀 Production Ready
-- 📦 **Optimized Builds**: Tree-shaking and code splitting
-- 🔍 **SEO Friendly**: Meta tags and proper HTML structure
-- ♿ **Accessible**: WCAG compliant components
-- 🌐 **i18n Ready**: Internationalization support structure
+### 💳 **Tontine Management**
+- Create and manage multiple tontines
+- Track contribution schedules
+- Member enrollment and participation tracking
+- Status badges for active/completed tontines
+- Contribution amount configuration
 
-### 🎨 Visual Design
-- 🖼️ **Beautiful Welcome Page**: Showcases all technologies with interactive elements
-- 📱 **Responsive Layout**: Mobile-first design that works on all devices
-- 🌙 **Dark Mode Ready**: CSS variables for easy theme switching
-- ✨ **Smooth Animations**: Custom keyframe animations for better UX
-- 🎯 **Developer Guidance**: Visual workflow and tool explanations
+### 💵 **Credit System**
+- Credit request submission and approval
+- Interest rate calculation
+- Repayment tracking
+- Credit history per member
+- Status indicators (approved, pending, rejected)
+
+### 📅 **Session Tracking**
+- Meeting schedule management
+- Attendance tracking
+- Session notes and minutes
+- Contribution collection during sessions
+- Historical session records
+
+### 🏗️ **Project Management**
+- Community project proposals
+- Budget allocation and tracking
+- Project status monitoring
+- Member voting on projects
+- Progress tracking
+
+### 🎨 **Modern UI/UX**
+- Sleek, retractable sidebar with emerald green theme
+- Smooth animations powered by Framer Motion
+- Dark/Light mode support
+- Responsive mobile-first design
+- Custom gradients and shadows
+- Empty state components for better UX
+- Form validation with real-time feedback
 
 ## 🛠️ Tech Stack
 
@@ -105,9 +103,14 @@ Perfect for:
 | **Styling** | TailwindCSS | 3.4.13 | Utility-first CSS |
 | **UI Components** | ShadCN/UI | Latest | Pre-built Components |
 | **State Management** | Zustand | 5.0.0-rc.2 | Global State |
-| **Icons** | React Icons | 5.3.0 | Icon Library |
-| **Linting** | ESLint | 9.11.1 | Code Quality |
-| **Container** | Docker | - | Containerization |
+| **Forms** | React Hook Form | 7.53.2 | Form Management |
+| **Validation** | Zod | 3.23.8 | Schema Validation |
+| **Charts** | Recharts | 2.15.0 | Data Visualization |
+| **Animations** | Framer Motion | 11.15.0 | Smooth Animations |
+| **Icons** | Lucide React | Latest | Icon Library |
+| **i18n** | i18next | 23.16.8 | Internationalization |
+| **Routing** | React Router | 7.1.1 | Navigation |
+| **Date Handling** | date-fns | 4.1.0 | Date Utilities |
 
 ## 🚀 Quick Start
 
@@ -119,25 +122,16 @@ Perfect for:
 ### 1. Clone & Setup
 ```bash
 # Clone the repository
-git clone https://github.com/DimitriTedom/SnowDev-ReactJs-Template.git
+git clone <repository-url>
 
 # Navigate to project directory
-cd My-React-APP_Template-SnowDev
+cd Systeme-de-Gestion-de-Tontine
 
 # Install dependencies
 npm install
 ```
 
-### 2. Environment Configuration
-```bash
-# Copy environment template
-cp .env.template .env
-
-# Edit your environment variables
-nano .env  # or your preferred editor
-```
-
-### 3. Start Development
+### 2. Start Development
 ```bash
 # Start development server
 npm run dev
@@ -145,107 +139,120 @@ npm run dev
 # Open http://localhost:5173
 ```
 
-### 4. Start Building! 🎉
-You're ready to start building your amazing application!
+### 3. Build for Production
+```bash
+# Create production build
+npm run build
 
-![Quick Start & Development Tools](./public/quickstart-developmenttools.png)
+# Preview production build
+npm run preview
+```
 
 ## 📁 Project Structure
 
 ```
-My-React-APP_Template-SnowDev/
-├── 📁 public/                  # Static assets
-│   └── vite.svg               # Vite logo
-├── 📁 src/                    # Source code
-│   ├── 📁 components/         # Reusable components
-│   │   └── 📁 ui/            # ShadCN UI components
-│   │       └── button.tsx     # Button component
-│   ├── 📁 lib/               # Utility functions
-│   │   └── utils.ts          # Helper utilities
-│   ├── App.tsx               # Main application component
-│   ├── index.css             # Global styles & Tailwind
-│   ├── main.tsx              # Application entry point
-│   └── vite-env.d.ts         # Vite type definitions
-├── 📄 .env.template          # Environment variables template
-├── 📄 components.json        # ShadCN configuration
-├── 📄 Dockerfile            # Docker configuration
-├── 📄 eslint.config.js       # ESLint configuration
-├── 📄 index.html             # HTML entry point
-├── 📄 LICENSE                # MIT License
-├── 📄 nginx.conf             # Nginx configuration
-├── 📄 package.json           # Dependencies & scripts
-├── 📄 postcss.config.js      # PostCSS configuration
-├── 📄 README.md              # Documentation
-├── 📄 tailwind.config.js     # TailwindCSS configuration
-├── 📄 tsconfig.json          # TypeScript configuration
-├── 📄 tsconfig.app.json      # TypeScript app configuration
-├── 📄 tsconfig.node.json     # TypeScript node configuration
-└── 📄 vite.config.ts         # Vite configuration
+Systeme-de-Gestion-de-Tontine/
+├── 📁 public/                     # Static assets
+│   └── logo.jpeg                 # Application logo
+├── 📁 src/                       # Source code
+│   ├── 📁 components/            # React components
+│   │   ├── AppSidebar.tsx       # Main navigation sidebar
+│   │   ├── Navbar.tsx           # Top navigation bar
+│   │   ├── EmptyState.tsx       # Empty state component
+│   │   ├── theme-provider.tsx   # Dark/Light mode provider
+│   │   ├── 📁 credits/          # Credit management components
+│   │   │   └── AddCreditModal.tsx
+│   │   ├── 📁 members/          # Member management components
+│   │   │   ├── AddMemberModal.tsx
+│   │   │   └── MemberFinancialSummary.tsx
+│   │   ├── 📁 projects/         # Project management components
+│   │   │   └── AddProjectModal.tsx
+│   │   ├── 📁 sessions/         # Session tracking components
+│   │   │   ├── AddSessionModal.tsx
+│   │   │   └── MeetingSheet.tsx
+│   │   ├── 📁 tontines/         # Tontine management components
+│   │   │   └── AddTontineModal.tsx
+│   │   └── 📁 ui/               # ShadCN UI components
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── dialog.tsx
+│   │       ├── form.tsx
+│   │       ├── input.tsx
+│   │       ├── table.tsx
+│   │       ├── badge.tsx
+│   │       ├── sidebar.tsx
+│   │       └── ... (more components)
+│   ├── 📁 hooks/                # Custom React hooks
+│   │   └── use-mobile.tsx
+│   ├── 📁 i18n/                 # Internationalization
+│   │   ├── config.ts
+│   │   └── 📁 locales/
+│   │       ├── en.json          # English translations
+│   │       └── fr.json          # French translations
+│   ├── 📁 lib/                  # Utility functions
+│   │   └── utils.ts
+│   ├── 📁 pages/                # Page components
+│   │   ├── Dashboard.tsx        # Main dashboard
+│   │   ├── Members.tsx          # Member management
+│   │   ├── Tontines.tsx         # Tontine management
+│   │   ├── Credits.tsx          # Credit management
+│   │   ├── Sessions.tsx         # Session tracking
+│   │   └── Projects.tsx         # Project management
+│   ├── 📁 stores/               # Zustand state stores
+│   │   ├── memberStore.ts
+│   │   ├── tontineStore.ts
+│   │   ├── creditStore.ts
+│   │   ├── sessionStore.ts
+│   │   ├── projectStore.ts
+│   │   ├── contributionStore.ts
+│   │   └── penaltyStore.ts
+│   ├── 📁 types/                # TypeScript type definitions
+│   │   └── index.ts
+│   ├── App.tsx                  # Main application component
+│   ├── index.css                # Global styles & Tailwind
+│   ├── main.tsx                 # Application entry point
+│   └── vite-env.d.ts            # Vite type definitions
+├── 📄 components.json           # ShadCN configuration
+├── 📄 eslint.config.js          # ESLint configuration
+├── 📄 index.html                # HTML entry point
+├── 📄 LICENSE                   # MIT License
+├── 📄 package.json              # Dependencies & scripts
+├── 📄 postcss.config.js         # PostCSS configuration
+├── 📄 README.md                 # Documentation
+├── 📄 tailwind.config.js        # TailwindCSS configuration
+├── 📄 tsconfig.json             # TypeScript configuration
+└── 📄 vite.config.ts            # Vite configuration
 ```
 
-## 🔧 Configuration
+## 🎨 UI/UX Highlights
 
-### TailwindCSS Layers
-Our CSS is organized into three layers:
+### 🌈 **Color Palette**
+- **Primary**: Emerald Green (`emerald-500`, `emerald-600`)
+- **Accent**: Teal highlights
+- **Backgrounds**: Dynamic light/dark mode
+- **Gradients**: Smooth emerald-to-teal gradients on charts
 
-#### 🎨 **@layer base**
-- CSS reset and normalization
-- Theme variables (light/dark mode)
-- Global styles and typography
+### ✨ **Animations**
+- Page transitions with Framer Motion
+- Smooth sidebar collapse/expand
+- Hover effects on interactive elements
+- Loading states and skeletons
+- Entrance animations for modals
 
-#### 🧩 **@layer components**
-- Reusable component classes
-- Card, button, form components
-- Layout helpers (flex-center, grid-responsive)
+### 📱 **Responsive Design**
+- Mobile-first approach
+- Collapsible sidebar for small screens
+- Responsive tables with horizontal scroll
+- Adaptive card layouts
+- Touch-friendly interface
 
-#### 🛠️ **@layer utilities**
-- Custom utility classes
-- Animations and effects
-- Debug utilities (remove in production)
-
-### ShadCN/UI Configuration
-```json
-{
-  "style": "default",
-  "rsc": false,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "src/index.css"
-  },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils"
-  }
-}
-```
-
-## 🐳 Docker Support
-
-### Development Container
-```bash
-# Build development image
-docker build --target development -t my-react-app:dev .
-
-# Run development container
-docker run -p 5173:5173 -v $(pwd):/app my-react-app:dev
-```
-
-### Production Container
-```bash
-# Build production image
-docker build --target production -t my-react-app:prod .
-
-# Run production container
-docker run -p 80:80 my-react-app:prod
-```
-
-### Multi-stage Dockerfile Features
-- 🏗️ **Builder stage**: Optimized Node.js build
-- 🚀 **Production stage**: Lightweight Nginx server
-- 🔒 **Security**: Non-root user, minimal attack surface
-- ⚡ **Performance**: Gzip compression, caching headers
-- 🏥 **Health checks**: Built-in container health monitoring
+### 🎯 **Key UI Components**
+- **Status Badges**: Color-coded indicators for various states
+- **Empty States**: Friendly illustrations when no data exists
+- **Data Tables**: Sortable, searchable tables with pagination
+- **Charts**: Interactive area charts with tooltips
+- **Forms**: Validated forms with real-time error messages
+- **Cards**: Elevated cards with gradients and shadows
 
 ## 📜 Available Scripts
 
@@ -255,138 +262,27 @@ docker run -p 80:80 my-react-app:prod
 | **Build** | `npm run build` | Build for production |
 | **Preview** | `npm run preview` | Preview production build locally |
 | **Lint** | `npm run lint` | Run ESLint for code quality |
-| **Type Check** | `npm run type-check` | Run TypeScript compiler check |
 
-### Custom Scripts (Add to package.json)
-```json
-{
-  "scripts": {
-    "docker:build": "docker build -t my-react-app .",
-    "docker:run": "docker run -p 80:80 my-react-app",
-    "docker:dev": "docker build --target development -t my-react-app:dev . && docker run -p 5173:5173 my-react-app:dev"
-  }
-}
-```
+## 🔧 Configuration
 
-## 🎨 Styling & Components
-
-### Pre-built Component Classes
-```css
-/* Layout */
-.container        /* Responsive container */
-.flex-center      /* Flex center alignment */
-.flex-between     /* Flex space-between */
-.grid-responsive  /* Responsive grid layout */
-
-/* Components */
-.card            /* Card container */
-.btn             /* Base button */
-.btn-primary     /* Primary button variant */
-.form-input      /* Form input styling */
-
-/* Utilities */
-.text-gradient   /* Gradient text effect */
-.glass           /* Glassmorphism effect */
-.animate-in      /* Slide-in animation */
-```
-
-### ShadCN Components Available
-- Button with variants
-- Card components
-- Form elements
-- Layout components
-- Navigation elements
-
-### Adding New Components
-```bash
-# Add ShadCN components
-npx shadcn-ui@latest add dialog
-npx shadcn-ui@latest add dropdown-menu
-npx shadcn-ui@latest add form
-```
-
-## 🔒 Environment Variables
-
-### Client-side Variables (VITE_ prefix)
+### Environment Variables
+Create a `.env` file in the root directory (optional):
 ```env
-VITE_APP_NAME="My React App"
-VITE_API_URL="http://localhost:3001/api"
-VITE_DEBUG_MODE="false"
+VITE_APP_NAME="Système de Gestion de Tontine"
+VITE_DEFAULT_LANGUAGE="fr"
 ```
 
-### Server-side Variables
-```env
-JWT_SECRET="your-secret-key"
-API_SECRET="your-api-secret"
-```
+### Tailwind Configuration
+The application uses custom Tailwind configuration with:
+- Emerald as primary color
+- Custom animations
+- Extended shadows and gradients
+- Dark mode support
 
-### Security Best Practices
-- ✅ Never expose secrets to client-side
-- ✅ Use VITE_ prefix only for public variables
-- ✅ Validate environment variables on startup
-- ✅ Use different .env files for different environments
-
-## 🧪 Testing
-
-### Setup Testing Framework
-```bash
-# Install testing dependencies
-npm install -D vitest @testing-library/react @testing-library/jest-dom
-
-# Add to package.json
-{
-  "scripts": {
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
-  }
-}
-```
-
-### Example Test Structure
-```
-src/
-├── __tests__/           # Test files
-├── components/
-│   └── __tests__/      # Component tests
-└── utils/
-    └── __tests__/      # Utility tests
-```
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-### Netlify
-```bash
-# Build command: npm run build
-# Publish directory: dist
-```
-
-### Docker Production
-```bash
-# Build and run
-docker build -t my-react-app .
-docker run -p 80:80 my-react-app
-```
-
-### Environment-specific Builds
-```bash
-# Staging
-VITE_NODE_ENV=staging npm run build
-
-# Production  
-VITE_NODE_ENV=production npm run build
-```
-
-![Development Workflow](./public/from%20development%20workflow.png)
+### TypeScript Configuration
+- Strict mode enabled
+- Path aliases configured (`@/components`, `@/lib`, etc.)
+- Full type safety across the application
 
 ## 🤝 Contributing
 
@@ -396,37 +292,20 @@ We welcome contributions! Please follow these guidelines:
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes
-4. Run tests: `npm test`
-5. Commit changes: `git commit -m 'Add amazing feature'`
-6. Push to branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+4. Run linter: `npm run lint`
+5. Build to verify: `npm run build`
+6. Commit changes: `git commit -m 'Add amazing feature'`
+7. Push to branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
 
 ### Code Standards
 - ✅ Follow TypeScript best practices
 - ✅ Use meaningful commit messages
-- ✅ Add tests for new features
-- ✅ Update documentation
-- ✅ Follow existing code style
+- ✅ Maintain consistent code style
+- ✅ Update documentation when needed
+- ✅ Test thoroughly before committing
 
-### Issue Templates
-- 🐛 **Bug Report**: Describe the issue with reproduction steps
-- 💡 **Feature Request**: Propose new features or improvements
-- 📚 **Documentation**: Improve or fix documentation
-
-## 👥 Community & Support
-
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/DimitriTedom/SnowDev-ReactJs-Template/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/DimitriTedom/SnowDev-ReactJs-Template/issues)
-- 📖 **Wiki**: [Project Wiki](https://github.com/DimitriTedom/SnowDev-ReactJs-Template/wiki)
-
-## 🙏 Acknowledgments
-
-Special thanks to:
-- **Worketyamo-Students** community for inspiration
-- **React Team** for the amazing framework
-- **Vite Team** for the lightning-fast build tool
-- **TailwindCSS Team** for the utility-first CSS framework
-- **ShadCN** for the beautiful component library
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📄 License
 
@@ -439,8 +318,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 **Built with ❤️ by [DimitriTedom (SnowDev)](https://github.com/DimitriTedom)**
 
 **For the amazing developers at Worketyamo-Students 🎓**
-
-[⭐ Star this repo](https://github.com/DimitriTedom/SnowDev-ReactJs-Template.git) if you found it helpful!
 
 </div>
 
