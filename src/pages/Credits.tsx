@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Eye } from 'lucide-react';
+import { Plus, Trash2, Banknote } from 'lucide-react';
 import { useCreditStore } from '@/stores/creditStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -19,10 +19,14 @@ import { AddCreditModal } from '@/components/credits/AddCreditModal';
 
 export default function Credits() {
   const { t } = useTranslation();
-  const { credits, deleteCredit } = useCreditStore();
+  const { credits, fetchCredits, deleteCredit, isLoading } = useCreditStore();
   const { getMemberById } = useMemberStore();
   const { getTontineById } = useTontineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -71,9 +75,16 @@ export default function Credits() {
         </Button>
       </div>
 
-      {credits.length === 0 ? (
+      {isLoading ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
+            <p className="text-muted-foreground">{t('common.loading')}</p>
+          </CardContent>
+        </Card>
+      ) : credits.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <Banknote className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground mb-4">{t('credits.noCredits')}</p>
             <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -144,7 +155,7 @@ export default function Credits() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(credit.status)}>
+                        <Badge variant={getStatusColor(credit.status) as any}>
                           {t(`credits.statuses.${credit.status}`)}
                         </Badge>
                       </TableCell>

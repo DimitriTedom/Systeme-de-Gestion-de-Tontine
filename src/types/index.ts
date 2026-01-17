@@ -26,6 +26,7 @@ export interface Tontine {
   endDate?: Date;
   status: 'active' | 'completed' | 'cancelled';
   memberIds: string[];
+  membersCount: number;
   adminId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,7 +42,7 @@ export interface Session {
   totalContributions: number;
   totalPenalties: number;
   attendanceCount: number;
-  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled' | 'closed';
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -131,4 +132,43 @@ export interface CreditWithMember extends Credit {
 export interface ProjectWithTontine extends Project {
   tontine: Tontine;
   responsibleMember?: Member;
+}
+
+// Session Management Types
+export interface AttendanceRecord {
+  id_membre: string;
+  present: boolean;
+  montant?: number;
+}
+
+export interface PenaltySummary {
+  id_membre: string;
+  nom: string;
+  prenom: string;
+  montant: number;
+  raison: string;
+}
+
+export interface CloseSessionRequest {
+  attendance: AttendanceRecord[];
+  montant_penalite_absence: number;
+}
+
+export interface CloseSessionResponse {
+  id_seance: string;
+  statut: string;
+  penalties_created: PenaltySummary[];
+  total_contributions: number;
+  total_penalties: number;
+}
+
+export interface SessionReport {
+  session: Session;
+  tontine: Tontine;
+  totalExpected: number;
+  totalCollected: number;
+  totalPenalties: number;
+  attendanceRate: number;
+  contributions: Contribution[];
+  penalties: Penalty[];
 }

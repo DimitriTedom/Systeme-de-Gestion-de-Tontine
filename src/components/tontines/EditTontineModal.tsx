@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useTontineStore } from '@/stores/tontineStore';
 import {
@@ -31,14 +31,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface AddTontineModalProps {
+interface EditTontineModalProps {
+  tontineId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
+export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineModalProps) {
   const { t } = useTranslation();
-  const { addTontine } = useTontineStore();
+  const { getTontineById, updateTontine } = useTontineStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
@@ -51,6 +52,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
     frequency: z.enum(['weekly', 'biweekly', 'monthly']),
     startDate: z.string().min(1, t('tontines.validation.startDateRequired')),
     endDate: z.string().optional(),
+    status: z.enum(['active', 'completed', 'cancelled']),
   }).refine((data) => {
     if (data.endDate && data.startDate) {
       return new Date(data.endDate) > new Date(data.startDate);
@@ -72,25 +74,72 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
       frequency: 'monthly' as const,
       startDate: '',
       endDate: '',
+      status: 'active' as const,
     },
   });
 
+  // Load tontine data when modal opens
+  useEffect(() => {
+    if (open && tontineId) {
+      const tontine = getTontineById(tontineId);
+      if (tontine) {
+        // Format dates properly
+        let startDateStr = '';
+        if (tontine.startDate) {
+          startDateStr = tontine.startDate instanceof Date
+            ? tontine.startDate.toISOString().split('T')[0]
+            : String(tontine.startDate).split('T')[0];
+        }
+        
+        let endDateStr = '';
+        if (tontine.endDate) {
+          endDateStr = tontine.endDate instanceof Date
+            ? tontine.endDate.toISOString().split('T')[0]
+            : String(tontine.endDate).split('T')[0];
+        }
+
+        // Reset form with all tontine data
+        form.reset({
+          name: tontine.name || '',
+          type: tontine.type || 'presence',
+          contributionAmount: tontine.contributionAmount || 0,
+          frequency: tontine.frequency || 'monthly',
+          startDate: startDateStr,
+          endDate: endDateStr,
+          status: tontine.status || 'active',
+        });
+      }
+    } else if (!open) {
+      // Reset form when modal closes
+      form.reset({
+        name: '',
+        type: 'presence' as const,
+        contributionAmount: 0,
+        frequency: 'monthly' as const,
+        startDate: '',
+        endDate: '',
+        status: 'active' as const,
+      });
+    }
+  }, [open, tontineId, getTontineById, form]);
+
   const onSubmit = async (data: FormValues) => {
+    if (!tontineId) return;
+
     setIsSubmitting(true);
     try {
-      await addTontine({
-        ...data,
+      await updateTontine(tontineId, {
+        name: data.name,
+        type: data.type,
         contributionAmount: Number(data.contributionAmount),
+        frequency: data.frequency,
         startDate: new Date(data.startDate),
         endDate: data.endDate ? new Date(data.endDate) : undefined,
-        status: 'active',
-        memberIds: [],
-        adminId: '1', // TODO: Replace with actual admin ID from auth
+        status: data.status,
       });
-      toast.success(t('tontines.tontineAdded'), {
-        description: `${data.name} ${t('members.hasBeenAdded')}`,
+      toast.success(t('tontines.tontineUpdated'), {
+        description: `${data.name} ${t('members.hasBeenUpdated')}`,
       });
-      form.reset();
       onOpenChange(false);
     } catch (error) {
       toast.error(t('common.error'), {
@@ -102,10 +151,10 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+    <Dialog open={open} onOpenChange={onOpenChange} key={tontineId || 'new'}>
+      <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('tontines.addTontine')}</DialogTitle>
+          <DialogTitle>{t('tontines.editTontine')}</DialogTitle>
           <DialogDescription>{t('tontines.tontineDetails')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -131,7 +180,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('tontines.type')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('tontines.type')} />
@@ -157,7 +206,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('tontines.frequency')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t('tontines.frequency')} />
@@ -193,7 +242,6 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                       placeholder="50000"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -221,10 +269,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {t('tontines.endDate')} 
-                      <span className="text-muted-foreground text-xs ml-1">({t('common.optional')})</span>
-                    </FormLabel>
+                    <FormLabel>{t('tontines.endDate')}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -233,6 +278,35 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('common.status')}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('common.status')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">
+                        {t('common.active')}
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        {t('common.completed')}
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        {t('common.cancelled')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button

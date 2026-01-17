@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, FileText } from 'lucide-react';
+import { Plus, Trash2, FileText, Calendar } from 'lucide-react';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
@@ -67,8 +67,9 @@ export default function Sessions() {
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {t('sessions.noSessions')}
+            <div className="flex flex-col items-center justify-center py-16">
+              <Calendar className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">{t('sessions.noSessions')}</p>
             </div>
           ) : (
             <Table>

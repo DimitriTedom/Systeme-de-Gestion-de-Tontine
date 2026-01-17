@@ -1,4 +1,5 @@
 import api from './api';
+import type { CloseSessionRequest, CloseSessionResponse } from '@/types';
 
 // Types matching the backend schemas (schemas.py)
 export interface SeanceCreate {
@@ -29,7 +30,7 @@ export interface SessionDTO {
   totalContributions: number;
   totalPenalties: number;
   attendanceCount: number;
-  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled' | 'closed';
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -46,6 +47,8 @@ const mapStatutToStatus = (statut: string): SessionDTO['status'] => {
     'completed': 'completed',
     'annule': 'cancelled',
     'cancelled': 'cancelled',
+    'cloturee': 'closed',
+    'closed': 'closed',
   };
   return mapping[statut.toLowerCase()] || 'scheduled';
 };
@@ -57,6 +60,7 @@ const mapStatusToStatut = (status: SessionDTO['status']): string => {
     'ongoing': 'En_cours',
     'completed': 'Termine',
     'cancelled': 'Annule',
+    'closed': 'Cloturee',
   };
   return mapping[status];
 };
@@ -170,4 +174,53 @@ export const updateSession = async (id: string, session: Partial<SessionDTO>): P
  */
 export const deleteSession = async (id: string): Promise<void> => {
   await api.delete(`/seances/${id}`);
+};
+
+/**
+ * Create multiple contributions in bulk
+ * Endpoint: POST /cotisations/bulk
+ */
+export interface CotisationCreate {
+  montant: number;
+  date_paiement: string;
+  id_membre: number;
+  id_seance: number;
+}
+
+export const createBulkContributions = async (contributions: CotisationCreate[]): Promise<void> => {
+  await api.post('/cotisations/bulk', {
+    cotisations: contributions
+  });
+};
+
+/**
+ * Close a session and create penalties for absent members
+ * Endpoint: POST /seances/{id_seance}/close
+ */
+export const closeSession = async (
+  sessionId: string,
+  closeRequest: CloseSessionRequest
+): Promise<CloseSessionResponse> => {
+  const response = await api.post<CloseSessionResponse>(`/seances/${sessionId}/close`, closeRequest);
+  return response.data;
+};
+
+/**
+ * Get session attendance (members with expected contributions)
+ * Endpoint: GET /seances/{id_seance}/attendance
+ */
+export interface SessionAttendanceMember {
+  id_membre: number;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string;
+  nb_parts: number;
+  expected_contribution: number;
+  statut: string;
+}
+
+export const getSessionAttendance = async (sessionId: string): Promise<SessionAttendanceMember[]> => {
+  const response = await api.get<SessionAttendanceMember[]>(`/seances/${sessionId}/attendance`);
+  return response.data;
 };

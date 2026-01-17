@@ -8,6 +8,8 @@ import Members from '@/pages/Members';
 import Tontines from '@/pages/Tontines';
 import Sessions from '@/pages/Sessions';
 import Credits from '@/pages/Credits';
+import Penalties from '@/pages/Penalties';
+import Tours from '@/pages/Tours';
 import Projects from '@/pages/Projects';
 
 export default function App() {
@@ -25,6 +27,8 @@ export default function App() {
                 <Route path="/tontines" element={<Tontines />} />
                 <Route path="/sessions" element={<Sessions />} />
                 <Route path="/credits" element={<Credits />} />
+                <Route path="/penalties" element={<Penalties />} />
+                <Route path="/tours" element={<Tours />} />
                 <Route path="/projects" element={<Projects />} />
               </Routes>
             </div>

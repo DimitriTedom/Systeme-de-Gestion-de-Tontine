@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { X, Wallet, Users, Calendar, DollarSign, Clock, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Wallet, Users, Calendar, DollarSign, Clock, TrendingUp, Loader2, Mail } from 'lucide-react';
 import { useTontineStore } from '@/stores/tontineStore';
+import { getTontineMembers, type TontineMemberParticipation } from '@/services/tontineService';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -12,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface TontineDetailsSheetProps {
   tontineId: string | null;
@@ -26,8 +29,27 @@ export function TontineDetailsSheet({
 }: TontineDetailsSheetProps) {
   const { t } = useTranslation();
   const { tontines } = useTontineStore();
+  const [tontineMembers, setTontineMembers] = useState<TontineMemberParticipation[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   const tontine = tontines.find((t) => t.id === tontineId);
+
+  // Fetch tontine members when modal opens
+  useEffect(() => {
+    if (open && tontineId) {
+      setIsLoadingMembers(true);
+      getTontineMembers(tontineId)
+        .then((data) => {
+          setTontineMembers(data);
+        })
+        .catch((error) => {
+          console.error('Error fetching tontine members:', error);
+        })
+        .finally(() => {
+          setIsLoadingMembers(false);
+        });
+    }
+  }, [open, tontineId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -51,7 +73,14 @@ export function TontineDetailsSheet({
     return null;
   }
 
-  const totalExpectedPerSession = tontine.contributionAmount * tontine.memberIds.length;
+  const totalExpectedPerSession = tontineMembers.reduce(
+    (sum, member) => sum + (tontine.contributionAmount * member.nb_parts),
+    0
+  );
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -151,17 +180,66 @@ export function TontineDetailsSheet({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-3xl font-bold">{tontine.memberIds.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {tontine.memberIds.length === 1 ? 'Membre actif' : 'Membres actifs'}
+              {isLoadingMembers ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : tontineMembers && tontineMembers.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b">
+                    <div>
+                      <p className="text-3xl font-bold">{tontineMembers.length}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {tontineMembers.length === 1 ? 'Membre inscrit' : 'Membres inscrits'}
+                      </p>
+                    </div>
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900 dark:to-emerald-800 flex items-center justify-center">
+                      <Users className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {tontineMembers.map((member) => (
+                      <div 
+                        key={member.id_membre} 
+                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm">
+                            {getInitials(member.prenom, member.nom)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {member.prenom} {member.nom}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Mail className="h-3 w-3" />
+                              <span className="truncate">{member.email}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {member.nb_parts} {member.nb_parts > 1 ? 'parts' : 'part'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {formatCurrency(tontine.contributionAmount * member.nb_parts)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Aucun membre inscrit à cette tontine
                   </p>
                 </div>
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900 dark:to-emerald-800 flex items-center justify-center">
-                  <Users className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

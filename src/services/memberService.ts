@@ -118,3 +118,40 @@ export const updateMember = async (id: string, member: Partial<MemberDTO>): Prom
 export const deleteMember = async (id: string): Promise<void> => {
   await api.delete(`/membres/${id}`);
 };
+
+/**
+ * Register a member to a tontine (PARTICIPE relationship)
+ * Endpoint: POST /membres/{id_membre}/register
+ */
+export const registerMemberToTontine = async (
+  memberId: string, 
+  tontineId: string, 
+  nbParts: number
+): Promise<void> => {
+  await api.post(`/membres/${memberId}/register`, {
+    id_tontine: parseInt(tontineId),
+    nb_parts: nbParts,
+  });
+};
+
+// Backend schema for member tontine participation
+export interface MemberTontineParticipation {
+  id_tontine: number;
+  type: string;
+  montant_cotisation: number;
+  periode: string;
+  description?: string;
+  date_debut: string;
+  date_fin?: string;
+  statut: string;
+  nb_parts: number;
+}
+
+/**
+ * Get all tontines a member is registered to
+ * Endpoint: GET /membres/{id_membre}/tontines
+ */
+export const getMemberTontines = async (memberId: string): Promise<MemberTontineParticipation[]> => {
+  const response = await api.get<MemberTontineParticipation[]>(`/membres/${memberId}/tontines`);
+  return response.data;
+};

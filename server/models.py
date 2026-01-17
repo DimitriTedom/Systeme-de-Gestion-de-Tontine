@@ -46,6 +46,7 @@ class Tontine(Base):
     periode = Column(String(50)) # mensuelle / hebdomadaire
     description = Column(Text)
     date_debut = Column(Date)
+    date_fin = Column(Date, nullable=True)
     statut = Column(String(20), default="Actif")
 
     seances = relationship("Seance", back_populates="tontine")
@@ -58,12 +59,13 @@ class Seance(Base):
     id_seance = Column(Integer, primary_key=True, index=True)
     date = Column(Date)
     lieu = Column(String(255))
-    statut = Column(String(50)) # tenue / annulee
+    statut = Column(String(50)) # tenue / annulee / programmee / cloturee
     notes = Column(Text)
     id_tontine = Column(Integer, ForeignKey("tontines.id_tontine"))
 
     tontine = relationship("Tontine", back_populates="seances")
     cotisations = relationship("Cotisation", back_populates="seance")
+    penalites = relationship("Penalite", back_populates="seance")
 
 class Cotisation(Base):
     __tablename__ = "cotisations"
@@ -85,7 +87,7 @@ class Credit(Base):
     objet = Column(String(255))
     date_demande = Column(Date)
     date_remboursement_prevue = Column(Date)
-    statut = Column(String(50)) # en_cours / rembourse
+    statut = Column(String(50)) # en_cours / rembourse / en_retard
     id_membre = Column(Integer, ForeignKey("membres.id_membre"))
 
     membre = relationship("Membre", back_populates="credits")
@@ -96,9 +98,15 @@ class Penalite(Base):
     montant = Column(Float)
     raison = Column(String(255))
     date = Column(Date)
+    statut = Column(String(50), default="non_paye")  # non_paye / paye / annule
+    type_penalite = Column(String(50), nullable=True)  # absence / late_contribution / misconduct / other
     id_membre = Column(Integer, ForeignKey("membres.id_membre"))
+    id_seance = Column(Integer, ForeignKey("seances.id_seance"), nullable=True)
+    id_tontine = Column(Integer, ForeignKey("tontines.id_tontine"), nullable=True)
 
     membre = relationship("Membre", back_populates="penalites")
+    seance = relationship("Seance")
+    tontine = relationship("Tontine")
 
 class Tour(Base):
     __tablename__ = "tours"
@@ -108,9 +116,11 @@ class Tour(Base):
     montant_distribue = Column(Float)
     id_membre = Column(Integer, ForeignKey("membres.id_membre"))
     id_tontine = Column(Integer, ForeignKey("tontines.id_tontine"))
+    id_seance = Column(Integer, ForeignKey("seances.id_seance"), nullable=True)
 
     beneficiaire = relationship("Membre", back_populates="tours")
     tontine = relationship("Tontine", back_populates="tours")
+    seance = relationship("Seance")
 
 class Projet(Base):
     __tablename__ = "projets"

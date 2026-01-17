@@ -32,18 +32,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-const projectSchema = z.object({
-  tontineId: z.string().min(1, 'Tontine required'),
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  budget: z.number().min(1, 'Budget must be positive'),
-  startDate: z.string().min(1, 'Start date required'),
-  targetDate: z.string().optional(),
-  responsibleMemberId: z.string().optional(),
-});
-
-type ProjectFormData = z.infer<typeof projectSchema>;
-
 interface AddProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,8 +43,47 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
   const { tontines } = useTontineStore();
   const { members } = useMemberStore();
 
+  // Schema defined inside component to access t() function for i18n
+  const projectSchema = z.object({
+    tontineId: z.string().min(1, t('projects.validation.tontineRequired')),
+    name: z.string().min(3, t('projects.validation.nameRequired')),
+    description: z.string().min(10, t('projects.validation.descriptionRequired')),
+    budget: z.coerce.number().min(1, t('projects.validation.budgetPositive')),
+    startDate: z.string().min(1, t('projects.validation.startDateRequired')),
+    targetDate: z.string().optional(),
+    responsibleMemberId: z.string().optional(),
+  }).refine((data) => {
+    const startDate = new Date(data.startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return startDate >= today;
+  }, {
+    message: t('projects.validation.startDateFuture'),
+    path: ["startDate"],
+  }).refine((data) => {
+    if (data.targetDate) {
+      const targetDate = new Date(data.targetDate);
+      const startDate = new Date(data.startDate);
+      return targetDate > startDate;
+    }
+    return true;
+  }, {
+    message: t('projects.validation.targetDateAfterStart'),
+    path: ["targetDate"],
+  });
+
+  type ProjectFormData = {
+    tontineId: string;
+    name: string;
+    description: string;
+    budget: number;
+    startDate: string;
+    targetDate?: string;
+    responsibleMemberId?: string;
+  };
+
   const form = useForm<ProjectFormData>({
-    resolver: zodResolver(projectSchema),
+    resolver: zodResolver(projectSchema) as any,
     defaultValues: {
       tontineId: '',
       name: '',
@@ -70,7 +97,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
 
   const onSubmit = (data: ProjectFormData) => {
     const startDate = new Date(data.startDate);
-    const targetDate = data.targetDate ? new Date(data.targetDate) : undefined;
+    const targetDate = data.targetDate ? new Date(data.targetDate) : null;
 
     addProject({
       tontineId: data.tontineId,
@@ -80,8 +107,9 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
       amountRaised: 0,
       startDate,
       targetDate,
+      completionDate: null,
       status: 'planned',
-      responsibleMemberId: data.responsibleMemberId || undefined,
+      responsibleMemberId: data.responsibleMemberId || null,
     });
 
     form.reset();

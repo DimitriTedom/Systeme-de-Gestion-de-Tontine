@@ -36,14 +36,27 @@ api.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       console.error('API Error:', error.response.status, error.response.data);
+      
+      // Extract error message from response
+      const errorMessage = error.response.data?.detail || 
+                          error.response.data?.message || 
+                          'An error occurred';
+      
+      // Create a custom error with the server's message
+      const customError = new Error(errorMessage);
+      (customError as any).status = error.response.status;
+      (customError as any).originalError = error;
+      
+      return Promise.reject(customError);
     } else if (error.request) {
       // Request made but no response received
       console.error('Network Error:', error.message);
+      return Promise.reject(new Error('Network error. Please check your connection.'));
     } else {
       // Error in request configuration
       console.error('Request Error:', error.message);
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
   }
 );
 

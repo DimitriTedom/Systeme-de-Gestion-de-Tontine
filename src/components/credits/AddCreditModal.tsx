@@ -31,17 +31,6 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
-const creditSchema = z.object({
-  tontineId: z.string().min(1, 'Tontine required'),
-  memberId: z.string().min(1, 'Member required'),
-  amount: z.number().min(1, 'Amount must be positive'),
-  interestRate: z.number().min(0, 'Interest rate must be positive'),
-  dueDate: z.string().min(1, 'Due date required'),
-  purpose: z.string().optional(),
-});
-
-type CreditFormData = z.infer<typeof creditSchema>;
-
 interface AddCreditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,8 +42,34 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
   const { members } = useMemberStore();
   const { tontines } = useTontineStore();
 
+  const creditSchema = z.object({
+    tontineId: z.string().min(1, t('credits.validation.tontineRequired')),
+    memberId: z.string().min(1, t('credits.validation.memberRequired')),
+    amount: z.coerce.number().min(1, t('credits.validation.amountPositive')),
+    interestRate: z.coerce.number().min(0, t('credits.validation.interestPositive')),
+    dueDate: z.string().min(1, t('credits.validation.dueDateRequired')),
+    purpose: z.string().optional(),
+  }).refine((data) => {
+    const dueDate = new Date(data.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate > today;
+  }, {
+    message: t('credits.validation.dueDateFuture'),
+    path: ["dueDate"],
+  });
+
+  type CreditFormData = {
+    tontineId: string;
+    memberId: string;
+    amount: number;
+    interestRate: number;
+    dueDate: string;
+    purpose?: string;
+  };
+
   const form = useForm<CreditFormData>({
-    resolver: zodResolver(creditSchema),
+    resolver: zodResolver(creditSchema) as any,
     defaultValues: {
       tontineId: '',
       memberId: '',

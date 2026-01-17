@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddTontineModal } from '@/components/tontines/AddTontineModal';
+import { EditTontineModal } from '@/components/tontines/EditTontineModal';
 import { TontineDetailsSheet } from '@/components/tontines/TontineDetailsSheet';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -24,6 +25,7 @@ export default function Tontines() {
   const { t } = useTranslation();
   const { tontines, isLoading, error, fetchTontines, deleteTontine } = useTontineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editTontineId, setEditTontineId] = useState<string | null>(null);
   const [selectedTontineId, setSelectedTontineId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -203,7 +205,7 @@ export default function Tontines() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {tontine.memberIds.length}
+                        {tontine.membersCount || 0}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -223,7 +225,12 @@ export default function Tontines() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" title={t('tontines.editTontine')}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setEditTontineId(tontine.id)}
+                          title={t('tontines.editTontine')}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -302,6 +309,12 @@ export default function Tontines() {
       <AddTontineModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
+      />
+
+      <EditTontineModal
+        tontineId={editTontineId}
+        open={!!editTontineId}
+        onOpenChange={(open) => !open && setEditTontineId(null)}
       />
 
       <TontineDetailsSheet

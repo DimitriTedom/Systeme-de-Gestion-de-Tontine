@@ -12,6 +12,7 @@ interface MemberStore {
   addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
+  registerToTontine: (memberId: string, tontineId: string, nbParts: number) => Promise<void>;
   
   // Local state actions
   getMemberById: (id: string) => Member | undefined;
@@ -154,6 +155,8 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
         error: error instanceof Error ? error.message : 'Failed to add member',
         isLoading: false 
       });
+      // Re-throw error so the component can catch it and show toast
+      throw error;
     }
   },
   
@@ -210,6 +213,20 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to delete member',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  registerToTontine: async (memberId, tontineId, nbParts) => {
+    set({ isLoading: true, error: null });
+    try {
+      await memberService.registerMemberToTontine(memberId, tontineId, nbParts);
+      set({ isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to register to tontine',
         isLoading: false 
       });
       throw error;

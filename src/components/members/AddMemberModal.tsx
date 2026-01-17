@@ -38,7 +38,7 @@ interface AddMemberModalProps {
 
 export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
   const { t } = useTranslation();
-  const { addMember, error: storeError } = useMemberStore();
+  const { addMember } = useMemberStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
@@ -78,17 +78,11 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
         joinedDate: new Date(),
       });
       
-      if (storeError) {
-        toast.error(t('members.addError'), {
-          description: storeError,
-        });
-      } else {
-        toast.success(t('members.addSuccess'), {
-          description: `${data.firstName} ${data.lastName} ${t('members.hasBeenAdded')}`,
-        });
-        form.reset();
-        onOpenChange(false);
-      }
+      toast.success(t('members.addSuccess'), {
+        description: `${data.firstName} ${data.lastName} ${t('members.hasBeenAdded')}`,
+      });
+      form.reset();
+      onOpenChange(false);
     } catch (error) {
       toast.error(t('members.addError'), {
         description: error instanceof Error ? error.message : t('common.unknownError'),

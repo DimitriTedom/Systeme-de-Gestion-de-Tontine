@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users } from 'lucide-react';
 import { useMemberStore } from '@/stores/memberStore';
+import { useTontineStore } from '@/stores/tontineStore';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
+import { getMemberTontines, type MemberTontineParticipation } from '@/services/memberService';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -15,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { RegisterToTontineModal } from './RegisterToTontineModal';
 
 interface MemberDetailsSheetProps {
   memberId: string | null;
@@ -29,10 +32,38 @@ export function MemberDetailsSheet({
 }: MemberDetailsSheetProps) {
   const { t } = useTranslation();
   const { members } = useMemberStore();
+  const { tontines } = useTontineStore();
   const [isLoadingFinancial, setIsLoadingFinancial] = useState(false);
   const [financialData, setFinancialData] = useState<MemberFinancialReport | null>(null);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [memberTontines, setMemberTontines] = useState<MemberTontineParticipation[]>([]);
+  const [isLoadingTontines, setIsLoadingTontines] = useState(false);
 
   const member = members.find((m) => m.id === memberId);
+
+  // Function to fetch member tontines
+  const fetchMemberTontines = () => {
+    if (!memberId) return;
+    
+    setIsLoadingTontines(true);
+    getMemberTontines(memberId)
+      .then((data) => {
+        setMemberTontines(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching member tontines:', error);
+      })
+      .finally(() => {
+        setIsLoadingTontines(false);
+      });
+  };
+
+  // Fetch member's tontines when modal opens
+  useEffect(() => {
+    if (open && memberId) {
+      fetchMemberTontines();
+    }
+  }, [open, memberId]);
 
   // Fetch financial data when modal opens
   useEffect(() => {
@@ -188,6 +219,72 @@ export function MemberDetailsSheet({
             </CardContent>
           </Card>
 
+          {/* My Tontines Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <CardTitle className="text-lg">{t('members.myTontines')}</CardTitle>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => setIsRegisterModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('members.registerToTontine')}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingTontines ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : memberTontines && memberTontines.length > 0 ? (
+                <div className="space-y-2">
+                  {memberTontines.map((tontine) => {
+                    return (
+                      <div 
+                        key={tontine.id_tontine} 
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{tontine.description || `Tontine #${tontine.id_tontine}`}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {tontine.type}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {formatCurrency(tontine.montant_cotisation)} / {tontine.periode}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {tontine.nb_parts} {tontine.nb_parts > 1 ? 'parts' : 'part'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t('members.noTontines')}
+                  </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setIsRegisterModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('members.joinFirstTontine')}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Financial Summary */}
           <Card>
             <CardHeader>
@@ -237,6 +334,17 @@ export function MemberDetailsSheet({
           </Card>
         </div>
       </SheetContent>
+
+      {/* Register to Tontine Modal */}
+      {member && (
+        <RegisterToTontineModal
+          open={isRegisterModalOpen}
+          onOpenChange={setIsRegisterModalOpen}
+          memberId={member.id}
+          memberName={`${member.firstName} ${member.lastName}`}
+          onSuccess={fetchMemberTontines}
+        />
+      )}
     </Sheet>
   );
 }

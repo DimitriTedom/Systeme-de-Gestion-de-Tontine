@@ -6,6 +6,8 @@ import {
   CreditCard,
   FolderKanban,
   PanelLeftClose,
+  AlertTriangle,
+  Trophy,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -51,6 +53,16 @@ export function AppSidebar() {
       title: t('nav.credits'),
       url: '/credits',
       icon: CreditCard,
+    },
+    {
+      title: t('nav.penalties'),
+      url: '/penalties',
+      icon: AlertTriangle,
+    },
+    {
+      title: t('nav.tours'),
+      url: '/tours',
+      icon: Trophy,
     },
     {
       title: t('nav.projects'),

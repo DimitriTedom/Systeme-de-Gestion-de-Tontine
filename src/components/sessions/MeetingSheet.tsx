@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Save } from 'lucide-react';
+import { X, Save, Lock, FileText } from 'lucide-react';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useContributionStore } from '@/stores/contributionStore';
-import { usePenaltyStore } from '@/stores/penaltyStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SessionReportModal } from './SessionReportModal';
 import {
   Sheet,
   SheetContent,
@@ -16,6 +16,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -26,6 +34,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createBulkContributions, type CotisationCreate } from '@/services/sessionService';
+import type { AttendanceRecord, PenaltySummary } from '@/types';
 
 interface MeetingSheetProps {
   sessionId: string;
@@ -41,19 +52,21 @@ interface MemberContribution {
 
 export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProps) {
   const { t } = useTranslation();
-  const { getSessionById, updateSession } = useSessionStore();
+  const { getSessionById, updateSession, closeSession } = useSessionStore();
   const { getTontineById } = useTontineStore();
   const { getMemberById } = useMemberStore();
   const { getContributionsBySessionId, bulkUpsertContributions } = useContributionStore();
-  const { addPenalty, getPenaltiesBySessionId } = usePenaltyStore();
 
   const session = getSessionById(sessionId);
   const tontine = session ? getTontineById(session.tontineId) : null;
   const members = tontine?.memberIds.map(id => getMemberById(id)).filter(Boolean) || [];
   const existingContributions = getContributionsBySessionId(sessionId);
-  const existingPenalties = getPenaltiesBySessionId(sessionId);
 
   const [contributions, setContributions] = useState<Record<string, MemberContribution>>({});
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closingSummary, setClosingSummary] = useState<PenaltySummary[] | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   // Default penalty amount for absences (5000 XAF as per MCD)
   const ABSENCE_PENALTY_AMOUNT = 5000;
@@ -97,11 +110,35 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
   };
 
   const handleAmountChange = (memberId: string, amount: number) => {
+    const cleanAmount = isNaN(amount) ? 0 : amount;
+    
+    // Validate based on tontine type
+    let error = '';
+    if (tontine && contributions[memberId]?.isPresent) {
+      if (tontine.type === 'presence') {
+        // For presence tontines: must be exactly nb_parts * montant_cotisation
+        // Since we don't have nb_parts in this mock, we use contributionAmount
+        if (cleanAmount !== tontine.contributionAmount) {
+          error = t('sessions.validation.presenceMustBeExact');
+        }
+      } else if (tontine.type === 'optional') {
+        // For optional tontines: can be 0 or any multiple of base montant_cotisation
+        if (cleanAmount > 0 && cleanAmount % tontine.contributionAmount !== 0) {
+          error = t('sessions.validation.optionalMustBeMultiple');
+        }
+      }
+    }
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [memberId]: error,
+    }));
+    
     setContributions(prev => ({
       ...prev,
       [memberId]: {
         ...prev[memberId],
-        amount: isNaN(amount) ? 0 : amount,
+        amount: cleanAmount,
       },
     }));
   };
@@ -116,60 +153,100 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     return Object.values(contributions).filter(c => c.isPresent).length;
   };
 
-  const handleSave = () => {
-    // Prepare contributions data
-    const contributionsData = Object.values(contributions)
-      .filter(c => c.isPresent)
+  const handleSave = async () => {
+    if (!session || !tontine) return;
+    
+    // Check for validation errors
+    const hasErrors = Object.values(validationErrors).some(err => err !== '');
+    if (hasErrors) {
+      alert(t('sessions.validation.fixErrors'));
+      return;
+    }
+    
+    // Prepare contributions for bulk save
+    const contributionsData: CotisationCreate[] = Object.values(contributions)
+      .filter(c => c.isPresent && c.amount > 0)
       .map(c => ({
-        sessionId: session.id,
-        memberId: c.memberId,
-        tontineId: tontine.id,
-        amount: c.amount,
-        expectedAmount: tontine.contributionAmount,
-        paymentDate: session.date,
-        paymentMethod: 'cash' as const,
-        status: c.amount >= tontine.contributionAmount ? 'completed' as const : 'partial' as const,
+        montant: c.amount,
+        date_paiement: session.date instanceof Date 
+          ? session.date.toISOString().split('T')[0]
+          : session.date,
+        id_membre: parseInt(c.memberId, 10),
+        id_seance: parseInt(session.id, 10),
       }));
 
-    // Save contributions
-    bulkUpsertContributions(contributionsData);
-
-    // Handle penalties for absent members
-    const absentMemberIds = Object.entries(contributions)
-      .filter(([_, contrib]) => !contrib.isPresent)
-      .map(([memberId, _]) => memberId);
-
-    // Create penalties for absent members (if not already penalized)
-    absentMemberIds.forEach(memberId => {
-      const alreadyPenalized = existingPenalties.some(
-        p => p.memberId === memberId && p.penaltyType === 'absence'
-      );
-
-      if (!alreadyPenalized) {
-        addPenalty({
-          sessionId: session.id,
-          memberId,
-          tontineId: tontine.id,
-          amount: ABSENCE_PENALTY_AMOUNT,
-          reason: t('penalties.autoPenalty'),
-          penaltyType: 'absence',
-          status: 'pending',
-        });
+    try {
+      // Bulk save contributions to backend
+      if (contributionsData.length > 0) {
+        await createBulkContributions(contributionsData);
       }
-    });
 
-    // Calculate total penalties
-    const totalPenalties = absentMemberIds.length * ABSENCE_PENALTY_AMOUNT;
+      // Update local store
+      const localContributions = Object.values(contributions)
+        .filter(c => c.isPresent)
+        .map(c => ({
+          sessionId: session.id,
+          memberId: c.memberId,
+          tontineId: tontine.id,
+          amount: c.amount,
+          expectedAmount: tontine.contributionAmount,
+          paymentDate: session.date,
+          paymentMethod: 'cash' as const,
+          status: c.amount >= tontine.contributionAmount ? 'completed' as const : 'partial' as const,
+        }));
 
-    // Update session totals
-    updateSession(session.id, {
-      totalContributions: calculateTotal(),
-      totalPenalties,
-      attendanceCount: calculateAttendanceCount(),
-      status: 'completed',
-    });
+      bulkUpsertContributions(localContributions);
 
-    onOpenChange(false);
+      // Update session totals
+      updateSession(session.id, {
+        totalContributions: calculateTotal(),
+        attendanceCount: calculateAttendanceCount(),
+      });
+
+      alert(t('sessions.contributionsSaved'));
+    } catch (error) {
+      console.error('Failed to save contributions:', error);
+      alert(t('sessions.contributionsSaveFailed'));
+    }
+  };
+
+  const handleCloseSession = async () => {
+    if (!session || !tontine) return;
+    
+    setShowCloseDialog(true);
+  };
+
+  const confirmCloseSession = async () => {
+    if (!session || !tontine) return;
+
+    try {
+      // Prepare attendance records
+      const attendance: AttendanceRecord[] = Object.values(contributions).map(c => ({
+        id_membre: c.memberId,
+        present: c.isPresent,
+        montant: c.isPresent ? c.amount : undefined,
+      }));
+
+      // Call close session endpoint
+      const result = await closeSession(session.id, {
+        attendance,
+        montant_penalite_absence: ABSENCE_PENALTY_AMOUNT,
+      });
+
+      // Show penalty summary
+      setClosingSummary(result.penalties_created);
+      setShowCloseDialog(false);
+      
+      // Close the meeting sheet after showing summary
+      setTimeout(() => {
+        setClosingSummary(null);
+        onOpenChange(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to close session:', error);
+      alert(t('sessions.closeSessionFailed'));
+      setShowCloseDialog(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -289,6 +366,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                             onCheckedChange={(checked) =>
                               handleAttendanceChange(member.id, checked as boolean)
                             }
+                            disabled={session.status === 'closed'}
                           />
                         </TableCell>
                         <TableCell>
@@ -303,23 +381,19 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                             onChange={(e) =>
                               handleAmountChange(member.id, parseFloat(e.target.value))
                             }
-                            disabled={!contrib.isPresent}
+                            disabled={!contrib.isPresent || session.status === 'closed'}
                             min={0}
                             className={
-                              contrib.isPresent &&
-                              isPresenceTontine &&
-                              contrib.amount < tontine.contributionAmount
+                              validationErrors[member.id]
                                 ? 'border-red-500'
                                 : ''
                             }
                           />
-                          {contrib.isPresent &&
-                            isPresenceTontine &&
-                            contrib.amount < tontine.contributionAmount && (
-                              <p className="text-xs text-red-500 mt-1">
-                                Montant requis: {formatCurrency(tontine.contributionAmount)}
-                              </p>
-                            )}
+                          {validationErrors[member.id] && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {validationErrors[member.id]}
+                            </p>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -346,16 +420,97 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t('common.cancel')}
+          {session.status === 'closed' && (
+            <Alert>
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                {t('sessions.sessionClosed')}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {closingSummary && closingSummary.length > 0 && (
+            <Alert className="bg-orange-50 border-orange-200">
+              <AlertDescription>
+                <div className="font-semibold mb-2">
+                  {t('sessions.penaltiesCreated')}:
+                </div>
+                <ul className="space-y-1">
+                  {closingSummary.map((penalty, idx) => (
+                    <li key={idx} className="text-sm">
+                      {penalty.nom} {penalty.prenom}: {formatCurrency(penalty.montant)} ({penalty.raison})
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex justify-between gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowReportModal(true)}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {t('sessions.viewReport')}
             </Button>
-            <Button onClick={handleSave}>
-              <Save className="mr-2 h-4 w-4" />
-              {t('common.save')}
-            </Button>
+            
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {t('common.cancel')}
+              </Button>
+              
+              {session.status !== 'closed' && (
+                <>
+                  <Button onClick={handleSave} variant="secondary">
+                    <Save className="mr-2 h-4 w-4" />
+                    {t('sessions.saveContributions')}
+                  </Button>
+                  
+                  {tontine.type === 'presence' && (
+                    <Button onClick={handleCloseSession}>
+                      <Lock className="mr-2 h-4 w-4" />
+                      {t('sessions.closeSession')}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Close Session Confirmation Dialog */}
+        <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('sessions.confirmCloseSession')}</DialogTitle>
+              <DialogDescription>
+                {t('sessions.closeSessionWarning')}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCloseDialog(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={confirmCloseSession}>
+                {t('sessions.confirmClose')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Session Report Modal */}
+        <SessionReportModal
+          session={session}
+          tontine={tontine}
+          totalExpected={members.length * tontine.contributionAmount}
+          totalCollected={total}
+          totalPenalties={session.totalPenalties}
+          attendanceCount={attendanceCount}
+          totalMembers={members.length}
+          open={showReportModal}
+          onOpenChange={setShowReportModal}
+        />
       </SheetContent>
     </Sheet>
   );

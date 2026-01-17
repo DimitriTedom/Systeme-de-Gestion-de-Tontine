@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Briefcase } from 'lucide-react';
 import { useState } from 'react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -66,6 +66,7 @@ export default function Projects() {
       {projects.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
+            <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground mb-4">{t('projects.noProjects')}</p>
             <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

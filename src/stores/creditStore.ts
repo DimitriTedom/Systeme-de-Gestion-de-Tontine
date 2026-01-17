@@ -1,92 +1,132 @@
 import { create } from 'zustand';
 import { Credit } from '@/types';
+import * as creditService from '@/services/creditService';
 
 interface CreditStore {
   credits: Credit[];
-  addCredit: (credit: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Async API actions
+  fetchCredits: () => Promise<void>;
+  addCredit: (credit: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  repayCredit: (id: string, amount: number) => Promise<void>;
+  
+  // Local state actions
   updateCredit: (id: string, credit: Partial<Credit>) => void;
   deleteCredit: (id: string) => void;
   getCreditById: (id: string) => Credit | undefined;
   getCreditsByMemberId: (memberId: string) => Credit[];
   getCreditsByTontineId: (tontineId: string) => Credit[];
+  clearError: () => void;
 }
 
-// Mock data for credits
-const mockCredits: Credit[] = [
-  {
-    id: 'credit-1',
-    tontineId: 'tontine-1',
-    memberId: 'member-1',
-    amount: 500000,
-    interestRate: 5,
-    disbursementDate: new Date('2025-12-01'),
-    dueDate: new Date('2026-06-01'),
-    repaymentAmount: 525000,
-    amountPaid: 200000,
-    status: 'repaying',
-    purpose: 'Achat de matériel agricole',
-    createdAt: new Date('2025-11-20'),
-    updatedAt: new Date('2026-01-10'),
-  },
-  {
-    id: 'credit-2',
-    tontineId: 'tontine-1',
-    memberId: 'member-2',
-    amount: 300000,
-    interestRate: 4,
-    disbursementDate: new Date('2025-11-15'),
-    dueDate: new Date('2026-05-15'),
-    repaymentAmount: 312000,
-    amountPaid: 312000,
-    status: 'completed',
-    purpose: 'Frais médicaux',
-    createdAt: new Date('2025-11-01'),
-    updatedAt: new Date('2026-01-05'),
-  },
-  {
-    id: 'credit-3',
-    tontineId: 'tontine-2',
-    memberId: 'member-3',
-    amount: 750000,
-    interestRate: 6,
-    disbursementDate: new Date('2026-01-01'),
-    dueDate: new Date('2026-07-01'),
-    repaymentAmount: 795000,
-    amountPaid: 0,
-    status: 'disbursed',
-    purpose: 'Expansion commerce',
-    guarantorIds: ['member-1', 'member-4'],
-    createdAt: new Date('2025-12-15'),
-    updatedAt: new Date('2026-01-01'),
-  },
-  {
-    id: 'credit-4',
-    tontineId: 'tontine-1',
-    memberId: 'member-5',
-    amount: 200000,
-    interestRate: 3,
-    disbursementDate: new Date('2025-10-01'),
-    dueDate: new Date('2026-04-01'),
-    repaymentAmount: 206000,
-    amountPaid: 150000,
-    status: 'repaying',
-    purpose: 'Scolarité des enfants',
-    createdAt: new Date('2025-09-20'),
-    updatedAt: new Date('2026-01-12'),
-  },
-];
-
 export const useCreditStore = create<CreditStore>((set, get) => ({
-  credits: mockCredits,
+  credits: [],
+  isLoading: false,
+  error: null,
 
-  addCredit: (creditData) => {
-    const newCredit: Credit = {
-      ...creditData,
-      id: `credit-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ credits: [...state.credits, newCredit] }));
+  // Fetch all credits from API
+  fetchCredits: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await creditService.getAllCredits();
+      // Transform DTO to Credit type
+      const credits: Credit[] = data.map((c) => ({
+        id: c.id,
+        tontineId: c.tontineId,
+        memberId: c.memberId,
+        amount: c.amount,
+        interestRate: c.interestRate,
+        disbursementDate: c.disbursementDate,
+        dueDate: c.dueDate,
+        repaymentAmount: c.amount * (1 + c.interestRate / 100),
+        amountPaid: c.amount - c.remainingBalance,
+        status: c.status,
+        purpose: c.purpose,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      }));
+      set({ credits, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch credits',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Add credit via API
+  addCredit: async (creditData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const creditDTO = {
+        tontineId: creditData.tontineId,
+        memberId: creditData.memberId,
+        amount: creditData.amount,
+        interestRate: creditData.interestRate,
+        disbursementDate: creditData.disbursementDate,
+        dueDate: creditData.dueDate,
+        purpose: creditData.purpose,
+      };
+      
+      const created = await creditService.createCredit(creditDTO);
+      
+      const newCredit: Credit = {
+        id: created.id,
+        tontineId: created.tontineId,
+        memberId: created.memberId,
+        amount: created.amount,
+        interestRate: created.interestRate,
+        disbursementDate: created.disbursementDate,
+        dueDate: created.dueDate,
+        repaymentAmount: creditData.repaymentAmount,
+        amountPaid: 0,
+        status: created.status,
+        purpose: created.purpose,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      set((state) => ({ 
+        credits: [...state.credits, newCredit],
+        isLoading: false 
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add credit',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Repay credit via API
+  repayCredit: async (id, amount) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updated = await creditService.repayCredit(id, amount);
+      
+      set((state) => ({
+        credits: state.credits.map((credit) =>
+          credit.id === id
+            ? {
+                ...credit,
+                amountPaid: credit.amount - updated.remainingBalance,
+                status: updated.status,
+                updatedAt: new Date(),
+              }
+            : credit
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to repay credit',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
 
   updateCredit: (id, creditData) => {
@@ -115,5 +155,9 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
   getCreditsByTontineId: (tontineId) => {
     return get().credits.filter((credit) => credit.tontineId === tontineId);
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

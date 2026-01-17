@@ -10,10 +10,10 @@ interface TontineStore {
   // Async API actions
   fetchTontines: () => Promise<void>;
   addTontine: (tontine: Omit<Tontine, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTontine: (id: string, tontine: Partial<Tontine>) => Promise<void>;
+  deleteTontine: (id: string) => Promise<void>;
   
   // Local state actions
-  updateTontine: (id: string, tontine: Partial<Tontine>) => void;
-  deleteTontine: (id: string) => Promise<void>;
   getTontineById: (id: string) => Tontine | undefined;
   clearError: () => void;
 }
@@ -142,14 +142,36 @@ export const useTontineStore = create<TontineStore>((set, get) => ({
     }
   },
   
-  updateTontine: (id, tontineData) => {
-    set((state) => ({
-      tontines: state.tontines.map((tontine) =>
-        tontine.id === id
-          ? { ...tontine, ...tontineData, updatedAt: new Date() }
-          : tontine
-      ),
-    }));
+  updateTontine: async (id, tontineData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updated = await tontineService.updateTontine(id, tontineData);
+      set((state) => ({
+        tontines: state.tontines.map((tontine) =>
+          tontine.id === id
+            ? { 
+                ...tontine, 
+                name: updated.name,
+                description: updated.description,
+                type: updated.type,
+                contributionAmount: updated.contributionAmount,
+                frequency: updated.frequency,
+                startDate: updated.startDate,
+                endDate: updated.endDate,
+                status: updated.status,
+                updatedAt: new Date() 
+              }
+            : tontine
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to update tontine',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
   
   deleteTontine: async (id) => {

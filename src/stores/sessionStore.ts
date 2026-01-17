@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Session } from '@/types';
+import { Session, CloseSessionRequest, CloseSessionResponse } from '@/types';
 import * as sessionService from '@/services/sessionService';
 
 interface SessionStore {
@@ -10,6 +10,7 @@ interface SessionStore {
   // Async API actions
   fetchSessions: () => Promise<void>;
   addSession: (session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  closeSession: (sessionId: string, request: CloseSessionRequest) => Promise<CloseSessionResponse>;
   
   // Local state actions
   updateSession: (id: string, session: Partial<Session>) => void;
@@ -152,6 +153,38 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         error: error instanceof Error ? error.message : 'Failed to add session',
         isLoading: false 
       });
+    }
+  },
+
+  // Close session and create penalties for absent members
+  closeSession: async (sessionId, request) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await sessionService.closeSession(sessionId, request);
+      
+      // Update session status to closed
+      set((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === sessionId
+            ? { 
+                ...session, 
+                status: 'closed' as const,
+                totalPenalties: response.total_penalties,
+                totalContributions: response.total_contributions,
+                updatedAt: new Date() 
+              }
+            : session
+        ),
+        isLoading: false,
+      }));
+      
+      return response;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to close session',
+        isLoading: false 
+      });
+      throw error;
     }
   },
   
