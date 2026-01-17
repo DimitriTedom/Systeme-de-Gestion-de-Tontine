@@ -1,12 +1,21 @@
 import { create } from 'zustand';
 import { Tontine } from '@/types';
+import * as tontineService from '@/services/tontineService';
 
 interface TontineStore {
   tontines: Tontine[];
-  addTontine: (tontine: Omit<Tontine, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Async API actions
+  fetchTontines: () => Promise<void>;
+  addTontine: (tontine: Omit<Tontine, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  
+  // Local state actions
   updateTontine: (id: string, tontine: Partial<Tontine>) => void;
-  deleteTontine: (id: string) => void;
+  deleteTontine: (id: string) => Promise<void>;
   getTontineById: (id: string) => Tontine | undefined;
+  clearError: () => void;
 }
 
 // Mock data for initial state
@@ -58,15 +67,79 @@ const mockTontines: Tontine[] = [
 
 export const useTontineStore = create<TontineStore>((set, get) => ({
   tontines: mockTontines,
-  
-  addTontine: (tontineData) => {
-    const newTontine: Tontine = {
-      ...tontineData,
-      id: Math.random().toString(36).substring(7),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ tontines: [...state.tontines, newTontine] }));
+  isLoading: false,
+  error: null,
+
+  // Fetch all tontines from API
+  fetchTontines: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await tontineService.getAllTontines();
+      // Transform TontineDTO to Tontine type
+      const tontines: Tontine[] = data.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        type: t.type,
+        contributionAmount: t.contributionAmount,
+        frequency: t.frequency,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        status: t.status,
+        memberIds: t.memberIds,
+        adminId: t.adminId,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      }));
+      set({ tontines, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch tontines',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Add tontine via API and update local state
+  addTontine: async (tontineData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const tontineDTO = {
+        name: tontineData.name,
+        description: tontineData.description,
+        type: tontineData.type,
+        contributionAmount: tontineData.contributionAmount,
+        frequency: tontineData.frequency,
+        startDate: tontineData.startDate,
+        endDate: tontineData.endDate,
+        status: tontineData.status,
+      };
+      const created = await tontineService.createTontine(tontineDTO);
+      const newTontine: Tontine = {
+        id: created.id,
+        name: created.name,
+        description: created.description,
+        type: created.type,
+        contributionAmount: created.contributionAmount,
+        frequency: created.frequency,
+        startDate: created.startDate,
+        endDate: created.endDate,
+        status: created.status,
+        memberIds: tontineData.memberIds,
+        adminId: tontineData.adminId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      set((state) => ({ 
+        tontines: [...state.tontines, newTontine],
+        isLoading: false 
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add tontine',
+        isLoading: false 
+      });
+    }
   },
   
   updateTontine: (id, tontineData) => {
@@ -79,13 +152,28 @@ export const useTontineStore = create<TontineStore>((set, get) => ({
     }));
   },
   
-  deleteTontine: (id) => {
-    set((state) => ({
-      tontines: state.tontines.filter((tontine) => tontine.id !== id),
-    }));
+  deleteTontine: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await tontineService.deleteTontine(id);
+      set((state) => ({
+        tontines: state.tontines.filter((tontine) => tontine.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to delete tontine',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
   
   getTontineById: (id) => {
     return get().tontines.find((tontine) => tontine.id === id);
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

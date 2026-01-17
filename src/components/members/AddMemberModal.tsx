@@ -3,6 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useMemberStore } from '@/stores/memberStore';
+import { toast } from 'sonner';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +38,8 @@ interface AddMemberModalProps {
 
 export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
   const { t } = useTranslation();
-  const { addMember } = useMemberStore();
+  const { addMember, error: storeError } = useMemberStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
     firstName: z.string().min(1, t('members.validation.firstNameRequired')),
@@ -66,14 +69,33 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    addMember({
-      ...data,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-      joinedDate: new Date(),
-    });
-    form.reset();
-    onOpenChange(false);
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
+    try {
+      await addMember({
+        ...data,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+        joinedDate: new Date(),
+      });
+      
+      if (storeError) {
+        toast.error(t('members.addError'), {
+          description: storeError,
+        });
+      } else {
+        toast.success(t('members.addSuccess'), {
+          description: `${data.firstName} ${data.lastName} ${t('members.hasBeenAdded')}`,
+        });
+        form.reset();
+        onOpenChange(false);
+      }
+    } catch (error) {
+      toast.error(t('members.addError'), {
+        description: error instanceof Error ? error.message : t('common.unknownError'),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -202,10 +224,13 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit">{t('common.save')}</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? t('common.saving') : t('common.save')}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

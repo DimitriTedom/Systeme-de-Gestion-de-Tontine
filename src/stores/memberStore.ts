@@ -1,12 +1,21 @@
 import { create } from 'zustand';
 import { Member } from '@/types';
+import * as memberService from '@/services/memberService';
 
 interface MemberStore {
   members: Member[];
-  addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateMember: (id: string, member: Partial<Member>) => void;
-  deleteMember: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Async API actions
+  fetchMembers: () => Promise<void>;
+  addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateMember: (id: string, member: Partial<Member>) => Promise<void>;
+  deleteMember: (id: string) => Promise<void>;
+  
+  // Local state actions
   getMemberById: (id: string) => Member | undefined;
+  clearError: () => void;
 }
 
 // Mock data for initial state
@@ -80,34 +89,138 @@ const mockMembers: Member[] = [
 
 export const useMemberStore = create<MemberStore>((set, get) => ({
   members: mockMembers,
-  
-  addMember: (memberData) => {
-    const newMember: Member = {
-      ...memberData,
-      id: Math.random().toString(36).substring(7),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ members: [...state.members, newMember] }));
+  isLoading: false,
+  error: null,
+
+  // Fetch all members from API
+  fetchMembers: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await memberService.getAllMembers();
+      // Transform MemberDTO to Member type
+      const members: Member[] = data.map((m) => ({
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        email: m.email,
+        phone: m.phone,
+        address: m.address,
+        joinedDate: m.joinedDate,
+        status: m.status,
+        createdAt: m.joinedDate,
+        updatedAt: new Date(),
+      }));
+      set({ members, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch members',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Add member via API and update local state
+  addMember: async (memberData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const memberDTO = {
+        firstName: memberData.firstName,
+        lastName: memberData.lastName,
+        email: memberData.email,
+        phone: memberData.phone,
+        address: memberData.address,
+        joinedDate: memberData.joinedDate,
+        status: memberData.status,
+      };
+      const created = await memberService.createMember(memberDTO);
+      const newMember: Member = {
+        id: created.id,
+        firstName: created.firstName,
+        lastName: created.lastName,
+        email: created.email,
+        phone: created.phone,
+        address: created.address,
+        joinedDate: created.joinedDate,
+        status: created.status,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      set((state) => ({ 
+        members: [...state.members, newMember],
+        isLoading: false 
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add member',
+        isLoading: false 
+      });
+    }
   },
   
-  updateMember: (id, memberData) => {
-    set((state) => ({
-      members: state.members.map((member) =>
-        member.id === id
-          ? { ...member, ...memberData, updatedAt: new Date() }
-          : member
-      ),
-    }));
+  // Update member via API and update local state
+  updateMember: async (id, memberData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const memberDTO: Partial<memberService.MemberDTO> = {};
+      
+      if (memberData.firstName !== undefined) memberDTO.firstName = memberData.firstName;
+      if (memberData.lastName !== undefined) memberDTO.lastName = memberData.lastName;
+      if (memberData.email !== undefined) memberDTO.email = memberData.email;
+      if (memberData.phone !== undefined) memberDTO.phone = memberData.phone;
+      if (memberData.address !== undefined) memberDTO.address = memberData.address;
+      if (memberData.status !== undefined) memberDTO.status = memberData.status;
+
+      const updated = await memberService.updateMember(id, memberDTO);
+      
+      set((state) => ({
+        members: state.members.map((member) =>
+          member.id === id
+            ? {
+                ...member,
+                firstName: updated.firstName,
+                lastName: updated.lastName,
+                email: updated.email,
+                phone: updated.phone,
+                address: updated.address,
+                status: updated.status,
+                updatedAt: new Date(),
+              }
+            : member
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to update member',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
   
-  deleteMember: (id) => {
-    set((state) => ({
-      members: state.members.filter((member) => member.id !== id),
-    }));
+  // Delete member via API and update local state
+  deleteMember: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await memberService.deleteMember(id);
+      set((state) => ({
+        members: state.members.filter((member) => member.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to delete member',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
   
   getMemberById: (id) => {
     return get().members.find((member) => member.id === id);
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

@@ -2,6 +2,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { useTontineStore } from '@/stores/tontineStore';
 import {
   Dialog,
@@ -37,6 +39,7 @@ interface AddTontineModalProps {
 export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
   const { t } = useTranslation();
   const { addTontine } = useTontineStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
     name: z
@@ -66,18 +69,30 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    addTontine({
-      ...data,
-      contributionAmount: Number(data.contributionAmount),
-      startDate: new Date(data.startDate),
-      endDate: data.endDate ? new Date(data.endDate) : undefined,
-      status: 'active',
-      memberIds: [],
-      adminId: '1', // TODO: Replace with actual admin ID from auth
-    });
-    form.reset();
-    onOpenChange(false);
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
+    try {
+      await addTontine({
+        ...data,
+        contributionAmount: Number(data.contributionAmount),
+        startDate: new Date(data.startDate),
+        endDate: data.endDate ? new Date(data.endDate) : undefined,
+        status: 'active',
+        memberIds: [],
+        adminId: '1', // TODO: Replace with actual admin ID from auth
+      });
+      toast.success(t('tontines.tontineAdded'), {
+        description: `${data.name} ${t('members.hasBeenAdded')}`,
+      });
+      form.reset();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(t('common.error'), {
+        description: error instanceof Error ? error.message : t('common.unknownError'),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -188,6 +203,8 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                       type="number"
                       placeholder="50000"
                       {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -230,10 +247,13 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit">{t('common.save')}</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? t('common.saving') : t('common.save')}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

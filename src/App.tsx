@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Navbar } from '@/components/Navbar';
+import { Toaster } from '@/components/ui/sonner';
 import Dashboard from '@/pages/Dashboard';
 import Members from '@/pages/Members';
 import Tontines from '@/pages/Tontines';
@@ -30,6 +31,7 @@ export default function App() {
           </main>
         </div>
       </div>
+      <Toaster position="top-right" richColors />
     </SidebarProvider>
   );
 }
