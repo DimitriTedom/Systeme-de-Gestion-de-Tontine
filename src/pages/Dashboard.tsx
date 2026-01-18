@@ -71,7 +71,7 @@ export default function Dashboard() {
       setAgReportData(data);
     } catch (error) {
       console.error('Error loading AG synthesis report:', error);
-      toast.error('Erreur lors du chargement de la synthèse AG');
+      toast.error(t('dashboard.agReportError'));
       setShowAGReport(false);
     } finally {
       setIsLoadingAGReport(false);
@@ -176,9 +176,9 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-2xl sm:text-3xl font-bold">{t('nav.dashboard')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Vue d'ensemble de la gestion de tontine
+            {t('dashboard.subtitle')}
           </p>
         </motion.div>
         <motion.div
@@ -188,8 +188,8 @@ export default function Dashboard() {
         >
           <Button onClick={handleGenerateAGReport} variant="outline" className="w-full sm:w-auto">
             <FileText className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Exporter Synthèse AG</span>
-            <span className="sm:hidden">Export AG</span>
+            <span className="hidden sm:inline">{t('dashboard.exportAGSynthesis')}</span>
+            <span className="sm:hidden">{t('dashboard.exportAG')}</span>
           </Button>
         </motion.div>
       </div>
@@ -204,7 +204,7 @@ export default function Dashboard() {
           <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Cash en Caisse</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.cashInHand')}</CardTitle>
               <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900 dark:to-emerald-800">
                 <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -213,8 +213,8 @@ export default function Dashboard() {
               <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(totalCashInHand)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalContributions > 0 || totalCreditsGranted > 0 
-                  ? `Entrées: ${formatCurrency(totalMoneyIn)} • Sorties: ${formatCurrency(totalMoneyOut)}`
-                  : "Aucune transaction enregistrée"}
+                  ? t('dashboard.moneyInOut', { moneyIn: formatCurrency(totalMoneyIn), moneyOut: formatCurrency(totalMoneyOut) })
+                  : t('dashboard.noTransactions')}
               </p>
             </CardContent>
           </Card>
@@ -228,7 +228,7 @@ export default function Dashboard() {
           <Card className="glass-card overflow-hidden group hover:shadow-lg hover:shadow-slate-500/10 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Membres Actifs</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.activeMembers')}</CardTitle>
               <div className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
                 <Users className="h-4 w-4 text-slate-600 dark:text-slate-400" />
               </div>
@@ -236,7 +236,7 @@ export default function Dashboard() {
             <CardContent className="relative z-10">
               <div className="text-2xl font-bold">{members.filter(m => m.statut === 'Actif').length}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Sur {members.length} membres totaux
+                {t('dashboard.outOf', { total: members.length })}
               </p>
             </CardContent>
           </Card>
@@ -250,7 +250,7 @@ export default function Dashboard() {
           <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Crédits Actifs</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.activeCredits')}</CardTitle>
               <div className="p-2 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800">
                 <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
@@ -260,7 +260,7 @@ export default function Dashboard() {
                 {credits.filter(c => c.statut === 'en_cours').length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {creditsOnTrack} en bonne voie, {creditsLate} en retard
+                {t('dashboard.onTrack', { onTrack: creditsOnTrack, late: creditsLate })}
               </p>
             </CardContent>
           </Card>
@@ -274,7 +274,7 @@ export default function Dashboard() {
           <Card className="glass-card border-red-200 dark:border-red-900 overflow-hidden group hover:shadow-lg hover:shadow-red-500/10 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium">Pénalités</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.penalties')}</CardTitle>
               <div className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800">
                 <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
               </div>
@@ -282,7 +282,7 @@ export default function Dashboard() {
             <CardContent className="relative z-10">
               <div className="text-2xl font-bold text-red-700 dark:text-red-300">{pendingPenalties}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {paidPenalties} payées sur {penalties.length} totales
+                {t('dashboard.paidOf', { paid: paidPenalties, total: penalties.length })}
               </p>
             </CardContent>
           </Card>
