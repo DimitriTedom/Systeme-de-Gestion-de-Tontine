@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -25,6 +25,7 @@ export function MemberFinancialSummary({
   onOpenChange,
 }: MemberFinancialSummaryProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [financialData, setFinancialData] = useState<MemberFinancialReport | null>(null);
 

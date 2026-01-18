@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/home/snowdev/Documents/UY1/222/TP S1/server/venv'
+set -gx VIRTUAL_ENV '/home/snowdev/Documents/UY1/222/TP S1/Systeme-de-Gestion-de-Tontine/server/venv'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

@@ -68,6 +68,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
   const [closingSummary, setClosingSummary] = useState<PenaltySummary[] | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Default penalty amount for absences (5000 XAF as per MCD)
   const ABSENCE_PENALTY_AMOUNT = 5000;
@@ -94,7 +95,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
   }, [session?.id, open]);
 
   useEffect(() => {
-    if (!members.length) return;
+    if (!members.length || isInitialized) return;
 
     // Initialize contributions from existing data or defaults
     const initialContributions: Record<number, MemberContribution> = {};
@@ -111,7 +112,16 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     });
 
     setContributions(initialContributions);
-  }, [members.length, existingContributions]);
+    setIsInitialized(true);
+  }, [members.length, isInitialized, existingContributions]);
+
+  // Reset initialization when sheet is closed
+  useEffect(() => {
+    if (!open) {
+      setIsInitialized(false);
+      setContributions({});
+    }
+  }, [open]);
 
   const handleAttendanceChange = (memberId: number, isPresent: boolean) => {
     const member = members.find(m => m.id_membre === memberId);
@@ -120,7 +130,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     setContributions(prev => ({
       ...prev,
       [memberId]: {
-        ...prev[memberId],
+        memberId: memberId,
         isPresent,
         // If presence tontine and marking present, set expected amount based on nb_parts
         amount: isPresent && tontine?.type === 'presence' 
@@ -158,7 +168,8 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     setContributions(prev => ({
       ...prev,
       [memberId]: {
-        ...prev[memberId],
+        memberId: memberId,
+        isPresent: prev[memberId]?.isPresent || false,
         amount: cleanAmount,
       },
     }));
@@ -393,6 +404,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                           </TableCell>
                           <TableCell className="text-center">
                             <Checkbox
+                              key={`checkbox-${member.id_membre}-${contrib.isPresent}`}
                               checked={contrib.isPresent}
                               onCheckedChange={(checked) =>
                                 handleAttendanceChange(member.id_membre, checked as boolean)

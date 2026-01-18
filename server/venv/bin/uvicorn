@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/home/snowdev/Documents/UY1/222/TP S1/server/venv/bin/python3" "$0" "$@"
+'''exec' "/home/snowdev/Documents/UY1/222/TP S1/Systeme-de-Gestion-de-Tontine/server/venv/bin/python3" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

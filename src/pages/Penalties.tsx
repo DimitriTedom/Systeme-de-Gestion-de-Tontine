@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, Ban } from 'lucide-react';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -137,13 +138,21 @@ export default function Penalties() {
         </Card>
       ) : penalties.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">{t('penalties.noPenalties')}</p>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('penalties.addFirstPenalty')}
-            </Button>
+          <CardContent className="py-4">
+            <InteractiveEmptyState
+              title={t('penalties.noPenalties')}
+              description="Enregistrez les pénalités pour les absences ou retards afin de maintenir la discipline au sein de la tontine."
+              icons={[
+                <AlertTriangle key="1" className="h-6 w-6" />,
+                <ShieldAlert key="2" className="h-6 w-6" />,
+                <Ban key="3" className="h-6 w-6" />
+              ]}
+              action={{
+                label: t('penalties.addFirstPenalty'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
           </CardContent>
         </Card>
       ) : (

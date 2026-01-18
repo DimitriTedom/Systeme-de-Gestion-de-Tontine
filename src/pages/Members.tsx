@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Eye, Users as UsersIcon, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Users as UsersIcon, Search, ChevronLeft, ChevronRight, FileSpreadsheet, UserPlus, UsersRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMemberStore } from '@/stores/memberStore';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,14 +19,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddMemberModal } from '@/components/members/AddMemberModal';
 import { EditMemberModal } from '@/components/members/EditMemberModal';
 import { MemberDetailsSheet } from '@/components/members/MemberDetailsSheet';
-import { EmptyState } from '@/components/EmptyState';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
+import { MemberFinancialExport } from '@/components/reports/MemberFinancialExport';
 
 export default function Members() {
   const { t } = useTranslation();
   const { members, isLoading, error, fetchMembers, deleteMember } = useMemberStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editMemberId, setEditMemberId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [exportMemberId, setExportMemberId] = useState<number | null>(null);
+  const [exportMemberName, setExportMemberName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -145,12 +149,19 @@ export default function Members() {
               </Button>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <EmptyState
-              icon={UsersIcon}
+            <InteractiveEmptyState
               title={searchQuery ? 'No members found' : t('members.noMembers')}
               description={searchQuery ? 'Try adjusting your search query' : 'Commencez par ajouter votre premier membre pour créer votre communauté de tontine.'}
-              actionLabel={searchQuery ? '' : t('members.addMember')}
-              onAction={searchQuery ? undefined : () => setIsAddModalOpen(true)}
+              icons={[
+                <UsersIcon key="1" className="h-6 w-6" />,
+                <UserPlus key="2" className="h-6 w-6" />,
+                <UsersRound key="3" className="h-6 w-6" />
+              ]}
+              action={searchQuery ? undefined : {
+                label: t('members.addMember'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
             />
           ) : (
             <>
@@ -187,6 +198,17 @@ export default function Members() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setExportMemberId(parseInt(member.id));
+                            setExportMemberName(`${member.firstName} ${member.lastName}`);
+                          }}
+                          title="Export Excel"
+                        >
+                          <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon"
@@ -292,6 +314,16 @@ export default function Members() {
         memberId={selectedMemberId}
         open={!!selectedMemberId}
         onOpenChange={(open) => !open && setSelectedMemberId(null)}
+      />
+
+      <MemberFinancialExport
+        open={!!exportMemberId}
+        onClose={() => {
+          setExportMemberId(null);
+          setExportMemberName('');
+        }}
+        memberId={exportMemberId || 0}
+        memberName={exportMemberName}
       />
     </motion.div>
   );

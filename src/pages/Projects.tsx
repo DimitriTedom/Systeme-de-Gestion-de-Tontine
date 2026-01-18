@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Briefcase, Edit, FolderKanban, Target } from 'lucide-react';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { useState } from 'react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
+import { EditProjectModal } from '@/components/projects/EditProjectModal';
 
 export default function Projects() {
   const { t } = useTranslation();
@@ -16,6 +18,7 @@ export default function Projects() {
   const { getTontineById } = useTontineStore();
   const { getMemberById } = useMemberStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editProjectId, setEditProjectId] = useState<string | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -65,13 +68,21 @@ export default function Projects() {
 
       {projects.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground mb-4">{t('projects.noProjects')}</p>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('projects.addFirstProject')}
-            </Button>
+          <CardContent className="py-4">
+            <InteractiveEmptyState
+              title={t('projects.noProjects')}
+              description="Financez des projets collectifs pour développer votre communauté et atteindre vos objectifs communs."
+              icons={[
+                <Briefcase key="1" className="h-6 w-6" />,
+                <FolderKanban key="2" className="h-6 w-6" />,
+                <Target key="3" className="h-6 w-6" />
+              ]}
+              action={{
+                label: t('projects.addFirstProject'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -94,17 +105,27 @@ export default function Projects() {
                         {t(`projects.statuses.${project.status}`)}
                       </Badge>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm('Êtes-vous sûr de vouloir supprimer ce projet?')) {
-                          deleteProject(project.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditProjectId(project.id)}
+                        title="Mettre à jour le projet"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm('Êtes-vous sûr de vouloir supprimer ce projet?')) {
+                            deleteProject(project.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4">
@@ -171,6 +192,11 @@ export default function Projects() {
       )}
 
       <AddProjectModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+      <EditProjectModal 
+        projectId={editProjectId} 
+        open={!!editProjectId} 
+        onOpenChange={(open) => !open && setEditProjectId(null)} 
+      />
     </div>
   );
 }

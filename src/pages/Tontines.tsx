@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Wallet, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet, Search, ChevronLeft, ChevronRight, Eye, Coins, PiggyBank } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddTontineModal } from '@/components/tontines/AddTontineModal';
 import { EditTontineModal } from '@/components/tontines/EditTontineModal';
 import { TontineDetailsSheet } from '@/components/tontines/TontineDetailsSheet';
-import { EmptyState } from '@/components/EmptyState';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 
 export default function Tontines() {
   const { t } = useTranslation();
   const { tontines, isLoading, error, fetchTontines, deleteTontine } = useTontineStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editTontineId, setEditTontineId] = useState<string | null>(null);
   const [selectedTontineId, setSelectedTontineId] = useState<string | null>(null);
@@ -152,12 +153,19 @@ export default function Tontines() {
               </Button>
             </div>
           ) : filteredTontines.length === 0 ? (
-            <EmptyState
-              icon={Wallet}
+            <InteractiveEmptyState
               title={searchQuery ? 'No tontines found' : t('tontines.noTontines')}
               description={searchQuery ? 'Try adjusting your search query' : 'Commencez par créer votre première tontine pour démarrer la gestion collective.'}
-              actionLabel={searchQuery ? '' : t('tontines.addTontine')}
-              onAction={searchQuery ? undefined : () => setIsAddModalOpen(true)}
+              icons={[
+                <Wallet key="1" className="h-6 w-6" />,
+                <Coins key="2" className="h-6 w-6" />,
+                <PiggyBank key="3" className="h-6 w-6" />
+              ]}
+              action={searchQuery ? undefined : {
+                label: t('tontines.addTontine'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
             />
           ) : (
             <>

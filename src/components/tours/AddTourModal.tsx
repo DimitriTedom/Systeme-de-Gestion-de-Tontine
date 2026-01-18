@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { useTourStore, EligibleBeneficiary } from '@/stores/tourStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -45,6 +45,7 @@ interface AddTourModalProps {
 export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
   const { t } = useTranslation();
   const { addTour, getEligibleBeneficiaries, getNextTourNumber, getSessionTotalContributions } = useTourStore();
+  const { toast } = useToast();
   const { members } = useMemberStore();
   const { sessions } = useSessionStore();
   const { tontines } = useTontineStore();

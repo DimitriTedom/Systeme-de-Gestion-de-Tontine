@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { useTontineStore } from '@/stores/tontineStore';
 import {
   Dialog,
@@ -39,6 +39,7 @@ interface AddTontineModalProps {
 export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
   const { t } = useTranslation();
   const { addTontine } = useTontineStore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
@@ -89,6 +90,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         status: 'active',
         memberIds: [],
+        membersCount: 0,
         adminId: '1', // TODO: Replace with actual admin ID from auth
       });
       toast.success(t('tontines.tontineAdded'), {

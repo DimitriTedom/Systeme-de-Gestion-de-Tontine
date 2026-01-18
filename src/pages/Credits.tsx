@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Banknote } from 'lucide-react';
+import { Plus, Trash2, Banknote, HandCoins, Wallet } from 'lucide-react';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { useCreditStore } from '@/stores/creditStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -83,13 +84,21 @@ export default function Credits() {
         </Card>
       ) : credits.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Banknote className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground mb-4">{t('credits.noCredits')}</p>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('credits.addFirstCredit')}
-            </Button>
+          <CardContent className="py-4">
+            <InteractiveEmptyState
+              title={t('credits.noCredits')}
+              description="Gérez les prêts accordés aux membres et suivez les remboursements pour maintenir la solidarité financière."
+              icons={[
+                <Banknote key="1" className="h-6 w-6" />,
+                <HandCoins key="2" className="h-6 w-6" />,
+                <Wallet key="3" className="h-6 w-6" />
+              ]}
+              action={{
+                label: t('credits.addFirstCredit'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
           </CardContent>
         </Card>
       ) : (

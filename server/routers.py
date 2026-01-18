@@ -521,4 +521,32 @@ def repay_credit(id_credit: int, repayment: schemas.CreditRepayment, db: Session
         raise HTTPException(status_code=404, detail="Credit not found")
     return db_credit
 
+# ============================================
+# REPORTING ENDPOINTS (E-ÉTATS)
+# ============================================
+
+@router.get("/reports/session/{id_seance}")
+def get_session_report_data(id_seance: int, db: Session = Depends(get_db)):
+    """
+    Get comprehensive session data for PDF report generation
+    Includes: session details, contributions, beneficiary (tour), absences, penalties
+    """
+    return crud.get_session_report_data(db, id_seance)
+
+@router.get("/reports/member/{id_membre}/financial")
+def get_member_financial_report(id_membre: int, db: Session = Depends(get_db)):
+    """
+    Get detailed financial statement for a member
+    Includes: all contributions, active credits, penalties, net balance
+    """
+    return crud.get_member_financial_report(db, id_membre)
+
+@router.get("/reports/ag-synthesis")
+def get_ag_synthesis_report(id_tontine: Optional[int] = None, db: Session = Depends(get_db)):
+    """
+    Get comprehensive data for General Assembly synthesis report
+    Includes: global financial dashboard, project investments (FIAC), emergency fund status
+    """
+    return crud.get_ag_synthesis_report(db, id_tontine)
+
 # Additional routers for Projects would follow the same pattern...

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, FileText, Calendar } from 'lucide-react';
+import { Plus, Trash2, FileText, Calendar, FileDown, CalendarClock, CalendarDays } from 'lucide-react';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
@@ -16,17 +17,39 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddSessionModal } from '@/components/sessions/AddSessionModal';
 import { MeetingSheet } from '@/components/sessions/MeetingSheet';
+import { SessionReportViewer } from '@/components/reports/ReportViewers';
+import { reportService, SessionReportData } from '@/services/reportService';
+import { useToast } from '@/components/ui/toast-provider';
 
 export default function Sessions() {
   const { t } = useTranslation();
   const { sessions, deleteSession } = useSessionStore();
   const { getTontineById } = useTontineStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [reportSessionId, setReportSessionId] = useState<number | null>(null);
+  const [reportData, setReportData] = useState<SessionReportData | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
 
   const handleDelete = (id: string) => {
     if (confirm(t('members.confirmDelete'))) {
       deleteSession(id);
+    }
+  };
+
+  const handleGenerateReport = async (sessionId: number) => {
+    setIsLoadingReport(true);
+    setReportSessionId(sessionId);
+    try {
+      const data = await reportService.getSessionReportData(sessionId);
+      setReportData(data);
+    } catch (error) {
+      console.error('Error loading session report:', error);
+      toast.error('Erreur lors du chargement du rapport de séance');
+      setReportSessionId(null);
+    } finally {
+      setIsLoadingReport(false);
     }
   };
 
@@ -67,10 +90,20 @@ export default function Sessions() {
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Calendar className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">{t('sessions.noSessions')}</p>
-            </div>
+            <InteractiveEmptyState
+              title={t('sessions.noSessions')}
+              description="Créez votre première séance pour commencer à gérer les contributions et tours de votre tontine."
+              icons={[
+                <Calendar key="1" className="h-6 w-6" />,
+                <CalendarClock key="2" className="h-6 w-6" />,
+                <CalendarDays key="3" className="h-6 w-6" />
+              ]}
+              action={{
+                label: t('sessions.addSession'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -125,6 +158,14 @@ export default function Sessions() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => handleGenerateReport(parseInt(session.id))}
+                            title="Générer le rapport PDF"
+                          >
+                            <FileDown className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setSelectedSessionId(session.id)}
                             title={t('sessions.viewMeetingSheet')}
                           >
@@ -151,6 +192,16 @@ export default function Sessions() {
       <AddSessionModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
+      />
+
+      <SessionReportViewer
+        open={!!reportSessionId}
+        onClose={() => {
+          setReportSessionId(null);
+          setReportData(null);
+        }}
+        data={reportData}
+        isLoading={isLoadingReport}
       />
 
       {selectedSessionId && (

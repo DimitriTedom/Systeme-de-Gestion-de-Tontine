@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DollarSign, Users, CreditCard, AlertTriangle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,6 +26,9 @@ import { useCreditStore } from '@/stores/creditStore';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { AGReportViewer } from '@/components/reports/ReportViewers';
+import { reportService, AGSynthesisReport } from '@/services/reportService';
+import { useToast } from '@/components/ui/toast-provider';
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -34,6 +38,25 @@ export default function Dashboard() {
   const { penalties } = usePenaltyStore();
   const { members } = useMemberStore();
   const { tontines } = useTontineStore();
+  const { toast } = useToast();
+  const [showAGReport, setShowAGReport] = useState(false);
+  const [agReportData, setAgReportData] = useState<AGSynthesisReport | null>(null);
+  const [isLoadingAGReport, setIsLoadingAGReport] = useState(false);
+
+  const handleGenerateAGReport = async () => {
+    setIsLoadingAGReport(true);
+    setShowAGReport(true);
+    try {
+      const data = await reportService.getAGSynthesisReport();
+      setAgReportData(data);
+    } catch (error) {
+      console.error('Error loading AG synthesis report:', error);
+      toast.error('Erreur lors du chargement de la synthèse AG');
+      setShowAGReport(false);
+    } finally {
+      setIsLoadingAGReport(false);
+    }
+  };
 
   // Calculate total cash in hand
   const totalContributions = contributions.reduce((sum, c) => sum + c.amount, 0);
@@ -98,9 +121,6 @@ export default function Dashboard() {
     }).format(value);
   };
 
-  const handleExportReport = () => {
-    alert('📄 Export PDF - Synthèse AG\n\nFonctionnalité en développement.\nLe rapport sera généré avec:\n- Résumé financier\n- État des cotisations\n- Statut des crédits\n- Liste des pénalités\n- Progression des projets');
-  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -124,7 +144,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Button onClick={handleExportReport} variant="outline" className="w-full sm:w-auto">
+          <Button onClick={handleGenerateAGReport} variant="outline" className="w-full sm:w-auto">
             <FileText className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Exporter Synthèse AG</span>
             <span className="sm:hidden">Export AG</span>
@@ -227,7 +247,7 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Contribution Trends */}
+          {/* Contribution Trends */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle>Tendance des Cotisations</CardTitle>
@@ -384,7 +404,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Tontines Overview */}
-        <Card className="glass-card md:col-span-2">
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle>Tontines Actives</CardTitle>
             <CardDescription>
@@ -393,23 +413,41 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {tontines.filter(t => t.status === 'active').map((tontine) => (
-                <div key={tontine.id} className="flex items-center justify-between border-b pb-3">
+              {tontines.filter(t => t.status === 'active').slice(0, 5).map((tontine) => (
+                <div key={tontine.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{tontine.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {tontine.membersCount || 0} membres • {formatCurrency(tontine.contributionAmount)}
                     </p>
                   </div>
-                  <Badge variant={tontine.type === 'presence' ? 'default' : 'secondary'}>
+                  <Badge 
+                    variant={tontine.type === 'presence' ? 'default' : 'secondary'}
+                    className={tontine.type === 'presence' ? 'bg-emerald-600' : ''}
+                  >
                     {t(`tontines.types.${tontine.type}`)}
                   </Badge>
                 </div>
               ))}
+              {tontines.filter(t => t.status === 'active').length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucune tontine active
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <AGReportViewer
+        open={showAGReport}
+        onClose={() => {
+          setShowAGReport(false);
+          setAgReportData(null);
+        }}
+        data={agReportData}
+        isLoading={isLoadingAGReport}
+      />
     </motion.div>
   );
 }

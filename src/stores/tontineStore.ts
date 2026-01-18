@@ -18,55 +18,8 @@ interface TontineStore {
   clearError: () => void;
 }
 
-// Mock data for initial state
-const mockTontines: Tontine[] = [
-  {
-    id: '1',
-    name: 'Tontine des Enseignants',
-    description: 'Tontine mensuelle pour les enseignants de l\'Université',
-    type: 'presence',
-    contributionAmount: 50000,
-    frequency: 'monthly',
-    startDate: new Date('2024-01-01'),
-    status: 'active',
-    memberIds: ['1', '2', '3'],
-    adminId: '1',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '2',
-    name: 'Tontine Solidarité',
-    description: 'Tontine hebdomadaire pour entraide communautaire',
-    type: 'optional',
-    contributionAmount: 10000,
-    frequency: 'weekly',
-    startDate: new Date('2024-02-01'),
-    status: 'active',
-    memberIds: ['2', '3', '4', '5'],
-    adminId: '2',
-    createdAt: new Date('2024-02-01'),
-    updatedAt: new Date('2024-02-01'),
-  },
-  {
-    id: '3',
-    name: 'Tontine Investissement',
-    description: 'Tontine bimensuelle pour projets d\'investissement',
-    type: 'presence',
-    contributionAmount: 100000,
-    frequency: 'biweekly',
-    startDate: new Date('2023-12-01'),
-    endDate: new Date('2024-12-01'),
-    status: 'active',
-    memberIds: ['1', '4', '5'],
-    adminId: '4',
-    createdAt: new Date('2023-12-01'),
-    updatedAt: new Date('2023-12-01'),
-  },
-];
-
 export const useTontineStore = create<TontineStore>((set, get) => ({
-  tontines: mockTontines,
+  tontines: [],
   isLoading: false,
   error: null,
 

@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { useState, useEffect } from 'react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -50,6 +50,7 @@ export function RegisterToTontineModal({
 }: RegisterToTontineModalProps) {
   const { t } = useTranslation();
   const { registerToTontine } = useMemberStore();
+  const { toast } = useToast();
   const { tontines, fetchTontines } = useTontineStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTontineType, setSelectedTontineType] = useState<string>('');

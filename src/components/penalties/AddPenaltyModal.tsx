@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -42,6 +42,7 @@ interface AddPenaltyModalProps {
 export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
   const { t } = useTranslation();
   const { addPenalty } = usePenaltyStore();
+  const { toast } = useToast();
   const { members } = useMemberStore();
   const { sessions } = useSessionStore();
   const { tontines } = useTontineStore();

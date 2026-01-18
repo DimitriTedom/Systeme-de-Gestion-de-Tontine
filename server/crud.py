@@ -776,3 +776,299 @@ def get_eligible_beneficiaries(db: Session, id_tontine: int):
     # Return members who haven't received yet
     eligible = [m for m in tontine.membres if m.id_membre not in received_ids]
     return eligible
+
+# ============================================
+# REPORTING FUNCTIONS (E-ÉTATS)
+# ============================================
+
+def get_session_report_data(db: Session, id_seance: int):
+    """
+    Get comprehensive session data for report generation
+    Returns: session details, tontine info, contributions, tour beneficiary, absences
+    """
+    seance = db.query(models.Seance).filter(models.Seance.id_seance == id_seance).first()
+    if not seance:
+        return None
+    
+    # Get tontine details
+    tontine = seance.tontine
+    
+    # Get all contributions for this session with member details
+    contributions = db.query(
+        models.Cotisation,
+        models.Membre
+    ).join(
+        models.Membre, models.Cotisation.id_membre == models.Membre.id_membre
+    ).filter(
+        models.Cotisation.id_seance == id_seance
+    ).all()
+    
+    contributions_data = [{
+        "id_membre": c.Cotisation.id_membre,
+        "nom": c.Membre.nom,
+        "prenom": c.Membre.prenom,
+        "montant_paye": c.Cotisation.montant_paye,
+        "mode_paiement": c.Cotisation.mode_paiement,
+        "present": c.Cotisation.present
+    } for c in contributions]
+    
+    # Get tour beneficiary for this session
+    tour = db.query(models.Tour).filter(models.Tour.id_seance == id_seance).first()
+    beneficiary = None
+    if tour:
+        membre = db.query(models.Membre).filter(models.Membre.id_membre == tour.id_membre).first()
+        beneficiary = {
+            "id_membre": membre.id_membre,
+            "nom": membre.nom,
+            "prenom": membre.prenom,
+            "montant_recu": tour.montant_recu,
+            "date_reception": tour.date_reception
+        }
+    
+    # Get absences (members registered in tontine but not present)
+    all_members = tontine.membres
+    present_members = [c["id_membre"] for c in contributions_data if c["present"]]
+    absences = [{
+        "id_membre": m.id_membre,
+        "nom": m.nom,
+        "prenom": m.prenom
+    } for m in all_members if m.id_membre not in present_members]
+    
+    # Get penalties for this session
+    penalties = db.query(
+        models.Penalite,
+        models.Membre
+    ).join(
+        models.Membre, models.Penalite.id_membre == models.Membre.id_membre
+    ).filter(
+        models.Penalite.id_seance == id_seance
+    ).all()
+    
+    penalties_data = [{
+        "id_membre": p.Penalite.id_membre,
+        "nom": p.Membre.nom,
+        "prenom": p.Membre.prenom,
+        "montant": p.Penalite.montant,
+        "raison": p.Penalite.raison,
+        "statut": p.Penalite.statut
+    } for p in penalties]
+    
+    return {
+        "session": {
+            "id_seance": seance.id_seance,
+            "numero_seance": seance.numero_seance,
+            "date_seance": seance.date_seance.isoformat() if seance.date_seance else None,
+            "lieu": seance.lieu,
+            "ordre_du_jour": seance.ordre_du_jour,
+            "total_cotisations": seance.total_cotisations,
+            "total_penalites": seance.total_penalites,
+            "nombre_presents": seance.nombre_presents
+        },
+        "tontine": {
+            "id_tontine": tontine.id_tontine,
+            "nom_tontine": tontine.nom_tontine,
+            "montant_cotisation": tontine.montant_cotisation,
+            "periodicite": tontine.periodicite
+        },
+        "contributions": contributions_data,
+        "beneficiary": beneficiary,
+        "absences": absences,
+        "penalties": penalties_data
+    }
+
+def get_member_financial_report(db: Session, id_membre: int):
+    """
+    Get comprehensive financial statement for a member
+    Returns: member info, all contributions, active credits, penalties, net balance
+    """
+    membre = db.query(models.Membre).filter(models.Membre.id_membre == id_membre).first()
+    if not membre:
+        return None
+    
+    # Get all contributions by member
+    contributions = db.query(
+        models.Cotisation,
+        models.Seance,
+        models.Tontine
+    ).join(
+        models.Seance, models.Cotisation.id_seance == models.Seance.id_seance
+    ).join(
+        models.Tontine, models.Seance.id_tontine == models.Tontine.id_tontine
+    ).filter(
+        models.Cotisation.id_membre == id_membre
+    ).order_by(
+        models.Seance.date_seance.desc()
+    ).all()
+    
+    contributions_data = [{
+        "date": c.Seance.date_seance.isoformat() if c.Seance.date_seance else None,
+        "tontine": c.Tontine.nom_tontine,
+        "session": c.Seance.numero_seance,
+        "montant": c.Cotisation.montant_paye,
+        "mode_paiement": c.Cotisation.mode_paiement
+    } for c in contributions]
+    
+    total_contributions = sum(c["montant"] for c in contributions_data)
+    
+    # Get active credits
+    credits = db.query(models.Credit).filter(
+        models.Credit.id_membre == id_membre,
+        models.Credit.statut.in_(["en_attente", "decaisse", "en_remboursement"])
+    ).all()
+    
+    credits_data = [{
+        "id_credit": c.id_credit,
+        "montant": c.montant,
+        "taux_interet": c.taux_interet,
+        "date_decaissement": c.date_decaissement.isoformat() if c.date_decaissement else None,
+        "date_echeance": c.date_echeance.isoformat() if c.date_echeance else None,
+        "solde_restant": c.solde_restant,
+        "statut": c.statut,
+        "motif": c.motif
+    } for c in credits]
+    
+    total_debts = sum(c["solde_restant"] for c in credits_data)
+    
+    # Get penalties
+    penalties = db.query(
+        models.Penalite,
+        models.Seance
+    ).join(
+        models.Seance, models.Penalite.id_seance == models.Seance.id_seance
+    ).filter(
+        models.Penalite.id_membre == id_membre
+    ).order_by(
+        models.Seance.date_seance.desc()
+    ).all()
+    
+    penalties_data = [{
+        "date": p.Seance.date_seance.isoformat() if p.Seance.date_seance else None,
+        "session": p.Seance.numero_seance,
+        "montant": p.Penalite.montant,
+        "raison": p.Penalite.raison,
+        "statut": p.Penalite.statut
+    } for p in penalties]
+    
+    total_penalties = sum(p["montant"] for p in penalties_data if p["statut"] == "en_attente")
+    
+    # Calculate net balance
+    net_balance = total_contributions - total_debts - total_penalties
+    
+    return {
+        "member": {
+            "id_membre": membre.id_membre,
+            "nom": membre.nom,
+            "prenom": membre.prenom,
+            "email": membre.email,
+            "telephone": membre.telephone
+        },
+        "contributions": contributions_data,
+        "total_contributions": total_contributions,
+        "credits": credits_data,
+        "total_debts": total_debts,
+        "penalties": penalties_data,
+        "total_penalties": total_penalties,
+        "net_balance": net_balance
+    }
+
+def get_ag_synthesis_report(db: Session, id_tontine: int = None):
+    """
+    Get comprehensive data for General Assembly synthesis
+    Returns: global financial dashboard, project investments (FIAC), emergency fund
+    """
+    # Filter by tontine if specified
+    if id_tontine:
+        tontines = db.query(models.Tontine).filter(models.Tontine.id_tontine == id_tontine).all()
+    else:
+        tontines = db.query(models.Tontine).all()
+    
+    # Global financial indicators
+    total_contributions = db.query(func.sum(models.Cotisation.montant_paye)).scalar() or 0
+    total_penalties = db.query(func.sum(models.Penalite.montant)).filter(
+        models.Penalite.statut == "paye"
+    ).scalar() or 0
+    
+    total_credits_disbursed = db.query(func.sum(models.Credit.montant)).filter(
+        models.Credit.statut.in_(["decaisse", "en_remboursement"])
+    ).scalar() or 0
+    
+    total_credits_remaining = db.query(func.sum(models.Credit.solde_restant)).filter(
+        models.Credit.statut.in_(["decaisse", "en_remboursement"])
+    ).scalar() or 0
+    
+    # Cash in hand
+    cash_in_hand = total_contributions + total_penalties - total_credits_disbursed
+    
+    # Member statistics
+    total_members = db.query(func.count(models.Membre.id_membre)).scalar() or 0
+    active_members = db.query(func.count(models.Membre.id_membre)).filter(
+        models.Membre.statut == "actif"
+    ).scalar() or 0
+    
+    # Project investments (FIAC)
+    projects = db.query(models.Projet).all()
+    projects_data = [{
+        "id_projet": p.id_projet,
+        "nom_projet": p.nom_projet,
+        "description": p.description,
+        "budget": p.budget,
+        "montant_alloue": p.montant_alloue,
+        "statut": p.statut,
+        "date_debut": p.date_debut.isoformat() if p.date_debut else None,
+        "date_fin": p.date_fin.isoformat() if p.date_fin else None
+    } for p in projects]
+    
+    total_project_budget = sum(p["budget"] for p in projects_data)
+    total_project_allocated = sum(p["montant_alloue"] for p in projects_data)
+    
+    # Emergency fund (Caisse de secours) - assuming it's tracked separately
+    # For now, we'll calculate it as a percentage of total cash
+    emergency_fund_percentage = 0.10  # 10% reserve
+    emergency_fund = cash_in_hand * emergency_fund_percentage
+    
+    # Session trends (last 6 months)
+    from datetime import datetime, timedelta
+    six_months_ago = datetime.now() - timedelta(days=180)
+    
+    recent_sessions = db.query(models.Seance).filter(
+        models.Seance.date_seance >= six_months_ago
+    ).order_by(
+        models.Seance.date_seance.asc()
+    ).all()
+    
+    session_trends = [{
+        "date": s.date_seance.isoformat() if s.date_seance else None,
+        "numero_seance": s.numero_seance,
+        "total_cotisations": s.total_cotisations,
+        "nombre_presents": s.nombre_presents
+    } for s in recent_sessions]
+    
+    return {
+        "dashboard": {
+            "total_contributions": total_contributions,
+            "total_penalties": total_penalties,
+            "cash_in_hand": cash_in_hand,
+            "total_credits_disbursed": total_credits_disbursed,
+            "total_credits_remaining": total_credits_remaining,
+            "total_members": total_members,
+            "active_members": active_members
+        },
+        "projects": {
+            "list": projects_data,
+            "total_budget": total_project_budget,
+            "total_allocated": total_project_allocated,
+            "remaining": total_project_budget - total_project_allocated
+        },
+        "emergency_fund": {
+            "amount": emergency_fund,
+            "percentage": emergency_fund_percentage * 100,
+            "target": cash_in_hand * 0.15  # Target 15% reserve
+        },
+        "session_trends": session_trends,
+        "tontines": [{
+            "id_tontine": t.id_tontine,
+            "nom_tontine": t.nom_tontine,
+            "nombre_membres": len(t.membres),
+            "montant_cotisation": t.montant_cotisation
+        } for t in tontines]
+    }

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useMemberStore } from '@/stores/memberStore';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/toast-provider';
 import { useState } from 'react';
 import {
   Dialog,
@@ -41,6 +41,7 @@ interface EditMemberModalProps {
 export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModalProps) {
   const { t } = useTranslation();
   const { updateMember, getMemberById, error: storeError } = useMemberStore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Trophy, Users, HandCoins } from 'lucide-react';
+import { Plus, Trash2, Trophy, Users, HandCoins, Award, Medal } from 'lucide-react';
+import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { useTourStore, Tour } from '@/stores/tourStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -124,13 +125,21 @@ export default function Tours() {
         </Card>
       ) : tours.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Trophy className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">{t('tours.noTours')}</p>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('tours.assignFirstTour')}
-            </Button>
+          <CardContent className="py-4">
+            <InteractiveEmptyState
+              title={t('tours.noTours')}
+              description="Attribuez les tours aux bénéficiaires pour organiser la distribution équitable des fonds collectés."
+              icons={[
+                <Trophy key="1" className="h-6 w-6" />,
+                <Award key="2" className="h-6 w-6" />,
+                <Medal key="3" className="h-6 w-6" />
+              ]}
+              action={{
+                label: t('tours.assignFirstTour'),
+                icon: <Plus className="h-4 w-4" />,
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
           </CardContent>
         </Card>
       ) : (

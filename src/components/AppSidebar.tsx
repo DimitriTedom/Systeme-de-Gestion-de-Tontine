@@ -5,24 +5,18 @@ import {
   CalendarDays,
   CreditCard,
   FolderKanban,
-  PanelLeftClose,
   AlertTriangle,
   Trophy,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
+  AnimatedSidebar,
+  SidebarBody,
+  SidebarLink,
+  useSidebar,
+} from '@/components/ui/animated-sidebar';
 
 export function AppSidebar() {
   const { t } = useTranslation();
@@ -30,127 +24,92 @@ export function AppSidebar() {
 
   const menuItems = [
     {
-      title: t('nav.dashboard'),
-      url: '/',
-      icon: LayoutDashboard,
+      label: t('nav.dashboard'),
+      href: '/',
+      icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.members'),
-      url: '/members',
-      icon: Users,
+      label: t('nav.members'),
+      href: '/members',
+      icon: <Users className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.tontines'),
-      url: '/tontines',
-      icon: Building2,
+      label: t('nav.tontines'),
+      href: '/tontines',
+      icon: <Building2 className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.sessions'),
-      url: '/sessions',
-      icon: CalendarDays,
+      label: t('nav.sessions'),
+      href: '/sessions',
+      icon: <CalendarDays className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.credits'),
-      url: '/credits',
-      icon: CreditCard,
+      label: t('nav.credits'),
+      href: '/credits',
+      icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.penalties'),
-      url: '/penalties',
-      icon: AlertTriangle,
+      label: t('nav.penalties'),
+      href: '/penalties',
+      icon: <AlertTriangle className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.tours'),
-      url: '/tours',
-      icon: Trophy,
+      label: t('nav.tours'),
+      href: '/tours',
+      icon: <Trophy className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      title: t('nav.projects'),
-      url: '/projects',
-      icon: FolderKanban,
+      label: t('nav.projects'),
+      href: '/projects',
+      icon: <FolderKanban className="h-5 w-5 flex-shrink-0" />,
     },
   ];
 
   return (
-    <Sidebar className="border-r border-border/50">
-      <SidebarContent>
-        <SidebarGroup>
-          <div className="px-4 py-6 mb-4">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-between gap-2"
-            >
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
-                  <img 
-                    src="/logo.jpeg" 
-                    alt="Tontine Logo" 
-                    className="w-7 h-7 object-contain rounded"
-                  />
-                </div>
-                <SidebarGroupLabel className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                  {t('app.name')}
-                </SidebarGroupLabel>
-              </div>
-              <SidebarTrigger className="ml-auto hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-md transition-colors">
-                <PanelLeftClose className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </SidebarTrigger>
-            </motion.div>
+    <AnimatedSidebar>
+      <SidebarBody className="justify-between gap-10">
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+          <Logo />
+          <div className="mt-8 flex flex-col gap-1">
+            {menuItems.map((link) => {
+              const isActive = location.pathname === link.href;
+              return (
+                <SidebarLink
+                  key={link.href}
+                  link={link}
+                  isActive={isActive}
+                />
+              );
+            })}
           </div>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item, index) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.url}>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        className={`
-                          relative group transition-all duration-200
-                          ${isActive 
-                            ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 text-emerald-700 dark:text-emerald-300 font-semibold shadow-sm' 
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100'
-                          }
-                        `}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3">
-                          {isActive && (
-                            <motion.div
-                              layoutId="activeIndicator"
-                              className="absolute left-0 w-1 h-8 bg-gradient-to-b from-emerald-600 to-emerald-700 rounded-r-full"
-                              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            />
-                          )}
-                          <item.icon 
-                            className={`
-                              transition-all duration-200
-                              ${isActive 
-                                ? 'text-emerald-600 dark:text-emerald-400 scale-110' 
-                                : 'group-hover:scale-110'
-                              }
-                            `}
-                          />
-                          <span className={`transition-all duration-200 ${isActive ? 'text-emerald-700' : 'group-hover:font-medium'}`}>
-                            {item.title}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </motion.div>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+        </div>
+      </SidebarBody>
+    </AnimatedSidebar>
   );
 }
+
+const Logo = () => {
+  const { t } = useTranslation();
+  const { open } = useSidebar();
+  
+  return (
+    <div className="flex items-center gap-2 py-2">
+      <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
+        <img 
+          src="/logo.jpeg" 
+          alt="Tontine Logo" 
+          className="w-7 h-7 object-contain rounded flex-shrink-0"
+        />
+      </div>
+      <motion.span
+        animate={{
+          display: open ? "inline-block" : "none",
+          opacity: open ? 1 : 0,
+        }}
+        className="text-lg font-bold text-emerald-700 dark:text-emerald-400 whitespace-pre"
+      >
+        {t('app.name')}
+      </motion.span>
+    </div>
+  );
+};

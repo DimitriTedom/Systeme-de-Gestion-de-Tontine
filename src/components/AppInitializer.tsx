@@ -38,7 +38,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
         console.log('✅ App data initialized successfully');
       } catch (error) {
         console.error('❌ Failed to initialize app data:', error);
-        // App will still render with mock data from stores
+        // App will still render with empty states
       }
     };
 
