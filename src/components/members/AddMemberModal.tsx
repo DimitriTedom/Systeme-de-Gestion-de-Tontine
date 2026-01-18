@@ -43,16 +43,16 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
-    firstName: z.string().min(1, t('members.validation.firstNameRequired')),
-    lastName: z.string().min(1, t('members.validation.lastNameRequired')),
+    prenom: z.string().min(1, t('members.validation.firstNameRequired')),
+    nom: z.string().min(1, t('members.validation.lastNameRequired')),
     email: z
       .string()
       .min(1, t('members.validation.emailRequired'))
       .email(t('members.validation.emailInvalid')),
-    phone: z.string().min(1, t('members.validation.phoneRequired')),
-    address: z.string().optional(),
-    dateOfBirth: z.string().optional(),
-    status: z.enum(['active', 'inactive', 'suspended']),
+    telephone: z.string().min(1, t('members.validation.phoneRequired')),
+    adresse: z.string().optional(),
+    commune: z.string().optional(),
+    statut: z.enum(['Actif', 'Inactif', 'Suspendu']),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -60,13 +60,13 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      prenom: '',
+      nom: '',
       email: '',
-      phone: '',
-      address: '',
-      dateOfBirth: '',
-      status: 'active' as const,
+      telephone: '',
+      adresse: '',
+      commune: '',
+      statut: 'Actif' as const,
     },
   });
 
@@ -74,13 +74,17 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
     setIsSubmitting(true);
     try {
       await addMember({
-        ...data,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-        joinedDate: new Date(),
+        nom: data.nom,
+        prenom: data.prenom,
+        email: data.email,
+        telephone: data.telephone,
+        adresse: data.adresse || null,
+        commune: data.commune || null,
+        statut: data.statut,
       });
       
       toast.success(t('members.addSuccess'), {
-        description: `${data.firstName} ${data.lastName} ${t('members.hasBeenAdded')}`,
+        description: `${data.prenom} ${data.nom} ${t('members.hasBeenAdded')}`,
       });
       form.reset();
       onOpenChange(false);
@@ -98,14 +102,17 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>{t('members.addMember')}</DialogTitle>
-          <DialogDescription>{t('members.memberDetails')}</DialogDescription>
+          <DialogDescription>
+            {t('members.addMemberDescription')}
+          </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="prenom"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('members.firstName')}</FormLabel>
@@ -116,9 +123,10 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="lastName"
+                name="nom"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('members.lastName')}</FormLabel>
@@ -140,7 +148,7 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="jean.dupont@example.com"
+                      placeholder="jean.dupont@email.com"
                       {...field}
                     />
                   </FormControl>
@@ -151,62 +159,67 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
 
             <FormField
               control={form.control}
-              name="phone"
+              name="telephone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('members.phone')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+237 6 77 88 99 00" {...field} />
+                    <Input placeholder="+237 6XX XXX XXX" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('members.address')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Yaoundé, Cameroun" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="adresse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('members.address')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123 Rue Principale" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="commune"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('members.commune')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Yaoundé" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
-              name="dateOfBirth"
+              name="statut"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.dateOfBirth')}</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('common.status')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>{t('members.status')}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('common.status')} />
+                        <SelectValue placeholder={t('members.selectStatus')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">{t('common.active')}</SelectItem>
-                      <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
+                      <SelectItem value="Actif">{t('common.Actif')}</SelectItem>
+                      <SelectItem value="Inactif">{t('common.Inactif')}</SelectItem>
+                      <SelectItem value="Suspendu">{t('common.Suspendu')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -219,12 +232,11 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
               >
                 {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : t('common.save')}
+                {isSubmitting ? t('common.loading') : t('common.add')}
               </Button>
             </DialogFooter>
           </form>

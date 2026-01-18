@@ -81,24 +81,20 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
   });
 
   const onSubmit = (data: CreditFormData) => {
-    const dueDate = new Date(data.dueDate);
-    const disbursementDate = new Date();
-    
     // Calculate repayment amount with interest
     const interestAmount = (data.amount * data.interestRate) / 100;
     const repaymentAmount = data.amount + interestAmount;
 
     addCredit({
-      tontineId: data.tontineId,
-      memberId: data.memberId,
-      amount: data.amount,
-      interestRate: data.interestRate,
-      disbursementDate,
-      dueDate,
-      repaymentAmount,
-      amountPaid: 0,
-      status: 'pending',
-      purpose: data.purpose,
+      id_tontine: data.tontineId,
+      id_membre: data.memberId,
+      montant: data.amount,
+      solde: repaymentAmount,
+      taux_interet: data.interestRate,
+      date_remboursement_prevue: data.dueDate,
+      montant_rembourse: 0,
+      statut: 'en_attente',
+      objet: data.purpose || null,
     });
 
     form.reset();
@@ -132,7 +128,7 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name}
+                          {tontine.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -157,7 +153,7 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
                     <SelectContent>
                       {members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.firstName} {member.lastName}
+                          {member.prenom} {member.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>

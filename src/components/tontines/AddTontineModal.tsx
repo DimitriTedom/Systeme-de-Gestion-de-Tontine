@@ -83,15 +83,25 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      const frequencyMap: Record<'weekly' | 'biweekly' | 'monthly', 'hebdomadaire' | 'bimensuelle' | 'mensuelle'> = {
+        weekly: 'hebdomadaire',
+        biweekly: 'bimensuelle',
+        monthly: 'mensuelle',
+      };
+
+      const typeMap: Record<'presence' | 'optional', 'presence' | 'optionnelle'> = {
+        presence: 'presence',
+        optional: 'optionnelle',
+      };
+
       await addTontine({
-        ...data,
-        contributionAmount: Number(data.contributionAmount),
-        startDate: new Date(data.startDate),
-        endDate: data.endDate ? new Date(data.endDate) : undefined,
-        status: 'active',
-        memberIds: [],
-        membersCount: 0,
-        adminId: '1', // TODO: Replace with actual admin ID from auth
+        nom: data.name,
+        type: typeMap[data.type],
+        montant_cotisation: Number(data.contributionAmount),
+        date_debut: data.startDate,
+        date_fin: data.endDate || undefined,
+        periode: frequencyMap[data.frequency],
+        statut: 'Actif',
       });
       toast.success(t('tontines.tontineAdded'), {
         description: `${data.name} ${t('members.hasBeenAdded')}`,

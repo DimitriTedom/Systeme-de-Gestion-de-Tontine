@@ -53,7 +53,7 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
       .email(t('members.validation.emailInvalid')),
     phone: z.string().min(1, t('members.validation.phoneRequired')),
     address: z.string().optional(),
-    status: z.enum(['active', 'inactive', 'suspended']),
+    status: z.enum(['Actif', 'Inactif', 'Suspendu']),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -66,7 +66,7 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
       email: '',
       phone: '',
       address: '',
-      status: 'active' as const,
+      status: 'Actif' as const,
     },
   });
 
@@ -76,12 +76,12 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
       const member = getMemberById(memberId);
       if (member) {
         form.reset({
-          firstName: member.firstName,
-          lastName: member.lastName,
+          firstName: member.prenom,
+          lastName: member.nom,
           email: member.email,
-          phone: member.phone,
-          address: member.address || '',
-          status: member.status,
+          phone: member.telephone,
+          address: member.adresse || '',
+          status: member.statut,
         });
       }
     }
@@ -210,9 +210,9 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">{t('common.active')}</SelectItem>
-                      <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
-                      <SelectItem value="suspended">{t('common.suspended')}</SelectItem>
+                      <SelectItem value="Actif">{t('common.active')}</SelectItem>
+                      <SelectItem value="Inactif">{t('common.inactive')}</SelectItem>
+                      <SelectItem value="Suspendu">{t('common.suspended')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

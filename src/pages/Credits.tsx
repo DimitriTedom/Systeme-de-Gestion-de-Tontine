@@ -37,28 +37,30 @@ export default function Credits() {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('fr-FR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date);
+    }).format(dateObj);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (statut: string) => {
     const colors = {
-      pending: 'pending',
-      approved: 'approved',
-      disbursed: 'approved',
-      repaying: 'repaying',
-      completed: 'completed',
-      defaulted: 'defaulted',
+      en_attente: 'pending',
+      approuve: 'approved',
+      decaisse: 'approved',
+      en_cours: 'repaying',
+      rembourse: 'completed',
+      en_retard: 'defaulted',
+      defaut: 'defaulted',
     };
-    return colors[status as keyof typeof colors] || 'secondary';
+    return colors[statut as keyof typeof colors] || 'secondary';
   };
 
-  const calculateProgress = (amountPaid: number, repaymentAmount: number) => {
-    return Math.min(100, (amountPaid / repaymentAmount) * 100);
+  const calculateProgress = (montant_rembourse: number, solde: number) => {
+    return Math.min(100, (montant_rembourse / solde) * 100);
   };
 
   return (
@@ -123,30 +125,30 @@ export default function Credits() {
               </TableHeader>
               <TableBody>
                 {credits.map((credit) => {
-                  const member = getMemberById(credit.memberId);
-                  const tontine = getTontineById(credit.tontineId);
-                  const balance = credit.repaymentAmount - credit.amountPaid;
-                  const progress = calculateProgress(credit.amountPaid, credit.repaymentAmount);
+                  const member = getMemberById(credit.id_membre);
+                  const tontine = credit.id_tontine ? getTontineById(credit.id_tontine) : null;
+                  const balance = credit.solde - credit.montant_rembourse;
+                  const progress = calculateProgress(credit.montant_rembourse, credit.solde);
 
                   return (
                     <TableRow key={credit.id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {member?.firstName} {member?.lastName}
+                            {member?.prenom} {member?.nom}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {member?.email}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{tontine?.name}</TableCell>
+                      <TableCell>{tontine?.nom}</TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(credit.amount)}
+                        {formatCurrency(credit.montant)}
                       </TableCell>
-                      <TableCell>{credit.interestRate}%</TableCell>
+                      <TableCell>{credit.taux_interet}%</TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(credit.repaymentAmount)}
+                        {formatCurrency(credit.solde)}
                       </TableCell>
                       <TableCell>
                         <div>
@@ -160,12 +162,12 @@ export default function Credits() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {formatDate(credit.dueDate)}
+                          {formatDate(credit.date_remboursement_prevue)}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(credit.status) as any}>
-                          {t(`credits.statuses.${credit.status}`)}
+                        <Badge variant={getStatusColor(credit.statut) as any}>
+                          {t(`credits.statuses.${credit.statut}`)}
                         </Badge>
                       </TableCell>
                       <TableCell>

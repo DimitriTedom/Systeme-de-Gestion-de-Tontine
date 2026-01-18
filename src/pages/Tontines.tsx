@@ -44,10 +44,10 @@ export default function Tontines() {
     const query = searchQuery.toLowerCase();
     return tontines.filter((tontine) => {
       return (
-        tontine.name.toLowerCase().includes(query) ||
+        tontine.nom.toLowerCase().includes(query) ||
         tontine.description?.toLowerCase().includes(query) ||
         tontine.type.toLowerCase().includes(query) ||
-        tontine.frequency.toLowerCase().includes(query)
+        tontine.periode.toLowerCase().includes(query)
       );
     });
   }, [tontines, searchQuery]);
@@ -192,7 +192,7 @@ export default function Tontines() {
                   >
                     <TableCell className="font-medium">
                       <div>
-                        <div>{tontine.name}</div>
+                        <div>{tontine.nom}</div>
                         {tontine.description && (
                           <div className="text-xs text-muted-foreground">
                             {tontine.description}
@@ -206,21 +206,21 @@ export default function Tontines() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {formatCurrency(tontine.contributionAmount)}
+                      {formatCurrency(tontine.montant_cotisation)}
                     </TableCell>
                     <TableCell>
-                      {t(`tontines.frequencies.${tontine.frequency}`)}
+                      {t(`tontines.frequencies.${tontine.periode}`)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {tontine.membersCount || 0}
+                        {tontine.membres_count || 0}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={tontine.status === 'active' ? 'default' : 'secondary'}
+                        variant={tontine.statut === 'Actif' ? 'default' : 'secondary'}
                       >
-                        {t(`common.${tontine.status}`)}
+                        {t(`common.${tontine.statut}`)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -244,7 +244,7 @@ export default function Tontines() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(tontine.id, tontine.name)}
+                          onClick={() => handleDelete(tontine.id, tontine.nom)}
                           title={t('members.confirmDelete')}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

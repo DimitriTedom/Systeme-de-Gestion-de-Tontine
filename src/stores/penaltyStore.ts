@@ -1,28 +1,33 @@
 import { create } from 'zustand';
-import * as penaltyService from '@/services/penaltyService';
-import { PenaltyDTO } from '@/services/penaltyService';
-
-// Re-export for convenience
-export type Penalty = PenaltyDTO;
+import { supabase } from '@/lib/supabase';
+import type { Penalite, InsertTables, UpdateTables } from '@/types/database.types';
 
 interface PenaltyStore {
-  penalties: Penalty[];
+  penalties: Penalite[];
   isLoading: boolean;
   error: string | null;
   
-  // Async API actions
+  // Actions CRUD
   fetchPenalties: () => Promise<void>;
-  addPenalty: (penalty: Omit<Penalty, 'id'>) => Promise<void>;
-  markAsPaid: (id: string) => Promise<void>;
+  fetchPenaltiesByMember: (memberId: string) => Promise<void>;
+  fetchPenaltiesBySession: (sessionId: string) => Promise<void>;
+  addPenalty: (penalty: InsertTables<'penalite'>) => Promise<Penalite | null>;
+  updatePenalty: (id: string, penalty: UpdateTables<'penalite'>) => Promise<void>;
   deletePenalty: (id: string) => Promise<void>;
   
-  // Local state getters
-  getPenaltyById: (id: string) => Penalty | undefined;
-  getPenaltiesByMemberId: (memberId: string) => Penalty[];
-  getPenaltiesBySessionId: (sessionId: string) => Penalty[];
-  getPenaltiesByTontineId: (tontineId: string) => Penalty[];
-  getPendingPenalties: () => Penalty[];
-  getPaidPenalties: () => Penalty[];
+  // Actions spécifiques
+  markAsPaid: (id: string) => Promise<void>;
+  cancelPenalty: (id: string) => Promise<void>;
+  
+  // Getters
+  getPenaltyById: (id: string) => Penalite | undefined;
+  getPenaltiesByMemberId: (memberId: string) => Penalite[];
+  getPenaltiesBySessionId: (sessionId: string) => Penalite[];
+  getPendingPenalties: () => Penalite[];
+  getPaidPenalties: () => Penalite[];
+  getTotalUnpaidAmount: () => number;
+  
+  // Utilitaires
   clearError: () => void;
 }
 
@@ -31,94 +36,189 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
   isLoading: false,
   error: null,
 
+  // Récupérer toutes les pénalités
   fetchPenalties: async () => {
     set({ isLoading: true, error: null });
+    
     try {
-      const data = await penaltyService.getAllPenalties();
-      set({ penalties: data, isLoading: false });
+      const { data, error } = await supabase
+        .from('penalite')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      set({ penalties: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch penalties',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des pénalités',
         isLoading: false 
       });
     }
   },
 
-  addPenalty: async (penaltyData) => {
+  // Récupérer les pénalités d'un membre
+  fetchPenaltiesByMember: async (memberId) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const created = await penaltyService.createPenalty(penaltyData);
-      set((state) => ({ 
-        penalties: [...state.penalties, created],
-        isLoading: false 
-      }));
+      const { data, error } = await supabase
+        .from('penalite')
+        .select('*')
+        .eq('id_membre', memberId)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      set({ penalties: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add penalty',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Récupérer les pénalités d'une séance
+  fetchPenaltiesBySession: async (sessionId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('penalite')
+        .select('*')
+        .eq('id_seance', sessionId)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      set({ penalties: data || [], isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Ajouter une pénalité
+  addPenalty: async (penaltyData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('penalite')
+        .insert(penaltyData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({ 
+        penalties: [data, ...state.penalties],
+        isLoading: false 
+      }));
+
+      return data;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout',
         isLoading: false 
       });
       throw error;
     }
   },
 
-  markAsPaid: async (id) => {
+  // Mettre à jour une pénalité
+  updatePenalty: async (id, penaltyData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const updated = await penaltyService.markPenaltyAsPaid(id);
+      const { data, error } = await supabase
+        .from('penalite')
+        .update(penaltyData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       set((state) => ({
-        penalties: state.penalties.map((p) =>
-          p.id === id ? updated : p
-        ),
+        penalties: state.penalties.map((p) => p.id === id ? data : p),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to update penalty',
+        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
         isLoading: false 
       });
       throw error;
     }
   },
 
+  // Supprimer une pénalité
   deletePenalty: async (id) => {
     set({ isLoading: true, error: null });
+    
     try {
-      await penaltyService.deletePenalty(id);
+      const { error } = await supabase
+        .from('penalite')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       set((state) => ({
         penalties: state.penalties.filter((p) => p.id !== id),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete penalty',
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
         isLoading: false 
       });
       throw error;
     }
   },
 
+  // Marquer comme payé
+  markAsPaid: async (id) => {
+    await get().updatePenalty(id, { 
+      statut: 'paye',
+      date_paiement: new Date().toISOString().split('T')[0],
+    });
+  },
+
+  // Annuler une pénalité
+  cancelPenalty: async (id) => {
+    await get().updatePenalty(id, { statut: 'annule' });
+  },
+
+  // Getters
   getPenaltyById: (id) => {
     return get().penalties.find((p) => p.id === id);
   },
 
   getPenaltiesByMemberId: (memberId) => {
-    return get().penalties.filter((p) => p.memberId === memberId);
+    return get().penalties.filter((p) => p.id_membre === memberId);
   },
 
   getPenaltiesBySessionId: (sessionId) => {
-    return get().penalties.filter((p) => p.sessionId === sessionId);
-  },
-
-  getPenaltiesByTontineId: (tontineId) => {
-    return get().penalties.filter((p) => p.tontineId === tontineId);
+    return get().penalties.filter((p) => p.id_seance === sessionId);
   },
 
   getPendingPenalties: () => {
-    return get().penalties.filter((p) => p.status === 'pending');
+    return get().penalties.filter((p) => p.statut === 'non_paye');
   },
 
   getPaidPenalties: () => {
-    return get().penalties.filter((p) => p.status === 'paid');
+    return get().penalties.filter((p) => p.statut === 'paye');
+  },
+
+  getTotalUnpaidAmount: () => {
+    return get().penalties
+      .filter((p) => p.statut === 'non_paye')
+      .reduce((sum, p) => sum + p.montant, 0);
   },
 
   clearError: () => {

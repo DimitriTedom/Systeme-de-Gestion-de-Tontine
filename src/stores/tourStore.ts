@@ -1,10 +1,42 @@
+// Tour Store - Gestion des tours avec Supabase
 import { create } from 'zustand';
-import * as tourService from '@/services/tourService';
-import { TourDTO, EligibleBeneficiary } from '@/services/tourService';
+import { supabase } from '@/lib/supabase';
 
-// Re-export for convenience
-export type Tour = TourDTO;
-export type { EligibleBeneficiary };
+export interface Tour {
+  id: string;
+  sessionId: string;
+  tontineId: string;
+  beneficiaryId: string;
+  beneficiaryName: string;
+  tourNumber: number;
+  amount: number;
+  date: Date;
+  status: 'pending' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+export interface EligibleBeneficiary {
+  id_membre: string;
+  nom: string;
+  prenom: string;
+  nb_tours_recus: number;
+  total_cotise: number;
+  eligible: boolean;
+}
+
+// Transform database row to Tour
+const transformTour = (row: any): Tour => ({
+  id: row.id,
+  sessionId: row.id_seance || '',
+  tontineId: row.id_tontine,
+  beneficiaryId: row.id_beneficiaire,
+  beneficiaryName: row.membre ? `${row.membre.prenom} ${row.membre.nom}` : '',
+  tourNumber: row.numero,
+  amount: row.montant_distribue,
+  date: new Date(row.date || new Date()),
+  status: 'completed',
+  notes: row.notes || undefined,
+});
 
 interface TourStore {
   tours: Tour[];
@@ -13,13 +45,20 @@ interface TourStore {
   
   // Async API actions
   fetchTours: () => Promise<void>;
-  addTour: (tour: Omit<Tour, 'id' | 'beneficiaryName'>) => Promise<void>;
+  addTour: (tour: {
+    sessionId: string;
+    tontineId: string;
+    beneficiaryId: string;
+    tourNumber: number;
+    amount: number;
+  }) => Promise<void>;
   deleteTour: (id: string) => Promise<void>;
   
   // Helper async functions
   getEligibleBeneficiaries: (tontineId: string) => Promise<EligibleBeneficiary[]>;
   getNextTourNumber: (tontineId: string) => Promise<number>;
   getSessionTotalContributions: (sessionId: string) => Promise<number>;
+  assignGain: (sessionId: number, beneficiaryId: number) => Promise<Tour | null>;
   
   // Local state getters
   getTourById: (id: string) => Tour | undefined;
@@ -37,11 +76,21 @@ export const useTourStore = create<TourStore>((set, get) => ({
   fetchTours: async () => {
     set({ isLoading: true, error: null });
     try {
-      const data = await tourService.getAllTours();
-      set({ tours: data, isLoading: false });
+      const { data, error } = await supabase
+        .from('tour')
+        .select(`
+          *,
+          membre:id_beneficiaire (nom, prenom)
+        `)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      const tours = (data || []).map(transformTour);
+      set({ tours, isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch tours',
+        error: error instanceof Error ? error.message : 'Échec du chargement des tours',
         isLoading: false 
       });
     }
@@ -50,14 +99,34 @@ export const useTourStore = create<TourStore>((set, get) => ({
   addTour: async (tourData) => {
     set({ isLoading: true, error: null });
     try {
-      const created = await tourService.createTour(tourData);
+      const insertData = {
+        id_seance: tourData.sessionId,
+        id_tontine: tourData.tontineId,
+        id_beneficiaire: tourData.beneficiaryId,
+        numero: tourData.tourNumber,
+        montant_distribue: tourData.amount,
+        date: new Date().toISOString().split('T')[0],
+      };
+
+      const { data, error } = await supabase
+        .from('tour')
+        .insert(insertData)
+        .select(`
+          *,
+          membre:id_beneficiaire (nom, prenom)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      const newTour = transformTour(data);
       set((state) => ({ 
-        tours: [...state.tours, created],
+        tours: [newTour, ...state.tours],
         isLoading: false 
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add tour',
+        error: error instanceof Error ? error.message : 'Échec de l\'ajout du tour',
         isLoading: false 
       });
       throw error;
@@ -67,44 +136,139 @@ export const useTourStore = create<TourStore>((set, get) => ({
   deleteTour: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await tourService.deleteTour(id);
+      const { error } = await supabase
+        .from('tour')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       set((state) => ({
         tours: state.tours.filter((t) => t.id !== id),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete tour',
+        error: error instanceof Error ? error.message : 'Échec de la suppression du tour',
         isLoading: false 
       });
       throw error;
     }
   },
 
-  getEligibleBeneficiaries: async (tontineId) => {
+  getEligibleBeneficiaries: async (tontineId: string) => {
     try {
-      return await tourService.getEligibleBeneficiaries(tontineId);
+      // Get all members participating in this tontine
+      const { data: participants, error: partError } = await supabase
+        .from('participe')
+        .select(`
+          id_membre,
+          membre:id_membre (id, nom, prenom)
+        `)
+        .eq('id_tontine', tontineId);
+
+      if (partError) throw partError;
+
+      // Get tours already assigned for this tontine
+      const { data: existingTours, error: tourError } = await supabase
+        .from('tour')
+        .select('id_beneficiaire')
+        .eq('id_tontine', tontineId)
+        .eq('statut', 'effectue');
+
+      if (tourError) throw tourError;
+
+      const beneficiariesWithTours = new Set(existingTours?.map(t => t.id_beneficiaire) || []);
+
+      // Get total contributions for each member
+      const eligibleMembers: EligibleBeneficiary[] = await Promise.all(
+        (participants || []).map(async (p: any) => {
+          const membre = p.membre as { id: string; nom: string; prenom: string } | null;
+          
+          const { data: cotisations } = await supabase
+            .from('cotisation')
+            .select('montant')
+            .eq('id_membre', p.id_membre)
+            .eq('statut', 'complete');
+
+          const total_cotise = cotisations?.reduce((sum, c: any) => sum + (c.montant || 0), 0) || 0;
+          const nb_tours_recus = existingTours?.filter(t => t.id_beneficiaire === p.id_membre).length || 0;
+
+          return {
+            id_membre: p.id_membre,
+            nom: membre?.nom || '',
+            prenom: membre?.prenom || '',
+            nb_tours_recus,
+            total_cotise,
+            eligible: !beneficiariesWithTours.has(p.id_membre),
+          };
+        })
+      );
+
+      return eligibleMembers;
     } catch (error) {
       console.error('Failed to get eligible beneficiaries:', error);
       return [];
     }
   },
 
-  getNextTourNumber: async (tontineId) => {
+  getNextTourNumber: async (tontineId: string) => {
     try {
-      return await tourService.getNextTourNumber(tontineId);
+      const { data, error } = await supabase
+        .from('tour')
+        .select('numero')
+        .eq('id_tontine', tontineId)
+        .order('numero', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      return ((data?.[0] as any)?.numero || 0) + 1;
     } catch (error) {
       console.error('Failed to get next tour number:', error);
       return 1;
     }
   },
 
-  getSessionTotalContributions: async (sessionId) => {
+  getSessionTotalContributions: async (sessionId: string) => {
     try {
-      return await tourService.getSessionTotalContributions(sessionId);
+      const { data, error } = await supabase
+        .from('cotisation')
+        .select('montant')
+        .eq('id_seance', sessionId)
+        .eq('statut', 'complete');
+
+      if (error) throw error;
+
+      return data?.reduce((sum, c: any) => sum + (c.montant || 0), 0) || 0;
     } catch (error) {
-      console.error('Failed to get session contributions:', error);
+      console.error('Failed to get session total contributions:', error);
       return 0;
+    }
+  },
+
+  assignGain: async (sessionId: number, beneficiaryId: number) => {
+    try {
+      const { data, error } = await supabase.rpc('attribuer_gain', {
+        p_id_seance: sessionId,
+        p_id_beneficiaire: beneficiaryId,
+      });
+
+      if (error) throw error;
+
+      // Refresh tours after assignment
+      await get().fetchTours();
+
+      // Find the newly created tour
+      const newTour = get().tours.find(t => 
+        t.sessionId === String(sessionId) && 
+        t.beneficiaryId === String(beneficiaryId)
+      );
+
+      return newTour || null;
+    } catch (error) {
+      console.error('Failed to assign gain:', error);
+      throw error;
     }
   },
 
@@ -124,7 +288,5 @@ export const useTourStore = create<TourStore>((set, get) => ({
     return get().tours.filter((t) => t.beneficiaryId === memberId);
   },
 
-  clearError: () => {
-    set({ error: null });
-  },
+  clearError: () => set({ error: null }),
 }));

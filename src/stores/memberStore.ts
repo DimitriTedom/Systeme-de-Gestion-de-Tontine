@@ -1,21 +1,27 @@
 import { create } from 'zustand';
-import { Member } from '@/types';
-import * as memberService from '@/services/memberService';
+import { supabase } from '@/lib/supabase';
+import type { Membre, InsertTables, UpdateTables } from '@/types/database.types';
 
 interface MemberStore {
-  members: Member[];
+  members: Membre[];
   isLoading: boolean;
   error: string | null;
   
-  // Async API actions
+  // Actions CRUD
   fetchMembers: () => Promise<void>;
-  addMember: (member: Omit<Member, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateMember: (id: string, member: Partial<Member>) => Promise<void>;
+  addMember: (member: InsertTables<'membre'>) => Promise<Membre | null>;
+  updateMember: (id: string, member: UpdateTables<'membre'>) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
-  registerToTontine: (memberId: string, tontineId: string, nbParts: number) => Promise<void>;
   
-  // Local state actions
-  getMemberById: (id: string) => Member | undefined;
+  // Actions spécifiques
+  registerToTontine: (memberId: string, tontineId: string, nbParts?: number) => Promise<void>;
+  unregisterFromTontine: (memberId: string, tontineId: string) => Promise<void>;
+  
+  // Getters
+  getMemberById: (id: string) => Membre | undefined;
+  getActiveMembers: () => Membre[];
+  
+  // Utilitaires
   clearError: () => void;
 }
 
@@ -24,148 +30,162 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Fetch all members from API
+  // Récupérer tous les membres
   fetchMembers: async () => {
     set({ isLoading: true, error: null });
+    
     try {
-      const data = await memberService.getAllMembers();
-      // Transform MemberDTO to Member type
-      const members: Member[] = data.map((m) => ({
-        id: m.id,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        email: m.email,
-        phone: m.phone,
-        address: m.address,
-        joinedDate: m.joinedDate,
-        status: m.status,
-        createdAt: m.joinedDate,
-        updatedAt: new Date(),
-      }));
-      set({ members, isLoading: false });
+      const { data, error } = await supabase
+        .from('membre')
+        .select('*')
+        .order('nom', { ascending: true });
+
+      if (error) throw error;
+
+      set({ members: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch members',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des membres',
         isLoading: false 
       });
     }
   },
 
-  // Add member via API and update local state
+  // Ajouter un membre
   addMember: async (memberData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const memberDTO = {
-        firstName: memberData.firstName,
-        lastName: memberData.lastName,
-        email: memberData.email,
-        phone: memberData.phone,
-        address: memberData.address,
-        joinedDate: memberData.joinedDate,
-        status: memberData.status,
-      };
-      const created = await memberService.createMember(memberDTO);
-      const newMember: Member = {
-        id: created.id,
-        firstName: created.firstName,
-        lastName: created.lastName,
-        email: created.email,
-        phone: created.phone,
-        address: created.address,
-        joinedDate: created.joinedDate,
-        status: created.status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const { data, error } = await supabase
+        .from('membre')
+        .insert(memberData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       set((state) => ({ 
-        members: [...state.members, newMember],
+        members: [...state.members, data],
         isLoading: false 
       }));
+
+      return data;
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add member',
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout du membre',
         isLoading: false 
       });
-      // Re-throw error so the component can catch it and show toast
       throw error;
     }
   },
-  
-  // Update member via API and update local state
+
+  // Mettre à jour un membre
   updateMember: async (id, memberData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const memberDTO: Partial<memberService.MemberDTO> = {};
-      
-      if (memberData.firstName !== undefined) memberDTO.firstName = memberData.firstName;
-      if (memberData.lastName !== undefined) memberDTO.lastName = memberData.lastName;
-      if (memberData.email !== undefined) memberDTO.email = memberData.email;
-      if (memberData.phone !== undefined) memberDTO.phone = memberData.phone;
-      if (memberData.address !== undefined) memberDTO.address = memberData.address;
-      if (memberData.status !== undefined) memberDTO.status = memberData.status;
+      const { data, error } = await supabase
+        .from('membre')
+        .update(memberData)
+        .eq('id', id)
+        .select()
+        .single();
 
-      const updated = await memberService.updateMember(id, memberDTO);
-      
+      if (error) throw error;
+
       set((state) => ({
-        members: state.members.map((member) =>
-          member.id === id
-            ? {
-                ...member,
-                firstName: updated.firstName,
-                lastName: updated.lastName,
-                email: updated.email,
-                phone: updated.phone,
-                address: updated.address,
-                status: updated.status,
-                updatedAt: new Date(),
-              }
-            : member
-        ),
+        members: state.members.map((m) => m.id === id ? data : m),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to update member',
+        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
         isLoading: false 
       });
       throw error;
     }
   },
-  
-  // Delete member via API and update local state
+
+  // Supprimer un membre
   deleteMember: async (id) => {
     set({ isLoading: true, error: null });
+    
     try {
-      await memberService.deleteMember(id);
+      const { error } = await supabase
+        .from('membre')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       set((state) => ({
-        members: state.members.filter((member) => member.id !== id),
+        members: state.members.filter((m) => m.id !== id),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete member',
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
         isLoading: false 
       });
       throw error;
     }
   },
 
-  registerToTontine: async (memberId, tontineId, nbParts) => {
+  // Inscrire un membre à une tontine
+  registerToTontine: async (memberId, tontineId, nbParts = 1) => {
     set({ isLoading: true, error: null });
+    
     try {
-      await memberService.registerMemberToTontine(memberId, tontineId, nbParts);
+      const { error } = await supabase
+        .from('participe')
+        .insert({
+          id_membre: memberId,
+          id_tontine: tontineId,
+          nb_parts: nbParts,
+        });
+
+      if (error) throw error;
+
       set({ isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to register to tontine',
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'inscription',
         isLoading: false 
       });
       throw error;
     }
   },
-  
+
+  // Désinscrire un membre d'une tontine
+  unregisterFromTontine: async (memberId, tontineId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase
+        .from('participe')
+        .delete()
+        .eq('id_membre', memberId)
+        .eq('id_tontine', tontineId);
+
+      if (error) throw error;
+
+      set({ isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la désinscription',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Getters
   getMemberById: (id) => {
-    return get().members.find((member) => member.id === id);
+    return get().members.find((m) => m.id === id);
+  },
+
+  getActiveMembers: () => {
+    return get().members.filter((m) => m.statut === 'Actif');
   },
 
   clearError: () => {

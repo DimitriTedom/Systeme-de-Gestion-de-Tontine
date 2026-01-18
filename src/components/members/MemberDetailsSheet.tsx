@@ -4,7 +4,6 @@ import { X, User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, User
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
-import { getMemberTontines, type MemberTontineParticipation } from '@/services/memberService';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -32,11 +31,10 @@ export function MemberDetailsSheet({
 }: MemberDetailsSheetProps) {
   const { t } = useTranslation();
   const { members } = useMemberStore();
-  const { tontines } = useTontineStore();
   const [isLoadingFinancial, setIsLoadingFinancial] = useState(false);
   const [financialData, setFinancialData] = useState<MemberFinancialReport | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [memberTontines, setMemberTontines] = useState<MemberTontineParticipation[]>([]);
+  const [memberTontines, setMemberTontines] = useState<any[]>([]);
   const [isLoadingTontines, setIsLoadingTontines] = useState(false);
 
   const member = members.find((m) => m.id === memberId);
@@ -46,11 +44,11 @@ export function MemberDetailsSheet({
     if (!memberId) return;
     
     setIsLoadingTontines(true);
-    getMemberTontines(memberId)
-      .then((data) => {
-        setMemberTontines(data);
+    reportService.getMemberFinancialReport(memberId)
+      .then((data: any) => {
+        setMemberTontines(data?.tontines || []);
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.error('Error fetching member tontines:', error);
       })
       .finally(() => {
@@ -106,8 +104,8 @@ export function MemberDetailsSheet({
     return null;
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (prenom: string, nom: string) => {
+    return `${(prenom || '').charAt(0)}${(nom || '').charAt(0)}`.toUpperCase();
   };
 
   return (
@@ -136,19 +134,19 @@ export function MemberDetailsSheet({
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="text-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white">
-                    {getInitials(member.firstName, member.lastName)}
+                    {getInitials(member.prenom, member.nom)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold">
-                    {member.firstName} {member.lastName}
+                    {member.prenom} {member.nom}
                   </h3>
                   <p className="text-sm text-muted-foreground">ID: {member.id}</p>
                   <Badge
-                    variant={member.status === 'active' ? 'default' : 'secondary'}
+                    variant={member.statut === 'Actif' ? 'default' : 'secondary'}
                     className="mt-2"
                   >
-                    {t(`common.${member.status}`)}
+                    {t(`common.${member.statut}`)}
                   </Badge>
                 </div>
               </div>
@@ -173,17 +171,17 @@ export function MemberDetailsSheet({
                 <Phone className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">{t('members.phone')}</p>
-                  <p className="font-medium">{member.phone || 'N/A'}</p>
+                  <p className="font-medium">{member.telephone || 'N/A'}</p>
                 </div>
               </div>
-              {member.address && (
+              {member.adresse && (
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">{t('members.address')}</p>
-                      <p className="font-medium">{member.address}</p>
+                      <p className="font-medium">{member.adresse}</p>
                     </div>
                   </div>
                 </>
@@ -197,23 +195,11 @@ export function MemberDetailsSheet({
               <CardTitle className="text-lg">Informations Personnelles</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {member.dateOfBirth && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">{t('members.dateOfBirth')}</p>
-                      <p className="font-medium">{formatDate(member.dateOfBirth)}</p>
-                    </div>
-                  </div>
-                  <Separator />
-                </>
-              )}
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">{t('members.joinedDate')}</p>
-                  <p className="font-medium">{formatDate(member.joinedDate)}</p>
+                  <p className="font-medium">{formatDate(member.date_inscription)}</p>
                 </div>
               </div>
             </CardContent>
@@ -341,7 +327,7 @@ export function MemberDetailsSheet({
           open={isRegisterModalOpen}
           onOpenChange={setIsRegisterModalOpen}
           memberId={member.id}
-          memberName={`${member.firstName} ${member.lastName}`}
+          memberName={`${member.prenom} ${member.nom}`}
           onSuccess={fetchMemberTontines}
         />
       )}

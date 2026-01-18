@@ -57,7 +57,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
     const tontine = tontines.find(t => t.id === data.tontineId);
     if (!tontine) return true;
     const projectStartDate = new Date(data.startDate);
-    const tontineStartDate = new Date(tontine.startDate);
+    const tontineStartDate = new Date(tontine.date_debut);
     projectStartDate.setHours(0, 0, 0, 0);
     tontineStartDate.setHours(0, 0, 0, 0);
     return projectStartDate >= tontineStartDate;
@@ -102,20 +102,20 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
   });
 
   const onSubmit = (data: ProjectFormData) => {
-    const startDate = new Date(data.startDate);
-    const targetDate = data.targetDate ? new Date(data.targetDate) : null;
+    const dateDebut = new Date(data.startDate).toISOString().split('T')[0];
+    const dateCible = data.targetDate ? new Date(data.targetDate).toISOString().split('T')[0] : null;
 
     addProject({
-      tontineId: data.tontineId,
-      name: data.name,
+      id_tontine: data.tontineId,
+      id_responsable: data.responsibleMemberId || null,
+      nom: data.name,
       description: data.description,
       budget: data.budget,
-      amountRaised: 0,
-      startDate,
-      targetDate,
-      completionDate: null,
-      status: 'planned',
-      responsibleMemberId: data.responsibleMemberId || null,
+      montant_alloue: 0,
+      date_debut: dateDebut,
+      date_cible: dateCible,
+      date_fin_reelle: null,
+      statut: 'planifie',
     });
 
     form.reset();
@@ -149,7 +149,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name}
+                          {tontine.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -250,7 +250,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                     <SelectContent>
                       {members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.firstName} {member.lastName}
+                          {member.prenom} {member.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -74,7 +74,7 @@ export function TontineDetailsSheet({
   }
 
   const totalExpectedPerSession = tontineMembers.reduce(
-    (sum, member) => sum + (tontine.contributionAmount * member.nb_parts),
+    (sum, member) => sum + (tontine.montant_cotisation * member.nb_parts),
     0
   );
 
@@ -110,15 +110,15 @@ export function TontineDetailsSheet({
                   <Wallet className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold">{tontine.name}</h3>
+                  <h3 className="text-2xl font-bold">{tontine.nom}</h3>
                   {tontine.description && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {tontine.description}
                     </p>
                   )}
                   <div className="flex gap-2 mt-3">
-                    <Badge variant={tontine.status === 'active' ? 'default' : 'secondary'}>
-                      {t(`common.${tontine.status}`)}
+                    <Badge variant={tontine.statut === 'Actif' ? 'default' : 'secondary'}>
+                      {t(`common.${tontine.statut}`)}
                     </Badge>
                     <Badge variant="outline">
                       {t(`tontines.types.${tontine.type}`)}
@@ -144,7 +144,7 @@ export function TontineDetailsSheet({
                     {t('tontines.contributionAmount')}
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(tontine.contributionAmount)}
+                    {formatCurrency(tontine.montant_cotisation)}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -164,7 +164,7 @@ export function TontineDetailsSheet({
                     {t('tontines.frequency')}
                   </p>
                   <p className="font-medium capitalize">
-                    {t(`tontines.frequencies.${tontine.frequency}`)}
+                    {t(`tontines.frequencies.${tontine.periode}`)}
                   </p>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export function TontineDetailsSheet({
                             {member.nb_parts} {member.nb_parts > 1 ? 'parts' : 'part'}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            {formatCurrency(tontine.contributionAmount * member.nb_parts)}
+                            {formatCurrency(tontine.montant_cotisation * member.nb_parts)}
                           </span>
                         </div>
                       </div>
@@ -258,10 +258,10 @@ export function TontineDetailsSheet({
                   <p className="text-sm text-muted-foreground">
                     {t('tontines.startDate')}
                   </p>
-                  <p className="font-medium">{formatDate(tontine.startDate)}</p>
+                  <p className="font-medium">{formatDate(tontine.date_debut)}</p>
                 </div>
               </div>
-              {tontine.endDate && (
+              {tontine.date_fin && (
                 <>
                   <Separator />
                   <div className="flex items-center gap-3">
@@ -270,7 +270,7 @@ export function TontineDetailsSheet({
                       <p className="text-sm text-muted-foreground">
                         {t('tontines.endDate')}
                       </p>
-                      <p className="font-medium">{formatDate(tontine.endDate)}</p>
+                      <p className="font-medium">{formatDate(tontine.date_fin)}</p>
                     </div>
                   </div>
                 </>

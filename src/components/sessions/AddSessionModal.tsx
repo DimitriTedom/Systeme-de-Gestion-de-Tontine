@@ -38,7 +38,7 @@ interface AddSessionModalProps {
 export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
   const { t } = useTranslation();
   const { addSession, getSessionsByTontineId } = useSessionStore();
-  const { tontines, getTontineById } = useTontineStore();
+  const { tontines } = useTontineStore();
 
   const formSchema = z.object({
     tontineId: z.string().min(1, t('sessions.validation.tontineRequired')),
@@ -51,7 +51,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
     const tontine = tontines.find(t => t.id === data.tontineId);
     if (!tontine) return true;
     const sessionDate = new Date(data.date);
-    const tontineStartDate = new Date(tontine.startDate);
+    const tontineStartDate = new Date(tontine.date_debut);
     sessionDate.setHours(0, 0, 0, 0);
     tontineStartDate.setHours(0, 0, 0, 0);
     return sessionDate >= tontineStartDate;
@@ -79,13 +79,13 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
     const sessionNumber = existingSessions.length + 1;
 
     addSession({
-      ...data,
-      sessionNumber,
-      date: new Date(data.date),
-      totalContributions: 0,
-      totalPenalties: 0,
-      attendanceCount: 0,
-      status: 'scheduled',
+      id_tontine: data.tontineId,
+      numero_seance: sessionNumber,
+      date: data.date,
+      lieu: data.location,
+      ordre_du_jour: data.agenda,
+      notes: data.notes,
+      statut: 'programmee',
     });
     form.reset();
     onOpenChange(false);
@@ -115,7 +115,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name}
+                          {tontine.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>

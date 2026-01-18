@@ -146,7 +146,7 @@ export function RegisterToTontineModal({
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name} ({tontine.type})
+                          {tontine.nom} ({tontine.type})
                         </SelectItem>
                       ))}
                     </SelectContent>

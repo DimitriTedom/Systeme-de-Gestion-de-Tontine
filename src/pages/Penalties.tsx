@@ -39,7 +39,7 @@ export default function Penalties() {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
     return new Intl.DateTimeFormat('fr-FR', {
       year: 'numeric',
       month: 'short',
@@ -49,31 +49,40 @@ export default function Penalties() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'paye':
         return 'success';
-      case 'pending':
+      case 'non_paye':
         return 'warning';
-      case 'waived':
+      case 'annule':
         return 'secondary';
       default:
         return 'secondary';
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'paye': 'Payée',
+      'non_paye': 'En attente',
+      'annule': 'Annulée',
+    };
+    return labels[status] || status;
+  };
+
   const getPenaltyTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       absence: 'Absence',
-      late_contribution: 'Retard de cotisation',
-      misconduct: 'Mauvaise conduite',
-      other: 'Autre',
+      retard_cotisation: 'Retard de cotisation',
+      mauvaise_conduite: 'Mauvaise conduite',
+      autre: 'Autre',
     };
     return labels[type] || type;
   };
 
   const pendingPenalties = getPendingPenalties();
   const paidPenalties = getPaidPenalties();
-  const totalPending = pendingPenalties.reduce((sum, p) => sum + p.amount, 0);
-  const totalPaid = paidPenalties.reduce((sum, p) => sum + p.amount, 0);
+  const totalPending = pendingPenalties.reduce((sum, p) => sum + p.montant, 0);
+  const totalPaid = paidPenalties.reduce((sum, p) => sum + p.montant, 0);
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -177,52 +186,52 @@ export default function Penalties() {
               </TableHeader>
               <TableBody>
                 {penalties.map((penalty) => {
-                  const member = getMemberById(penalty.memberId);
-                  const session = penalty.sessionId ? getSessionById(penalty.sessionId) : null;
-                  const tontine = getTontineById(penalty.tontineId);
+                  const member = getMemberById(penalty.id_membre);
+                  const session = penalty.id_seance ? getSessionById(penalty.id_seance) : null;
+                  const tontine = penalty.id_tontine ? getTontineById(penalty.id_tontine) : null;
 
                   return (
                     <TableRow key={penalty.id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {member?.firstName} {member?.lastName}
+                            {member?.prenom} {member?.nom}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {member?.phone}
+                            {member?.telephone}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {session ? `Séance #${session.sessionNumber}` : '-'}
+                          {session ? `Séance #${session.numero_seance}` : '-'}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {penalty.createdAt && formatDate(penalty.createdAt)}
+                          {penalty.created_at && formatDate(penalty.created_at)}
                         </div>
                       </TableCell>
-                      <TableCell>{tontine?.name || '-'}</TableCell>
+                      <TableCell>{tontine?.nom || '-'}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {getPenaltyTypeLabel(penalty.penaltyType)}
+                          {getPenaltyTypeLabel(penalty.type_penalite)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-orange-600">
-                        {formatCurrency(penalty.amount)}
+                        {formatCurrency(penalty.montant)}
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-[200px] truncate" title={penalty.reason}>
-                          {penalty.reason}
+                        <div className="max-w-[200px] truncate" title={penalty.raison}>
+                          {penalty.raison}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(penalty.status) as any}>
-                          {t(`penalties.statuses.${penalty.status}`)}
+                        <Badge variant={getStatusColor(penalty.statut) as "default" | "secondary" | "destructive" | "outline"}>
+                          {getStatusLabel(penalty.statut)}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          {penalty.status === 'pending' && (
+                          {penalty.statut === 'non_paye' && (
                             <Button
                               variant="outline"
                               size="sm"

@@ -1,23 +1,31 @@
 import { create } from 'zustand';
-import { Credit } from '@/types';
-import * as creditService from '@/services/creditService';
+import { supabase } from '@/lib/supabase';
+import type { Credit, InsertTables, UpdateTables } from '@/types/database.types';
 
 interface CreditStore {
   credits: Credit[];
   isLoading: boolean;
   error: string | null;
   
-  // Async API actions
+  // Actions CRUD
   fetchCredits: () => Promise<void>;
-  addCredit: (credit: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  repayCredit: (id: string, amount: number) => Promise<void>;
+  fetchCreditsByMember: (memberId: string) => Promise<void>;
+  addCredit: (credit: InsertTables<'credit'>) => Promise<Credit | null>;
+  updateCredit: (id: string, credit: UpdateTables<'credit'>) => Promise<void>;
+  deleteCredit: (id: string) => Promise<void>;
   
-  // Local state actions
-  updateCredit: (id: string, credit: Partial<Credit>) => void;
-  deleteCredit: (id: string) => void;
+  // Actions spécifiques
+  repayCredit: (id: string, amount: number) => Promise<void>;
+  approveCredit: (id: string) => Promise<void>;
+  disburseCredit: (id: string) => Promise<void>;
+  
+  // Getters
   getCreditById: (id: string) => Credit | undefined;
   getCreditsByMemberId: (memberId: string) => Credit[];
-  getCreditsByTontineId: (tontineId: string) => Credit[];
+  getActiveCredits: () => Credit[];
+  getPendingCredits: () => Credit[];
+  
+  // Utilitaires
   clearError: () => void;
 }
 
@@ -26,135 +34,200 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Fetch all credits from API
+  // Récupérer tous les crédits
   fetchCredits: async () => {
     set({ isLoading: true, error: null });
+    
     try {
-      const data = await creditService.getAllCredits();
-      // Transform DTO to Credit type
-      const credits: Credit[] = data.map((c) => ({
-        id: c.id,
-        tontineId: c.tontineId,
-        memberId: c.memberId,
-        amount: c.amount,
-        interestRate: c.interestRate,
-        disbursementDate: c.disbursementDate,
-        dueDate: c.dueDate,
-        repaymentAmount: c.amount * (1 + c.interestRate / 100),
-        amountPaid: c.amount - c.remainingBalance,
-        status: c.status,
-        purpose: c.purpose,
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
-      }));
-      set({ credits, isLoading: false });
+      const { data, error } = await supabase
+        .from('credit')
+        .select('*')
+        .order('date_demande', { ascending: false });
+
+      if (error) throw error;
+
+      set({ credits: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch credits',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des crédits',
         isLoading: false 
       });
     }
   },
 
-  // Add credit via API
-  addCredit: async (creditData) => {
+  // Récupérer les crédits d'un membre
+  fetchCreditsByMember: async (memberId) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const creditDTO = {
-        tontineId: creditData.tontineId,
-        memberId: creditData.memberId,
-        amount: creditData.amount,
-        interestRate: creditData.interestRate,
-        disbursementDate: creditData.disbursementDate,
-        dueDate: creditData.dueDate,
-        purpose: creditData.purpose,
-      };
-      
-      const created = await creditService.createCredit(creditDTO);
-      
-      const newCredit: Credit = {
-        id: created.id,
-        tontineId: created.tontineId,
-        memberId: created.memberId,
-        amount: created.amount,
-        interestRate: created.interestRate,
-        disbursementDate: created.disbursementDate,
-        dueDate: created.dueDate,
-        repaymentAmount: creditData.repaymentAmount,
-        amountPaid: 0,
-        status: created.status,
-        purpose: created.purpose,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      set((state) => ({ 
-        credits: [...state.credits, newCredit],
-        isLoading: false 
-      }));
+      const { data, error } = await supabase
+        .from('credit')
+        .select('*')
+        .eq('id_membre', memberId)
+        .order('date_demande', { ascending: false });
+
+      if (error) throw error;
+
+      set({ credits: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add credit',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Ajouter un crédit
+  addCredit: async (creditData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('credit')
+        .insert({
+          ...creditData,
+          solde: creditData.montant * (1 + (creditData.taux_interet || 0) / 100),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({ 
+        credits: [data, ...state.credits],
+        isLoading: false 
+      }));
+
+      return data;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout',
         isLoading: false 
       });
       throw error;
     }
   },
 
-  // Repay credit via API
-  repayCredit: async (id, amount) => {
+  // Mettre à jour un crédit
+  updateCredit: async (id, creditData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const updated = await creditService.repayCredit(id, amount);
-      
+      const { data, error } = await supabase
+        .from('credit')
+        .update(creditData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       set((state) => ({
-        credits: state.credits.map((credit) =>
-          credit.id === id
-            ? {
-                ...credit,
-                amountPaid: credit.amount - updated.remainingBalance,
-                status: updated.status,
-                updatedAt: new Date(),
-              }
-            : credit
-        ),
+        credits: state.credits.map((c) => c.id === id ? data : c),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to repay credit',
+        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
         isLoading: false 
       });
       throw error;
     }
   },
 
-  updateCredit: (id, creditData) => {
-    set((state) => ({
-      credits: state.credits.map((credit) =>
-        credit.id === id
-          ? { ...credit, ...creditData, updatedAt: new Date() }
-          : credit
-      ),
-    }));
+  // Supprimer un crédit
+  deleteCredit: async (id) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase
+        .from('credit')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        credits: state.credits.filter((c) => c.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
 
-  deleteCredit: (id) => {
-    set((state) => ({
-      credits: state.credits.filter((credit) => credit.id !== id),
-    }));
+  // Rembourser un crédit
+  repayCredit: async (id, amount) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const credit = get().getCreditById(id);
+      if (!credit) throw new Error('Crédit non trouvé');
+
+      const newSolde = credit.solde - amount;
+      const newMontantRembourse = credit.montant_rembourse + amount;
+      const newStatut = newSolde <= 0 ? 'rembourse' : 'en_cours';
+
+      const { data, error } = await supabase
+        .from('credit')
+        .update({
+          solde: Math.max(0, newSolde),
+          montant_rembourse: newMontantRembourse,
+          statut: newStatut,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({
+        credits: state.credits.map((c) => c.id === id ? data : c),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du remboursement',
+        isLoading: false 
+      });
+      throw error;
+    }
   },
 
+  // Approuver un crédit
+  approveCredit: async (id) => {
+    await get().updateCredit(id, { statut: 'approuve' });
+  },
+
+  // Décaisser un crédit
+  disburseCredit: async (id) => {
+    await get().updateCredit(id, { 
+      statut: 'decaisse',
+      date_decaissement: new Date().toISOString().split('T')[0],
+    });
+  },
+
+  // Getters
   getCreditById: (id) => {
-    return get().credits.find((credit) => credit.id === id);
+    return get().credits.find((c) => c.id === id);
   },
 
   getCreditsByMemberId: (memberId) => {
-    return get().credits.filter((credit) => credit.memberId === memberId);
+    return get().credits.filter((c) => c.id_membre === memberId);
   },
 
-  getCreditsByTontineId: (tontineId) => {
-    return get().credits.filter((credit) => credit.tontineId === tontineId);
+  getActiveCredits: () => {
+    return get().credits.filter((c) => 
+      ['decaisse', 'en_cours'].includes(c.statut)
+    );
+  },
+
+  getPendingCredits: () => {
+    return get().credits.filter((c) => c.statut === 'en_attente');
   },
 
   clearError: () => {

@@ -1,20 +1,39 @@
 import { create } from 'zustand';
-import { Tontine } from '@/types';
-import * as tontineService from '@/services/tontineService';
+import { supabase } from '@/lib/supabase';
+import type { Tontine, InsertTables, UpdateTables, Participe } from '@/types/database.types';
+
+interface TontineWithMembers extends Tontine {
+  membres_count?: number;
+  participations?: Participe[];
+}
 
 interface TontineStore {
-  tontines: Tontine[];
+  tontines: TontineWithMembers[];
   isLoading: boolean;
   error: string | null;
   
-  // Async API actions
+  // Actions CRUD
   fetchTontines: () => Promise<void>;
-  addTontine: (tontine: Omit<Tontine, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTontine: (id: string, tontine: Partial<Tontine>) => Promise<void>;
+  fetchTontinesWithStats: () => Promise<void>;
+  addTontine: (tontine: InsertTables<'tontine'>) => Promise<Tontine | null>;
+  updateTontine: (id: string, tontine: UpdateTables<'tontine'>) => Promise<void>;
   deleteTontine: (id: string) => Promise<void>;
   
-  // Local state actions
-  getTontineById: (id: string) => Tontine | undefined;
+  // Actions spécifiques
+  getTontineMembers: (tontineId: string) => Promise<Array<{
+    id_membre: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    telephone: string;
+    nb_parts: number;
+  }>>;
+  
+  // Getters
+  getTontineById: (id: string) => TontineWithMembers | undefined;
+  getActiveTontines: () => TontineWithMembers[];
+  
+  // Utilitaires
   clearError: () => void;
 }
 
@@ -23,129 +42,187 @@ export const useTontineStore = create<TontineStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Fetch all tontines from API
+  // Récupérer toutes les tontines
   fetchTontines: async () => {
     set({ isLoading: true, error: null });
+    
     try {
-      const data = await tontineService.getAllTontines();
-      // Transform TontineDTO to Tontine type
-      const tontines: Tontine[] = data.map((t) => ({
-        id: t.id,
-        name: t.name,
-        description: t.description,
-        type: t.type,
-        contributionAmount: t.contributionAmount,
-        frequency: t.frequency,
-        startDate: t.startDate,
-        endDate: t.endDate,
-        status: t.status,
-        memberIds: t.memberIds,
-        adminId: t.adminId,
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt,
-      }));
-      set({ tontines, isLoading: false });
+      const { data, error } = await supabase
+        .from('tontine')
+        .select('*')
+        .order('date_debut', { ascending: false });
+
+      if (error) throw error;
+
+      set({ tontines: data || [], isLoading: false });
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch tontines',
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des tontines',
         isLoading: false 
       });
     }
   },
 
-  // Add tontine via API and update local state
+  // Récupérer les tontines avec statistiques
+  fetchTontinesWithStats: async () => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Récupérer les tontines
+      const { data: tontines, error: tontinesError } = await supabase
+        .from('tontine')
+        .select('*')
+        .order('date_debut', { ascending: false });
+
+      if (tontinesError) throw tontinesError;
+
+      // Pour chaque tontine, compter les membres
+      const tontinesWithCount = await Promise.all(
+        (tontines || []).map(async (t) => {
+          const { count } = await supabase
+            .from('participe')
+            .select('*', { count: 'exact', head: true })
+            .eq('id_tontine', t.id)
+            .eq('statut', 'actif');
+
+          return {
+            ...t,
+            membres_count: count || 0,
+          };
+        })
+      );
+
+      set({ tontines: tontinesWithCount, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Ajouter une tontine
   addTontine: async (tontineData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const tontineDTO = {
-        name: tontineData.name,
-        description: tontineData.description,
-        type: tontineData.type,
-        contributionAmount: tontineData.contributionAmount,
-        frequency: tontineData.frequency,
-        startDate: tontineData.startDate,
-        endDate: tontineData.endDate,
-        status: tontineData.status,
-      };
-      const created = await tontineService.createTontine(tontineDTO);
-      const newTontine: Tontine = {
-        id: created.id,
-        name: created.name,
-        description: created.description,
-        type: created.type,
-        contributionAmount: created.contributionAmount,
-        frequency: created.frequency,
-        startDate: created.startDate,
-        endDate: created.endDate,
-        status: created.status,
-        memberIds: tontineData.memberIds,
-        adminId: tontineData.adminId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const { data, error } = await supabase
+        .from('tontine')
+        .insert(tontineData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       set((state) => ({ 
-        tontines: [...state.tontines, newTontine],
+        tontines: [{ ...data, membres_count: 0 }, ...state.tontines],
         isLoading: false 
       }));
+
+      return data;
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to add tontine',
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout',
         isLoading: false 
       });
+      throw error;
     }
   },
-  
+
+  // Mettre à jour une tontine
   updateTontine: async (id, tontineData) => {
     set({ isLoading: true, error: null });
+    
     try {
-      const updated = await tontineService.updateTontine(id, tontineData);
+      const { data, error } = await supabase
+        .from('tontine')
+        .update(tontineData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       set((state) => ({
-        tontines: state.tontines.map((tontine) =>
-          tontine.id === id
-            ? { 
-                ...tontine, 
-                name: updated.name,
-                description: updated.description,
-                type: updated.type,
-                contributionAmount: updated.contributionAmount,
-                frequency: updated.frequency,
-                startDate: updated.startDate,
-                endDate: updated.endDate,
-                status: updated.status,
-                updatedAt: new Date() 
-              }
-            : tontine
-        ),
+        tontines: state.tontines.map((t) => t.id === id ? { ...t, ...data } : t),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to update tontine',
+        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
         isLoading: false 
       });
       throw error;
     }
   },
-  
+
+  // Supprimer une tontine
   deleteTontine: async (id) => {
     set({ isLoading: true, error: null });
+    
     try {
-      await tontineService.deleteTontine(id);
+      const { error } = await supabase
+        .from('tontine')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       set((state) => ({
-        tontines: state.tontines.filter((tontine) => tontine.id !== id),
+        tontines: state.tontines.filter((t) => t.id !== id),
         isLoading: false,
       }));
     } catch (error) {
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete tontine',
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
         isLoading: false 
       });
       throw error;
     }
   },
-  
+
+  // Récupérer les membres d'une tontine
+  getTontineMembers: async (tontineId) => {
+    try {
+      const { data, error } = await supabase
+        .from('participe')
+        .select(`
+          id_membre,
+          nb_parts,
+          membre:id_membre (
+            id,
+            nom,
+            prenom,
+            email,
+            telephone
+          )
+        `)
+        .eq('id_tontine', tontineId)
+        .eq('statut', 'actif');
+
+      if (error) throw error;
+
+      return (data || []).map((p: any) => ({
+        id_membre: p.id_membre,
+        nom: p.membre.nom,
+        prenom: p.membre.prenom,
+        email: p.membre.email,
+        telephone: p.membre.telephone,
+        nb_parts: p.nb_parts,
+      }));
+    } catch (error) {
+      console.error('Erreur getTontineMembers:', error);
+      return [];
+    }
+  },
+
+  // Getters
   getTontineById: (id) => {
-    return get().tontines.find((tontine) => tontine.id === id);
+    return get().tontines.find((t) => t.id === id);
+  },
+
+  getActiveTontines: () => {
+    return get().tontines.filter((t) => t.statut === 'Actif');
   },
 
   clearError: () => {

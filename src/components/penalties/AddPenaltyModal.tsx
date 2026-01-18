@@ -48,59 +48,58 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
   const { tontines } = useTontineStore();
 
   const penaltySchema = z.object({
-    tontineId: z.string().min(1, t('penalties.validation.tontineRequired')),
-    sessionId: z.string().min(1, t('penalties.validation.sessionRequired')),
-    memberId: z.string().min(1, t('penalties.validation.memberRequired')),
-    amount: z.coerce.number().min(1, t('penalties.validation.amountPositive')),
-    penaltyType: z.string().min(1, t('penalties.validation.typeRequired')),
-    reason: z.string().min(1, t('penalties.validation.reasonRequired')),
+    id_tontine: z.string().min(1, t('penalties.validation.tontineRequired')),
+    id_seance: z.string().min(1, t('penalties.validation.sessionRequired')),
+    id_membre: z.string().min(1, t('penalties.validation.memberRequired')),
+    montant: z.coerce.number().min(1, t('penalties.validation.amountPositive')),
+    type_penalite: z.string().min(1, t('penalties.validation.typeRequired')),
+    raison: z.string().min(1, t('penalties.validation.reasonRequired')),
   });
 
   type PenaltyFormData = {
-    tontineId: string;
-    sessionId: string;
-    memberId: string;
-    amount: number;
-    penaltyType: string;
-    reason: string;
+    id_tontine: string;
+    id_seance: string;
+    id_membre: string;
+    montant: number;
+    type_penalite: string;
+    raison: string;
   };
 
   const form = useForm<PenaltyFormData>({
     resolver: zodResolver(penaltySchema) as any,
     defaultValues: {
-      tontineId: '',
-      sessionId: '',
-      memberId: '',
-      amount: 0,
-      penaltyType: '',
-      reason: '',
+      id_tontine: '',
+      id_seance: '',
+      id_membre: '',
+      montant: 0,
+      type_penalite: '',
+      raison: '',
     },
   });
 
-  const selectedTontineId = form.watch('tontineId');
+  const selectedTontineId = form.watch('id_tontine');
   
   // Filter sessions by selected tontine
   const filteredSessions = sessions.filter(
-    (session) => session.tontineId === selectedTontineId
+    (session) => session.id_tontine === selectedTontineId
   );
 
   // Get members of the selected tontine
   const selectedTontine = tontines.find((t) => t.id === selectedTontineId);
   const tontineMembers = members.filter(
-    (member) => selectedTontine?.memberIds?.includes(member.id)
+    (member) => selectedTontine?.participations?.some((p: { id_membre: string }) => p.id_membre === member.id)
   );
 
   const onSubmit = async (data: PenaltyFormData) => {
     try {
       await addPenalty({
-        tontineId: data.tontineId,
-        sessionId: data.sessionId,
-        memberId: data.memberId,
-        amount: data.amount,
-        penaltyType: data.penaltyType as 'late_contribution' | 'absence' | 'misconduct' | 'other',
-        reason: data.reason,
-        status: 'pending',
-        createdAt: new Date(),
+        id_tontine: data.id_tontine,
+        id_seance: data.id_seance,
+        id_membre: data.id_membre,
+        montant: data.montant,
+        type_penalite: data.type_penalite as 'absence' | 'retard_cotisation' | 'mauvaise_conduite' | 'autre',
+        raison: data.raison,
+        statut: 'non_paye',
       });
 
       toast.success(t('penalties.addSuccess'), {
@@ -130,7 +129,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="tontineId"
+              name="id_tontine"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('nav.tontines')}</FormLabel>
@@ -143,7 +142,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name}
+                          {tontine.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -155,7 +154,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
 
             <FormField
               control={form.control}
-              name="sessionId"
+              name="id_seance"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('penalties.session')}</FormLabel>
@@ -172,7 +171,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
                     <SelectContent>
                       {filteredSessions.map((session) => (
                         <SelectItem key={session.id} value={session.id}>
-                          Séance #{session.sessionNumber} - {new Date(session.date).toLocaleDateString('fr-FR')}
+                          Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -184,7 +183,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
 
             <FormField
               control={form.control}
-              name="memberId"
+              name="id_membre"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('sessions.member')}</FormLabel>
@@ -201,7 +200,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
                     <SelectContent>
                       {(tontineMembers.length > 0 ? tontineMembers : members).map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.firstName} {member.lastName}
+                          {member.prenom} {member.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -213,7 +212,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
 
             <FormField
               control={form.control}
-              name="penaltyType"
+              name="type_penalite"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('penalties.type')}</FormLabel>
@@ -225,9 +224,9 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="absence">{t('penalties.types.absence')}</SelectItem>
-                      <SelectItem value="late_contribution">{t('penalties.types.lateContribution')}</SelectItem>
-                      <SelectItem value="misconduct">{t('penalties.types.misconduct')}</SelectItem>
-                      <SelectItem value="other">{t('penalties.types.other')}</SelectItem>
+                      <SelectItem value="retard_cotisation">{t('penalties.types.lateContribution')}</SelectItem>
+                      <SelectItem value="mauvaise_conduite">{t('penalties.types.misconduct')}</SelectItem>
+                      <SelectItem value="autre">{t('penalties.types.other')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -237,7 +236,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
 
             <FormField
               control={form.control}
-              name="amount"
+              name="montant"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('penalties.amount')}</FormLabel>
@@ -255,7 +254,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
 
             <FormField
               control={form.control}
-              name="reason"
+              name="raison"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('penalties.reason')}</FormLabel>
@@ -274,7 +273,7 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit">{t('penalties.addPenalty')}</Button>
+              <Button type="submit">{t('common.save')}</Button>
             </DialogFooter>
           </form>
         </Form>

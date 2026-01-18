@@ -47,11 +47,11 @@ export default function Members() {
     const query = searchQuery.toLowerCase();
     return members.filter((member) => {
       return (
-        member.firstName.toLowerCase().includes(query) ||
-        member.lastName.toLowerCase().includes(query) ||
+        member.prenom.toLowerCase().includes(query) ||
+        member.nom.toLowerCase().includes(query) ||
         member.email?.toLowerCase().includes(query) ||
-        member.phone?.toLowerCase().includes(query) ||
-        member.address?.toLowerCase().includes(query)
+        member.telephone?.toLowerCase().includes(query) ||
+        member.adresse?.toLowerCase().includes(query)
       );
     });
   }, [members, searchQuery]);
@@ -185,15 +185,15 @@ export default function Members() {
                     transition={{ delay: index * 0.05 }}
                     className="group hover:bg-accent/50 transition-colors"
                   >
-                    <TableCell className="font-medium">{member.firstName}</TableCell>
-                    <TableCell>{member.lastName}</TableCell>
+                    <TableCell className="font-medium">{member.prenom}</TableCell>
+                    <TableCell>{member.nom}</TableCell>
                     <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.phone}</TableCell>
+                    <TableCell>{member.telephone}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={member.status === 'active' ? 'default' : 'secondary'}
+                        variant={member.statut === 'Actif' ? 'default' : 'secondary'}
                       >
-                        {t(`common.${member.status}`)}
+                        {t(`common.${member.statut}`)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -203,7 +203,7 @@ export default function Members() {
                           size="icon"
                           onClick={() => {
                             setExportMemberId(parseInt(member.id));
-                            setExportMemberName(`${member.firstName} ${member.lastName}`);
+                            setExportMemberName(`${member.prenom} ${member.nom}`);
                           }}
                           title="Export Excel"
                         >
@@ -228,7 +228,7 @@ export default function Members() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(member.id, `${member.firstName} ${member.lastName}`)}
+                          onClick={() => handleDelete(member.id, `${member.prenom} ${member.nom}`)}
                           title={t('members.confirmDelete')}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

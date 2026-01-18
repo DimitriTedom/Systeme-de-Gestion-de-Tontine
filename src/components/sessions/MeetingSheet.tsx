@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Save, Lock, FileText } from 'lucide-react';
+import { X, Save, Lock, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
-import { useMemberStore } from '@/stores/memberStore';
 import { useContributionStore } from '@/stores/contributionStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,8 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { createBulkContributions, getSessionAttendance, saveSessionMeeting, type CotisationCreate, type SaveMeetingRecord } from '@/services/sessionService';
-import type { AttendanceRecord, PenaltySummary, SessionAttendanceMember } from '@/types';
+import type { MembreSeance, PenaltySummary } from '@/types/database.types';
 
 interface MeetingSheetProps {
   sessionId: string;
@@ -50,64 +48,79 @@ interface MemberContribution {
   amount: number;
 }
 
+interface SaveResult {
+  success: boolean;
+  message: string;
+  contributionsCreated: number;
+  penaltiesCreated: PenaltySummary[];
+  totalContributions: number;
+}
+
 export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProps) {
   const { t } = useTranslation();
-  const { getSessionById, updateSession, closeSession } = useSessionStore();
+  const { 
+    getSessionById, 
+    updateSession, 
+    closeSession, 
+    getSessionMembers, 
+    recordAttendanceAndContribution 
+  } = useSessionStore();
   const { getTontineById } = useTontineStore();
-  const { getMemberById } = useMemberStore();
-  const { getContributionsBySessionId, bulkUpsertContributions } = useContributionStore();
+  const { getContributionsBySessionId } = useContributionStore();
 
   const session = getSessionById(sessionId);
-  const tontine = session ? getTontineById(session.tontineId) : null;
+  const tontine = session ? getTontineById(session.id_tontine) : null;
   const existingContributions = getContributionsBySessionId(sessionId);
 
-  const [members, setMembers] = useState<SessionAttendanceMember[]>([]);
+  const [members, setMembers] = useState<MembreSeance[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [contributions, setContributions] = useState<Record<number, MemberContribution>>({});
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closingSummary, setClosingSummary] = useState<PenaltySummary[] | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   
   // Default penalty amount for absences (5000 XAF as per MCD)
   const ABSENCE_PENALTY_AMOUNT = 5000;
 
-  // Fetch members with nb_parts from backend
-  useEffect(() => {
-    const fetchMembers = async () => {
-      if (!session?.id) return;
-      
-      setLoading(true);
-      try {
-        const attendanceMembers = await getSessionAttendance(session.id);
-        setMembers(attendanceMembers);
-      } catch (error) {
-        console.error('Failed to fetch session attendance:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch members with nb_parts from Supabase RPC
+  const fetchMembers = useCallback(async () => {
+    if (!session?.id) return;
+    
+    setLoading(true);
+    try {
+      const attendanceMembers = await getSessionMembers(session.id);
+      setMembers(attendanceMembers);
+    } catch (error) {
+      console.error('Failed to fetch session members:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.id, getSessionMembers]);
 
-    if (open) {
+  useEffect(() => {
+    if (open && session?.id) {
       fetchMembers();
     }
-  }, [session?.id, open]);
+  }, [open, session?.id, fetchMembers]);
 
+  // Initialize contributions from existing data or defaults
   useEffect(() => {
     if (!members.length || isInitialized) return;
 
-    // Initialize contributions from existing data or defaults
     const initialContributions: Record<number, MemberContribution> = {};
     
     members.forEach(member => {
       if (!member) return;
       
-      const existing = existingContributions.find(c => String(c.memberId) === String(member.id_membre));
+      const existing = existingContributions.find(c => String(c.id_membre) === String(member.id_membre));
       initialContributions[member.id_membre] = {
         memberId: member.id_membre,
-        isPresent: existing ? existing.status === 'completed' : false,
-        amount: existing?.amount || member.expected_contribution,
+        isPresent: existing ? existing.statut === 'complete' : (member.deja_cotise || false),
+        amount: existing?.montant || member.montant_cotise || member.expected_contribution,
       };
     });
 
@@ -120,6 +133,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     if (!open) {
       setIsInitialized(false);
       setContributions({});
+      setSaveResult(null);
     }
   }, [open]);
 
@@ -132,7 +146,6 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
       [memberId]: {
         memberId: memberId,
         isPresent,
-        // If presence tontine and marking present, set expected amount based on nb_parts
         amount: isPresent && tontine?.type === 'presence' 
           ? member.expected_contribution
           : prev[memberId]?.amount || 0,
@@ -148,13 +161,11 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     let error = '';
     if (tontine && contributions[memberId]?.isPresent && member) {
       if (tontine.type === 'presence') {
-        // For presence tontines: must be exactly nb_parts * montant_cotisation
         if (cleanAmount !== member.expected_contribution) {
           error = t('sessions.validation.presenceMustBeExact');
         }
-      } else if (tontine.type === 'optional') {
-        // For optional tontines: can be 0 or any multiple of base montant_cotisation
-        if (cleanAmount > 0 && cleanAmount % tontine.contributionAmount !== 0) {
+      } else if (tontine.type === 'optionnelle') {
+        if (cleanAmount > 0 && cleanAmount % tontine.montant_cotisation !== 0) {
           error = t('sessions.validation.optionalMustBeMultiple');
         }
       }
@@ -194,74 +205,92 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
       alert(t('sessions.validation.fixErrors'));
       return;
     }
-    
-    // Prepare meeting records for the new consolidated endpoint
-    const meetingRecords: SaveMeetingRecord[] = members.map(member => ({
-      id_membre: parseInt(member.id_membre, 10),
-      present: contributions[member.id_membre]?.isPresent || false,
-      montant_paye: contributions[member.id_membre]?.isPresent 
-        ? contributions[member.id_membre].amount 
-        : undefined,
-    }));
 
+    setSaving(true);
+    
     try {
-      // Save meeting using the new consolidated endpoint
-      const result = await saveSessionMeeting(session.id, meetingRecords);
-      
-      // Update session status
+      let contributionsCreated = 0;
+      const penaltiesCreated: PenaltySummary[] = [];
+
+      // Save each member's attendance and contribution via RPC
+      for (const member of members) {
+        const contrib = contributions[member.id_membre];
+        if (!contrib) continue;
+
+        await recordAttendanceAndContribution(
+          session.id,
+          String(member.id_membre),
+          contrib.isPresent,
+          contrib.isPresent ? contrib.amount : undefined
+        );
+        
+        contributionsCreated++;
+      }
+
+      // Update session status locally
       updateSession(session.id, {
-        status: 'completed',
-        totalContributions: result.total_contributions,
-        totalPenalties: result.total_penalties,
-        attendanceCount: calculateAttendanceCount(),
+        statut: 'en_cours',
+        total_cotisations: calculateTotal(),
+        nombre_presents: calculateAttendanceCount(),
       });
 
-      // Show success message with summary
-      const message = `${t('sessions.meetingSaved')}!\n\n` +
-        `${t('sessions.contributions')}: ${result.contributions_created}\n` +
-        `${t('sessions.penalties')}: ${result.penalties_created.length}\n` +
-        `${t('sessions.total')}: ${formatCurrency(result.total_contributions)}`;
-      
-      alert(message);
-      
-      // If penalties were created, show them
-      if (result.penalties_created.length > 0) {
-        setClosingSummary(result.penalties_created);
-        setTimeout(() => setClosingSummary(null), 5000);
-      }
-      
-      onOpenChange(false);
+      setSaveResult({
+        success: true,
+        message: t('sessions.meetingSaved'),
+        contributionsCreated,
+        penaltiesCreated,
+        totalContributions: calculateTotal(),
+      });
+
+      // Refresh members data
+      await fetchMembers();
     } catch (error) {
       console.error('Failed to save meeting:', error);
-      alert(t('sessions.meetingSaveFailed'));
+      setSaveResult({
+        success: false,
+        message: t('sessions.meetingSaveFailed'),
+        contributionsCreated: 0,
+        penaltiesCreated: [],
+        totalContributions: 0,
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleCloseSession = async () => {
     if (!session || !tontine) return;
-    
     setShowCloseDialog(true);
   };
 
   const confirmCloseSession = async () => {
     if (!session || !tontine) return;
 
+    setSaving(true);
     try {
-      // Prepare attendance records
-      const attendance: AttendanceRecord[] = Object.values(contributions).map(c => ({
-        id_membre: c.memberId,
-        present: c.isPresent,
-        montant: c.isPresent ? c.amount : undefined,
-      }));
+      // Call the close session via store
+      const result = await closeSession(session.id);
 
-      // Call close session endpoint
-      const result = await closeSession(session.id, {
-        attendance,
-        montant_penalite_absence: ABSENCE_PENALTY_AMOUNT,
-      });
+      if (result) {
+        // Transform result to PenaltySummary format
+        const penalties: PenaltySummary[] = result.penalites_creees?.map((p) => ({
+          nom: p.nom,
+          prenom: p.prenom,
+          montant: p.montant,
+          raison: p.raison,
+        })) || [];
 
-      // Show penalty summary
-      setClosingSummary(result.penalties_created);
+        setClosingSummary(penalties);
+        
+        // Update local session state
+        updateSession(session.id, {
+          statut: 'terminee',
+          total_cotisations: result.total_cotisations,
+          total_penalites: result.total_penalites,
+          nombre_presents: calculateAttendanceCount(),
+        });
+      }
+
       setShowCloseDialog(false);
       
       // Close the meeting sheet after showing summary
@@ -273,6 +302,8 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
       console.error('Failed to close session:', error);
       alert(t('sessions.closeSessionFailed'));
       setShowCloseDialog(false);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -284,12 +315,13 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    }).format(date);
+    }).format(dateObj);
   };
 
   if (!session || !tontine) {
@@ -299,6 +331,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
   const total = calculateTotal();
   const attendanceCount = calculateAttendanceCount();
   const isPresenceTontine = tontine?.type === 'presence';
+  const isSessionClosed = session.statut === 'terminee';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -317,19 +350,19 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
           <SheetDescription>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="font-semibold">{tontine.name}</span>
+                <span className="font-semibold">{tontine.nom}</span>
                 <Badge variant={isPresenceTontine ? "default" : "secondary"}>
                   {t(`tontines.types.${tontine.type}`)}
                 </Badge>
               </div>
               <div className="text-sm">
-                <div><strong>{t('sessions.sessionNumber')}:</strong> #{session.sessionNumber}</div>
+                <div><strong>{t('sessions.sessionNumber')}:</strong> #{session.numero_seance}</div>
                 <div><strong>{t('sessions.date')}:</strong> {formatDate(session.date)}</div>
-                {session.location && (
-                  <div><strong>{t('sessions.location')}:</strong> {session.location}</div>
+                {session.lieu && (
+                  <div><strong>{t('sessions.location')}:</strong> {session.lieu}</div>
                 )}
-                {session.agenda && (
-                  <div><strong>{t('sessions.agenda')}:</strong> {session.agenda}</div>
+                {session.ordre_du_jour && (
+                  <div><strong>{t('sessions.agenda')}:</strong> {session.ordre_du_jour}</div>
                 )}
               </div>
             </div>
@@ -347,6 +380,25 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
             </Card>
           )}
 
+          {/* Save Result Alert */}
+          {saveResult && (
+            <Alert variant={saveResult.success ? "default" : "destructive"}>
+              {saveResult.success ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              <AlertDescription>
+                <div className="font-semibold">{saveResult.message}</div>
+                {saveResult.success && (
+                  <div className="text-sm mt-1">
+                    {t('sessions.contributions')}: {saveResult.contributionsCreated} | {t('sessions.total')}: {formatCurrency(saveResult.totalContributions)}
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">{t('sessions.attendance')} & {t('sessions.contribution')}</CardTitle>
@@ -355,6 +407,10 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
               {loading ? (
                 <div className="flex justify-center py-8">
                   <div className="text-muted-foreground">{t('common.loading')}...</div>
+                </div>
+              ) : members.length === 0 ? (
+                <div className="flex justify-center py-8 text-muted-foreground">
+                  {t('sessions.noMembers')}
                 </div>
               ) : (
                 <Table>
@@ -373,6 +429,9 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                       </TableHead>
                       <TableHead className="w-[200px]">
                         {t('sessions.actualAmount')}
+                      </TableHead>
+                      <TableHead className="w-[100px] text-center">
+                        {t('sessions.status')}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -409,7 +468,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                               onCheckedChange={(checked) =>
                                 handleAttendanceChange(member.id_membre, checked as boolean)
                               }
-                              disabled={session.status === 'closed'}
+                              disabled={isSessionClosed || saving}
                             />
                           </TableCell>
                           <TableCell>
@@ -418,7 +477,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                             </div>
                             {member.nb_parts > 1 && (
                               <div className="text-xs text-muted-foreground">
-                                {member.nb_parts} × {formatCurrency(tontine?.contributionAmount || 0)}
+                                {member.nb_parts} × {formatCurrency(tontine?.montant_cotisation || 0)}
                               </div>
                             )}
                           </TableCell>
@@ -429,7 +488,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                               onChange={(e) =>
                                 handleAmountChange(member.id_membre, parseFloat(e.target.value))
                               }
-                              disabled={!contrib.isPresent || session.status === 'closed'}
+                              disabled={!contrib.isPresent || isSessionClosed || saving}
                               min={0}
                               className={
                                 validationErrors[member.id_membre]
@@ -441,6 +500,17 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                               <p className="text-xs text-red-500 mt-1">
                                 {validationErrors[member.id_membre]}
                               </p>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {member.deja_cotise ? (
+                              <Badge variant="default" className="bg-emerald-600">
+                                {t('sessions.paid')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                {t('sessions.pending')}
+                              </Badge>
                             )}
                           </TableCell>
                         </TableRow>
@@ -469,7 +539,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
             </CardContent>
           </Card>
 
-          {session.status === 'closed' && (
+          {isSessionClosed && (
             <Alert>
               <Lock className="h-4 w-4" />
               <AlertDescription>
@@ -479,7 +549,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
           )}
 
           {closingSummary && closingSummary.length > 0 && (
-            <Alert className="bg-orange-50 border-orange-200">
+            <Alert className="bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800">
               <AlertDescription>
                 <div className="font-semibold mb-2">
                   {t('sessions.penaltiesCreated')}:
@@ -509,11 +579,23 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                 {t('common.cancel')}
               </Button>
               
-              {session.status !== 'closed' && (
+              {!isSessionClosed && (
                 <>
-                  <Button onClick={handleSave} className="bg-primary">
+                  <Button 
+                    onClick={handleSave} 
+                    className="bg-primary"
+                    disabled={saving}
+                  >
                     <Save className="mr-2 h-4 w-4" />
-                    {t('sessions.saveAndClose')}
+                    {saving ? t('common.saving') : t('sessions.saveProgress')}
+                  </Button>
+                  <Button 
+                    onClick={handleCloseSession} 
+                    variant="destructive"
+                    disabled={saving}
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    {t('sessions.closeSession')}
                   </Button>
                 </>
               )}
@@ -530,12 +612,23 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
                 {t('sessions.closeSessionWarning')}
               </DialogDescription>
             </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                {t('sessions.closeSessionSummary')}:
+              </p>
+              <ul className="text-sm space-y-1">
+                <li>✓ {t('sessions.presentMembers')}: {attendanceCount}</li>
+                <li>✓ {t('sessions.absentMembers')}: {members.length - attendanceCount}</li>
+                <li>✓ {t('sessions.totalContributions')}: {formatCurrency(total)}</li>
+                <li>⚠️ {t('sessions.penaltyPerAbsence')}: {formatCurrency(ABSENCE_PENALTY_AMOUNT)}</li>
+              </ul>
+            </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCloseDialog(false)}>
+              <Button variant="outline" onClick={() => setShowCloseDialog(false)} disabled={saving}>
                 {t('common.cancel')}
               </Button>
-              <Button onClick={confirmCloseSession}>
-                {t('sessions.confirmClose')}
+              <Button onClick={confirmCloseSession} disabled={saving} variant="destructive">
+                {saving ? t('common.loading') : t('sessions.confirmClose')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -543,11 +636,20 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
 
         {/* Session Report Modal */}
         <SessionReportModal
-          session={session}
-          tontine={tontine}
-          totalExpected={members.length * tontine.contributionAmount}
+          session={{
+            date: new Date(session.date),
+            sessionNumber: session.numero_seance,
+            location: session.lieu || '',
+            status: session.statut,
+          }}
+          tontine={{
+            name: tontine.nom,
+            type: tontine.type,
+            contributionAmount: tontine.montant_cotisation,
+          }}
+          totalExpected={members.reduce((sum, m) => sum + m.expected_contribution, 0)}
           totalCollected={total}
-          totalPenalties={session.totalPenalties}
+          totalPenalties={session.total_penalites || 0}
           attendanceCount={attendanceCount}
           totalMembers={members.length}
           open={showReportModal}

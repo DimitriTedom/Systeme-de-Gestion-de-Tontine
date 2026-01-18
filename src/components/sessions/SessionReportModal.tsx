@@ -10,11 +10,24 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Session, Tontine } from '@/types';
+
+// Types locaux pour le rapport de séance (compatibles avec Supabase)
+interface SessionForReport {
+  date: Date;
+  location?: string;
+  sessionNumber: number;
+  status: 'programmee' | 'en_cours' | 'terminee' | 'annulee';
+}
+
+interface TontineForReport {
+  name: string;
+  type: 'presence' | 'optionnelle';
+  contributionAmount: number;
+}
 
 interface SessionReportModalProps {
-  session: Session;
-  tontine: Tontine;
+  session: SessionForReport;
+  tontine: TontineForReport;
   totalExpected: number;
   totalCollected: number;
   totalPenalties: number;
@@ -90,7 +103,7 @@ export function SessionReportModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{t('sessions.status')}:</span>
-                <Badge variant={session.status === 'closed' ? 'default' : 'secondary'}>
+                <Badge variant={session.status === 'terminee' ? 'default' : 'secondary'}>
                   {t(`sessions.statuses.${session.status}`)}
                 </Badge>
               </div>

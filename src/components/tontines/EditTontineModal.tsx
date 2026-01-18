@@ -48,12 +48,12 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
       .string()
       .min(1, t('tontines.validation.nameRequired'))
       .min(3, t('tontines.validation.nameMin')),
-    type: z.enum(['presence', 'optional']),
+    type: z.enum(['presence', 'optionnelle']),
     contributionAmount: z.number().positive(t('tontines.validation.amountPositive')),
-    frequency: z.enum(['weekly', 'biweekly', 'monthly']),
+    frequency: z.enum(['hebdomadaire', 'bimensuelle', 'mensuelle']),
     startDate: z.string().min(1, t('tontines.validation.startDateRequired')),
     endDate: z.string().optional(),
-    status: z.enum(['active', 'completed', 'cancelled']),
+    status: z.enum(['Actif', 'Terminée', 'Annulée']),
   }).refine((data) => {
     if (data.endDate && data.startDate) {
       const endDate = new Date(data.endDate);
@@ -76,10 +76,10 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
       name: '',
       type: 'presence' as const,
       contributionAmount: 0,
-      frequency: 'monthly' as const,
+      frequency: 'mensuelle' as const,
       startDate: '',
       endDate: '',
-      status: 'active' as const,
+      status: 'Actif' as const,
     },
   });
 
@@ -90,28 +90,28 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
       if (tontine) {
         // Format dates properly
         let startDateStr = '';
-        if (tontine.startDate) {
-          startDateStr = tontine.startDate instanceof Date
-            ? tontine.startDate.toISOString().split('T')[0]
-            : String(tontine.startDate).split('T')[0];
+        if (tontine.date_debut) {
+          startDateStr = typeof tontine.date_debut === 'string' 
+            ? tontine.date_debut.split('T')[0]
+            : String(tontine.date_debut).split('T')[0];
         }
         
         let endDateStr = '';
-        if (tontine.endDate) {
-          endDateStr = tontine.endDate instanceof Date
-            ? tontine.endDate.toISOString().split('T')[0]
-            : String(tontine.endDate).split('T')[0];
+        if (tontine.date_fin) {
+          endDateStr = typeof tontine.date_fin === 'string' 
+            ? tontine.date_fin.split('T')[0]
+            : String(tontine.date_fin).split('T')[0];
         }
 
         // Reset form with all tontine data
         form.reset({
-          name: tontine.name || '',
+          name: tontine.nom || '',
           type: tontine.type || 'presence',
-          contributionAmount: tontine.contributionAmount || 0,
-          frequency: tontine.frequency || 'monthly',
+          contributionAmount: tontine.montant_cotisation || 0,
+          frequency: tontine.periode || 'mensuelle',
           startDate: startDateStr,
           endDate: endDateStr,
-          status: tontine.status || 'active',
+          status: tontine.statut || 'Actif',
         });
       }
     } else if (!open) {
@@ -120,10 +120,10 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
         name: '',
         type: 'presence' as const,
         contributionAmount: 0,
-        frequency: 'monthly' as const,
+        frequency: 'mensuelle' as const,
         startDate: '',
         endDate: '',
-        status: 'active' as const,
+        status: 'Actif' as const,
       });
     }
   }, [open, tontineId, getTontineById, form]);
@@ -134,13 +134,13 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
     setIsSubmitting(true);
     try {
       await updateTontine(tontineId, {
-        name: data.name,
+        nom: data.name,
         type: data.type,
-        contributionAmount: Number(data.contributionAmount),
-        frequency: data.frequency,
-        startDate: new Date(data.startDate),
-        endDate: data.endDate ? new Date(data.endDate) : undefined,
-        status: data.status,
+        montant_cotisation: Number(data.contributionAmount),
+        periode: data.frequency,
+        date_debut: data.startDate,
+        date_fin: data.endDate || null,
+        statut: data.status,
       });
       toast.success(t('tontines.tontineUpdated'), {
         description: `${data.name} ${t('members.hasBeenUpdated')}`,
@@ -195,7 +195,7 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
                         <SelectItem value="presence">
                           {t('tontines.types.presence')}
                         </SelectItem>
-                        <SelectItem value="optional">
+                        <SelectItem value="optionnelle">
                           {t('tontines.types.optional')}
                         </SelectItem>
                       </SelectContent>
@@ -218,13 +218,13 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="weekly">
+                        <SelectItem value="hebdomadaire">
                           {t('tontines.frequencies.weekly')}
                         </SelectItem>
-                        <SelectItem value="biweekly">
+                        <SelectItem value="bimensuelle">
                           {t('tontines.frequencies.biweekly')}
                         </SelectItem>
-                        <SelectItem value="monthly">
+                        <SelectItem value="mensuelle">
                           {t('tontines.frequencies.monthly')}
                         </SelectItem>
                       </SelectContent>
@@ -297,13 +297,13 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">
+                      <SelectItem value="Actif">
                         {t('common.active')}
                       </SelectItem>
-                      <SelectItem value="completed">
+                      <SelectItem value="Terminée">
                         {t('common.completed')}
                       </SelectItem>
-                      <SelectItem value="cancelled">
+                      <SelectItem value="Annulée">
                         {t('common.cancelled')}
                       </SelectItem>
                     </SelectContent>

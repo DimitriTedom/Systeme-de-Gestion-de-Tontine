@@ -177,24 +177,24 @@ export default function Tours() {
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {tour.beneficiaryName || `${beneficiary?.firstName} ${beneficiary?.lastName}`}
+                            {tour.beneficiaryName || `${beneficiary?.prenom} ${beneficiary?.nom}`}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {beneficiary?.phone}
+                            {beneficiary?.telephone}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {session ? `Séance #${session.sessionNumber}` : '-'}
+                          {session ? `Séance #${session.numero_seance}` : '-'}
                         </div>
                       </TableCell>
-                      <TableCell>{tontine?.name || '-'}</TableCell>
+                      <TableCell>{tontine?.nom || '-'}</TableCell>
                       <TableCell className="font-medium text-green-600">
                         {formatCurrency(tour.amount)}
                       </TableCell>
                       <TableCell>
-                        {tour.dateTour && formatDate(tour.dateTour)}
+                        {tour.date && formatDate(tour.date)}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -233,7 +233,7 @@ export default function Tours() {
               return (
                 <Card key={tontineId}>
                   <CardHeader>
-                    <CardTitle className="text-lg">{tontine?.name || 'Tontine'}</CardTitle>
+                    <CardTitle className="text-lg">{tontine?.nom || 'Tontine'}</CardTitle>
                     <CardDescription>
                       {tontineTours.length} {t('tours.toursCompleted')} • {formatCurrency(tontineTotal)}
                     </CardDescription>
@@ -246,7 +246,7 @@ export default function Tours() {
                           <div key={tour.id} className="flex justify-between items-center text-sm">
                             <span>
                               <Badge variant="outline" className="mr-2">#{tour.tourNumber}</Badge>
-                              {tour.beneficiaryName || `${beneficiary?.firstName} ${beneficiary?.lastName}`}
+                              {tour.beneficiaryName || `${beneficiary?.prenom} ${beneficiary?.nom}`}
                             </span>
                             <span className="font-medium text-green-600">
                               {formatCurrency(tour.amount)}

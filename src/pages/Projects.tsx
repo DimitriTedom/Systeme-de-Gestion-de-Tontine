@@ -28,21 +28,22 @@ export default function Projects() {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
     return new Intl.DateTimeFormat('fr-FR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date);
+    }).format(new Date(dateString));
   };
 
   const getStatusColor = (status: string): "default" | "destructive" | "outline" | "secondary" => {
     const colors: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
-      planned: 'secondary',
-      fundraising: 'default',
-      in_progress: 'default',
-      completed: 'default',
-      cancelled: 'destructive',
+      planifie: 'secondary',
+      collecte_fonds: 'default',
+      en_cours: 'default',
+      termine: 'default',
+      annule: 'destructive',
     };
     return colors[status] || 'secondary';
   };
@@ -88,21 +89,21 @@ export default function Projects() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
-            const tontine = getTontineById(project.tontineId);
-            const responsible = project.responsibleMemberId 
-              ? getMemberById(project.responsibleMemberId) 
+            const tontine = getTontineById(project.id_tontine);
+            const responsible = project.id_responsable 
+              ? getMemberById(project.id_responsable) 
               : null;
-            const progress = calculateProgress(project.amountRaised, project.budget);
-            const remaining = project.budget - project.amountRaised;
+            const progress = calculateProgress(project.montant_alloue, project.budget);
+            const remaining = project.budget - project.montant_alloue;
 
             return (
               <Card key={project.id} className="flex flex-col">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
-                      <Badge variant={getStatusColor(project.status)}>
-                        {t(`projects.statuses.${project.status}`)}
+                      <CardTitle className="text-lg">{project.nom}</CardTitle>
+                      <Badge variant={getStatusColor(project.statut)}>
+                        {t(`projects.statuses.${project.statut}`)}
                       </Badge>
                     </div>
                     <div className="flex gap-1">
@@ -143,7 +144,7 @@ export default function Projects() {
                     <Progress value={progress} className="h-2" />
                     <div className="flex justify-between text-sm">
                       <span className="font-medium text-green-600">
-                        {formatCurrency(project.amountRaised)}
+                        {formatCurrency(project.montant_alloue)}
                       </span>
                       <span className="text-muted-foreground">
                         / {formatCurrency(project.budget)}
@@ -159,27 +160,27 @@ export default function Projects() {
                   <div className="pt-4 border-t space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tontine:</span>
-                      <span className="font-medium">{tontine?.name}</span>
+                      <span className="font-medium">{tontine?.nom}</span>
                     </div>
                     {responsible && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Responsable:</span>
                         <span className="font-medium">
-                          {responsible.firstName} {responsible.lastName}
+                          {responsible.prenom} {responsible.nom}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date cible:</span>
                       <span className="font-medium">
-                        {project.targetDate ? formatDate(project.targetDate) : '-'}
+                        {project.date_cible ? formatDate(project.date_cible) : '-'}
                       </span>
                     </div>
-                    {project.completionDate && (
+                    {project.date_fin_reelle && (
                       <div className="flex justify-between text-green-600">
                         <span>Terminé le:</span>
                         <span className="font-medium">
-                          {formatDate(project.completionDate)}
+                          {formatDate(project.date_fin_reelle)}
                         </span>
                       </div>
                     )}

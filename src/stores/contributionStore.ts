@@ -1,63 +1,248 @@
 import { create } from 'zustand';
-import { Contribution } from '@/types';
+import { supabase } from '@/lib/supabase';
+import type { Cotisation, InsertTables, UpdateTables } from '@/types/database.types';
 
 interface ContributionStore {
-  contributions: Contribution[];
-  addContribution: (contribution: Omit<Contribution, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateContribution: (id: string, contribution: Partial<Contribution>) => void;
-  deleteContribution: (id: string) => void;
-  getContributionsBySessionId: (sessionId: string) => Contribution[];
-  getContributionsByMemberId: (memberId: string) => Contribution[];
-  bulkUpsertContributions: (contributions: Omit<Contribution, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
+  contributions: Cotisation[];
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions CRUD
+  fetchContributions: () => Promise<void>;
+  fetchContributionsBySession: (sessionId: string) => Promise<void>;
+  fetchContributionsByMember: (memberId: string) => Promise<void>;
+  addContribution: (contribution: InsertTables<'cotisation'>) => Promise<Cotisation | null>;
+  updateContribution: (id: string, contribution: UpdateTables<'cotisation'>) => Promise<void>;
+  deleteContribution: (id: string) => Promise<void>;
+  
+  // Actions spécifiques
+  bulkUpsertContributions: (
+    sessionId: string,
+    contributions: Array<{
+      memberId: string;
+      amount: number;
+      expectedAmount: number;
+    }>
+  ) => Promise<void>;
+  
+  // Getters
+  getContributionsBySessionId: (sessionId: string) => Cotisation[];
+  getContributionsByMemberId: (memberId: string) => Cotisation[];
+  getTotalBySession: (sessionId: string) => number;
+  
+  // Utilitaires
+  clearError: () => void;
 }
 
 export const useContributionStore = create<ContributionStore>((set, get) => ({
   contributions: [],
-  
-  addContribution: (contributionData) => {
-    const newContribution: Contribution = {
-      ...contributionData,
-      id: Math.random().toString(36).substring(7),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ contributions: [...state.contributions, newContribution] }));
-  },
-  
-  updateContribution: (id, contributionData) => {
-    set((state) => ({
-      contributions: state.contributions.map((contribution) =>
-        contribution.id === id
-          ? { ...contribution, ...contributionData, updatedAt: new Date() }
-          : contribution
-      ),
-    }));
-  },
-  
-  deleteContribution: (id) => {
-    set((state) => ({
-      contributions: state.contributions.filter((contribution) => contribution.id !== id),
-    }));
-  },
-  
-  getContributionsBySessionId: (sessionId) => {
-    return get().contributions.filter((contribution) => contribution.sessionId === sessionId);
-  },
-  
-  getContributionsByMemberId: (memberId) => {
-    return get().contributions.filter((contribution) => contribution.memberId === memberId);
-  },
-  
-  bulkUpsertContributions: (contributionsData) => {
-    const newContributions: Contribution[] = contributionsData.map(data => ({
-      ...data,
-      id: Math.random().toString(36).substring(7),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
+  isLoading: false,
+  error: null,
+
+  // Récupérer toutes les cotisations
+  fetchContributions: async () => {
+    set({ isLoading: true, error: null });
     
-    set((state) => ({ 
-      contributions: [...state.contributions, ...newContributions]
-    }));
+    try {
+      const { data, error } = await supabase
+        .from('cotisation')
+        .select('*')
+        .order('date_paiement', { ascending: false });
+
+      if (error) throw error;
+
+      set({ contributions: data || [], isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des cotisations',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Récupérer les cotisations d'une séance
+  fetchContributionsBySession: async (sessionId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('cotisation')
+        .select('*')
+        .eq('id_seance', sessionId)
+        .order('date_paiement', { ascending: false });
+
+      if (error) throw error;
+
+      set({ contributions: data || [], isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Récupérer les cotisations d'un membre
+  fetchContributionsByMember: async (memberId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('cotisation')
+        .select('*')
+        .eq('id_membre', memberId)
+        .order('date_paiement', { ascending: false });
+
+      if (error) throw error;
+
+      set({ contributions: data || [], isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+    }
+  },
+
+  // Ajouter une cotisation
+  addContribution: async (contributionData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('cotisation')
+        .insert(contributionData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({ 
+        contributions: [data, ...state.contributions],
+        isLoading: false 
+      }));
+
+      return data;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Mettre à jour une cotisation
+  updateContribution: async (id, contributionData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('cotisation')
+        .update(contributionData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({
+        contributions: state.contributions.map((c) => c.id === id ? data : c),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Supprimer une cotisation
+  deleteContribution: async (id) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase
+        .from('cotisation')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        contributions: state.contributions.filter((c) => c.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Upsert en masse (pour la feuille de séance)
+  bulkUpsertContributions: async (sessionId, contributions) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Récupérer la séance pour avoir l'id_tontine
+      const { data: session, error: sessionError } = await supabase
+        .from('seance')
+        .select('id_tontine')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      // Préparer les données pour upsert
+      const upsertData = contributions.map((c) => ({
+        id_membre: c.memberId,
+        id_seance: sessionId,
+        id_tontine: session.id_tontine,
+        montant: c.amount,
+        montant_attendu: c.expectedAmount,
+        statut: c.amount >= c.expectedAmount ? 'complete' : c.amount > 0 ? 'partiel' : 'en_attente',
+      }));
+
+      const { error } = await supabase
+        .from('cotisation')
+        .upsert(upsertData, {
+          onConflict: 'id_membre,id_seance',
+        });
+
+      if (error) throw error;
+
+      // Recharger les cotisations de la séance
+      await get().fetchContributionsBySession(sessionId);
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la sauvegarde',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Getters
+  getContributionsBySessionId: (sessionId) => {
+    return get().contributions.filter((c) => c.id_seance === sessionId);
+  },
+
+  getContributionsByMemberId: (memberId) => {
+    return get().contributions.filter((c) => c.id_membre === memberId);
+  },
+
+  getTotalBySession: (sessionId) => {
+    return get().contributions
+      .filter((c) => c.id_seance === sessionId)
+      .reduce((sum, c) => sum + c.montant, 0);
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 }));

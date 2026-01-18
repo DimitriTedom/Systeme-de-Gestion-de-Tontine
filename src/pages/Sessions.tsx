@@ -38,9 +38,9 @@ export default function Sessions() {
     }
   };
 
-  const handleGenerateReport = async (sessionId: number) => {
+  const handleGenerateReport = async (sessionId: string) => {
     setIsLoadingReport(true);
-    setReportSessionId(sessionId);
+    setReportSessionId(parseInt(sessionId));
     try {
       const data = await reportService.getSessionReportData(sessionId);
       setReportData(data);
@@ -120,37 +120,37 @@ export default function Sessions() {
               </TableHeader>
               <TableBody>
                 {sessions.map((session) => {
-                  const tontine = getTontineById(session.tontineId);
+                  const tontine = getTontineById(session.id_tontine);
                   return (
                     <TableRow key={session.id}>
                       <TableCell className="font-medium">
-                        #{session.sessionNumber}
+                        #{session.numero_seance}
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{tontine?.name || 'N/A'}</div>
-                          {session.agenda && (
+                          <div className="font-medium">{tontine?.nom || 'N/A'}</div>
+                          {session.ordre_du_jour && (
                             <div className="text-xs text-muted-foreground">
-                              {session.agenda}
+                              {session.ordre_du_jour}
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(session.date)}</TableCell>
-                      <TableCell className="text-sm">{session.location}</TableCell>
+                      <TableCell>{formatDate(new Date(session.date))}</TableCell>
+                      <TableCell className="text-sm">{session.lieu}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {session.attendanceCount}
+                          {session.nombre_presents}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(session.totalContributions)}
+                        {formatCurrency(session.total_cotisations)}
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={session.status === 'completed' ? 'default' : 'secondary'}
+                          variant={session.statut === 'terminee' ? 'default' : 'secondary'}
                         >
-                          {t(`common.${session.status}`)}
+                          {t(`common.${session.statut}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -158,7 +158,7 @@ export default function Sessions() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleGenerateReport(parseInt(session.id))}
+                            onClick={() => handleGenerateReport(session.id)}
                             title="Générer le rapport PDF"
                           >
                             <FileDown className="h-4 w-4 text-primary" />

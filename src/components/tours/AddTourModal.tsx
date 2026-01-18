@@ -84,8 +84,8 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
 
   // Filter sessions by selected tontine (only completed/closed sessions)
   const filteredSessions = sessions.filter(
-    (session) => session.tontineId === selectedTontineId && 
-                 (session.status === 'completed' || session.status === 'closed')
+    (session) => session.id_tontine === selectedTontineId && 
+                 (session.statut === 'terminee' || session.statut === 'en_cours')
   );
 
   // Load eligible beneficiaries when tontine changes
@@ -124,7 +124,6 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
         beneficiaryId: data.beneficiaryId,
         tourNumber: nextTourNumber,
         amount: data.amount,
-        dateTour: new Date(),
       });
 
       toast.success(t('tours.addSuccess'), {
@@ -143,16 +142,21 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
   // Get members for the selected tontine (fallback if API doesn't return eligible)
   const selectedTontine = tontines.find((t) => t.id === selectedTontineId);
   const tontineMembers = members.filter(
-    (member) => selectedTontine?.memberIds?.includes(member.id)
+    (member) => selectedTontine?.participations?.some((p: { id_membre: string }) => p.id_membre === member.id)
   );
 
   // Use eligible beneficiaries from API, or fallback to tontine members
   const beneficiaryOptions = eligibleBeneficiaries.length > 0 
-    ? eligibleBeneficiaries 
+    ? eligibleBeneficiaries.map(b => ({
+        id: b.id_membre,
+        nom: b.nom,
+        prenom: b.prenom,
+        hasReceivedTour: !b.eligible,
+      }))
     : tontineMembers.map(m => ({
         id: m.id,
-        nom: m.lastName,
-        prenom: m.firstName,
+        nom: m.nom,
+        prenom: m.prenom,
         hasReceivedTour: false,
       }));
 
@@ -197,7 +201,7 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
                     <SelectContent>
                       {tontines.map((tontine) => (
                         <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.name}
+                          {tontine.nom}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -232,7 +236,7 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
                       ) : (
                         filteredSessions.map((session) => (
                           <SelectItem key={session.id} value={session.id}>
-                            Séance #{session.sessionNumber} - {new Date(session.date).toLocaleDateString('fr-FR')}
+                            Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
                           </SelectItem>
                         ))
                       )}
@@ -291,7 +295,7 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    {eligibleBeneficiaries.filter(b => !b.hasReceivedTour).length} {t('tours.eligibleMembers')}
+                    {eligibleBeneficiaries.filter(b => b.eligible).length} {t('tours.eligibleMembers')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

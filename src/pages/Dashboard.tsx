@@ -59,30 +59,33 @@ export default function Dashboard() {
   };
 
   // Calculate total cash in hand
-  const totalContributions = contributions.reduce((sum, c) => sum + c.amount, 0);
+  const totalContributions = contributions.reduce((sum, c) => sum + c.montant, 0);
   const totalCreditsGranted = credits
-    .filter(c => c.status === 'disbursed' || c.status === 'repaying')
-    .reduce((sum, c) => sum + c.amount, 0);
+    .filter(c => c.statut === 'decaisse' || c.statut === 'en_cours')
+    .reduce((sum, c) => sum + c.montant, 0);
   const totalCashInHand = totalContributions - totalCreditsGranted;
 
   // Calculate contribution trends (last 6 sessions)
   const contributionTrends = sessions
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(-6)
     .map((session) => ({
-      name: `Session ${session.sessionNumber}`,
-      contributions: session.totalContributions,
-      penalties: session.totalPenalties,
-      attendance: session.attendanceCount,
+      name: `Session ${session.numero_seance}`,
+      contributions: session.total_cotisations,
+      penalties: session.total_penalites,
+      attendance: session.nombre_presents,
     }));
 
   // Calculate credit status
   const creditsOnTrack = credits.filter(c => {
-    if (c.status === 'completed') return true;
-    if (c.status === 'repaying') {
-      const daysUntilDue = Math.ceil((c.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-      const progressPercentage = (c.amountPaid / c.repaymentAmount) * 100;
-      const totalDays = Math.ceil((c.dueDate.getTime() - c.disbursementDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (c.statut === 'rembourse') return true;
+    if (c.statut === 'en_cours') {
+      const dueDate = new Date(c.date_remboursement_prevue);
+      const disbursementDate = c.date_decaissement ? new Date(c.date_decaissement) : new Date();
+      const daysUntilDue = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      const repaymentAmount = c.montant + (c.montant * c.taux_interet / 100);
+      const progressPercentage = (c.montant_rembourse / repaymentAmount) * 100;
+      const totalDays = Math.ceil((dueDate.getTime() - disbursementDate.getTime()) / (1000 * 60 * 60 * 24));
       const daysPassed = totalDays - daysUntilDue;
       const expectedProgress = (daysPassed / totalDays) * 100;
       return progressPercentage >= expectedProgress * 0.8; // 80% of expected progress
@@ -91,12 +94,15 @@ export default function Dashboard() {
   }).length;
 
   const creditsLate = credits.filter(c => {
-    if (c.status === 'defaulted') return true;
-    if (c.status === 'repaying') {
-      const daysUntilDue = Math.ceil((c.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    if (c.statut === 'defaut') return true;
+    if (c.statut === 'en_cours') {
+      const dueDate = new Date(c.date_remboursement_prevue);
+      const disbursementDate = c.date_decaissement ? new Date(c.date_decaissement) : new Date();
+      const daysUntilDue = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
       if (daysUntilDue < 0) return true; // Past due date
-      const progressPercentage = (c.amountPaid / c.repaymentAmount) * 100;
-      const totalDays = Math.ceil((c.dueDate.getTime() - c.disbursementDate.getTime()) / (1000 * 60 * 60 * 24));
+      const repaymentAmount = c.montant + (c.montant * c.taux_interet / 100);
+      const progressPercentage = (c.montant_rembourse / repaymentAmount) * 100;
+      const totalDays = Math.ceil((dueDate.getTime() - disbursementDate.getTime()) / (1000 * 60 * 60 * 24));
       const daysPassed = totalDays - daysUntilDue;
       const expectedProgress = (daysPassed / totalDays) * 100;
       return progressPercentage < expectedProgress * 0.8;
@@ -110,8 +116,8 @@ export default function Dashboard() {
   ];
 
   // Penalties data
-  const pendingPenalties = penalties.filter(p => p.status === 'pending').length;
-  const paidPenalties = penalties.filter(p => p.status === 'paid').length;
+  const pendingPenalties = penalties.filter(p => p.statut === 'non_paye').length;
+  const paidPenalties = penalties.filter(p => p.statut === 'paye').length;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -190,7 +196,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold">{members.filter(m => m.status === 'active').length}</div>
+              <div className="text-2xl font-bold">{members.filter(m => m.statut === 'Actif').length}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Sur {members.length} membres totaux
               </p>
@@ -213,7 +219,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                {credits.filter(c => c.status === 'repaying').length}
+                {credits.filter(c => c.statut === 'en_cours').length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {creditsOnTrack} en bonne voie, {creditsLate} en retard
@@ -413,12 +419,12 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {tontines.filter(t => t.status === 'active').slice(0, 5).map((tontine) => (
+              {tontines.filter(t => t.statut === 'Actif').slice(0, 5).map((tontine) => (
                 <div key={tontine.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{tontine.name}</p>
+                    <p className="text-sm font-medium leading-none">{tontine.nom}</p>
                     <p className="text-xs text-muted-foreground">
-                      {tontine.membersCount || 0} membres • {formatCurrency(tontine.contributionAmount)}
+                      {tontine.membres_count || 0} membres • {formatCurrency(tontine.montant_cotisation)}
                     </p>
                   </div>
                   <Badge 
@@ -429,7 +435,7 @@ export default function Dashboard() {
                   </Badge>
                 </div>
               ))}
-              {tontines.filter(t => t.status === 'active').length === 0 && (
+              {tontines.filter(t => t.statut === 'Actif').length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Aucune tontine active
                 </p>
