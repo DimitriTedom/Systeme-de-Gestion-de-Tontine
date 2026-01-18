@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Banknote, HandCoins, Wallet } from 'lucide-react';
+import { Plus, Trash2, Banknote, HandCoins, Wallet, DollarSign, CheckCircle2, Send, RefreshCw } from 'lucide-react';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { useCreditStore } from '@/stores/creditStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,17 +18,31 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddCreditModal } from '@/components/credits/AddCreditModal';
+import { RepayCreditModal } from '@/components/credits/RepayCreditModal';
+import type { Credit } from '@/types/database.types';
 
 export default function Credits() {
   const { t } = useTranslation();
-  const { credits, fetchCredits, deleteCredit, isLoading } = useCreditStore();
+  const { 
+    credits, 
+    fetchCredits, 
+    deleteCredit, 
+    approveCredit, 
+    disburseCredit,
+    updateOverdueCredits,
+    isLoading 
+  } = useCreditStore();
   const { getMemberById } = useMemberStore();
   const { getTontineById } = useTontineStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedCreditForRepay, setSelectedCreditForRepay] = useState<Credit | null>(null);
 
   useEffect(() => {
     fetchCredits();
-  }, [fetchCredits]);
+    // Mettre à jour les crédits en retard au chargement
+    updateOverdueCredits();
+  }, [fetchCredits, updateOverdueCredits]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -63,6 +78,66 @@ export default function Credits() {
     return Math.min(100, (montant_rembourse / solde) * 100);
   };
 
+  const handleApproveCredit = async (creditId: string) => {
+    try {
+      await approveCredit(creditId);
+      toast.success('Crédit approuvé', {
+        description: 'Le crédit a été approuvé avec succès.',
+      });
+    } catch (error) {
+      toast.error('Erreur', {
+        description: 'Impossible d\'approuver le crédit.',
+      });
+    }
+  };
+
+  const handleDisburseCredit = async (creditId: string) => {
+    try {
+      await disburseCredit(creditId);
+      toast.success('Crédit décaissé', {
+        description: 'Le crédit a été décaissé avec succès.',
+      });
+    } catch (error) {
+      toast.error('Erreur', {
+        description: 'Impossible de décaisser le crédit.',
+      });
+    }
+  };
+
+  const handleUpdateOverdueCredits = async () => {
+    try {
+      const result = await updateOverdueCredits();
+      if (result.count > 0) {
+        toast.warning('Crédits en retard mis à jour', {
+          description: `${result.count} crédit(s) ont été marqués comme en retard.`,
+        });
+      } else {
+        toast.success('Tout est à jour', {
+          description: 'Aucun crédit en retard détecté.',
+        });
+      }
+    } catch (error) {
+      toast.error('Erreur', {
+        description: 'Impossible de mettre à jour les crédits.',
+      });
+    }
+  };
+
+  const handleDeleteCredit = async (creditId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce crédit?')) {
+      try {
+        await deleteCredit(creditId);
+        toast.success('Crédit supprimé', {
+          description: 'Le crédit a été supprimé avec succès.',
+        });
+      } catch (error) {
+        toast.error('Erreur', {
+          description: 'Impossible de supprimer le crédit.',
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -72,10 +147,20 @@ export default function Credits() {
             Gérez les demandes de crédit des membres
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          {t('credits.addCredit')}
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            onClick={handleUpdateOverdueCredits} 
+            variant="outline"
+            className="flex-1 sm:flex-initial"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            MAJ Retards
+          </Button>
+          <Button onClick={() => setIsAddModalOpen(true)} className="flex-1 sm:flex-initial">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('credits.addCredit')}
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -171,18 +256,51 @@ export default function Credits() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
+                          {/* Approuver */}
+                          {credit.statut === 'en_attente' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Approuver"
+                              onClick={() => handleApproveCredit(credit.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          
+                          {/* Décaisser */}
+                          {credit.statut === 'approuve' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Décaisser"
+                              onClick={() => handleDisburseCredit(credit.id)}
+                            >
+                              <Send className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
+                          
+                          {/* Rembourser */}
+                          {['en_cours', 'en_retard'].includes(credit.statut) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Rembourser"
+                              onClick={() => setSelectedCreditForRepay(credit)}
+                            >
+                              <DollarSign className="h-4 w-4 text-orange-600" />
+                            </Button>
+                          )}
+                          
+                          {/* Supprimer */}
                           <Button
                             variant="ghost"
                             size="icon"
                             title={t('common.delete')}
-                            onClick={() => {
-                              if (confirm('Êtes-vous sûr de vouloir supprimer ce crédit?')) {
-                                deleteCredit(credit.id);
-                              }
-                            }}
+                            onClick={() => handleDeleteCredit(credit.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -198,6 +316,12 @@ export default function Credits() {
       <AddCreditModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
+      />
+
+      <RepayCreditModal
+        credit={selectedCreditForRepay}
+        open={!!selectedCreditForRepay}
+        onOpenChange={(open) => !open && setSelectedCreditForRepay(null)}
       />
     </div>
   );

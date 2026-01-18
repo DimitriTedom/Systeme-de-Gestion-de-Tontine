@@ -32,9 +32,18 @@ export default function Sessions() {
   const [reportData, setReportData] = useState<SessionReportData | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm(t('members.confirmDelete'))) {
-      deleteSession(id);
+      try {
+        await deleteSession(id);
+        toast.success('Séance supprimée', {
+          description: 'La séance a été supprimée avec succès',
+        });
+      } catch (error) {
+        toast.error('Erreur', {
+          description: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        });
+      }
     }
   };
 

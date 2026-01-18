@@ -4,492 +4,372 @@
 
 ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Latest-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5.4.8-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.13-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-**A full-stack web application for managing community savings groups (Tontines) with financial tracking, member management, and analytics**
+**Application complète de gestion de tontines avec suivi financier, gestion des membres et analyses détaillées**
 
-Created by **@DimitriTedom (SnowDev)** for **Worketyamo-Students**
+**Projet académique - Université de Yaoundé I**  
+**Faculté des Sciences - Département d'Informatique**  
+**INF2212 : Implémentation des Bases de Données**  
+**Janvier 2026**
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [Documentation](#-project-structure)
+[Fonctionnalités](#-fonctionnalités) • [Démarrage](#-démarrage-rapide) • [Technologies](#️-stack-technologique) • [Équipe](#-équipe-de-développement)
 
 </div>
 
 ---
 
-## 📚 Table of Contents
+## 📚 Table des Matières
 
-- [🎯 Overview](#-overview)
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Quick Start](#-quick-start)
-- [📁 Project Structure](#-project-structure)
-- [🎨 UI/UX Highlights](#-uiux-highlights)
-- [📜 Available Scripts](#-available-scripts)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+- [🎯 Contexte du Projet](#-contexte-du-projet)
+- [✨ Fonctionnalités](#-fonctionnalités)
+- [🛠️ Stack Technologique](#️-stack-technologique)
+- [🚀 Démarrage Rapide](#-démarrage-rapide)
+- [📁 Structure du Projet](#-structure-du-projet)
+- [🎨 Interface Utilisateur](#-interface-utilisateur)
+- [👥 Équipe de Développement](#-équipe-de-développement)
+- [📄 Licence](#-licence)
 
-## 🎯 Overview
+## 🎯 Contexte du Projet
 
-**Système de Gestion de Tontine** is a comprehensive full-stack web application designed to manage **tontines** (community savings and credit associations). Built with modern web technologies, it provides an intuitive interface for tracking contributions, managing members, processing credit requests, monitoring projects, and analyzing financial data.
+Ce projet constitue un travail de synthèse pour l'UE **INF2212 (Implémentation des Bases de Données)** à l'Université de Yaoundé I. Il vise à concevoir et implémenter une application complète de gestion d'une tontine, reposant sur une base de données relationnelle.
 
-The application consists of:
-- **Frontend**: React + TypeScript SPA with modern UI/UX
-- **Backend**: FastAPI REST API with SQLAlchemy ORM
-- **Database**: SQLite (development) / PostgreSQL (production ready)
+### Objectifs du Projet
 
-Perfect for:
-- 💰 Community savings groups and associations
-- 🏦 Microfinance organizations
-- 👥 ROSCAs (Rotating Savings and Credit Associations)
-- 📊 Financial cooperatives
-- 🌍 Development projects with community funding
+L'application permet de gérer efficacement :
+- ✅ Les cotisations périodiques des membres
+- ✅ La distribution des gains lors des tours
+- ✅ Les crédits internes contractés par les membres
+- ✅ L'application de pénalités
+- ✅ Le financement de projets collectifs (FIAC)
+- ✅ La génération de rapports financiers détaillés
 
-## ✨ Features
+### Types de Tontines Supportées
+
+#### 1. **Tontine de Présence** (Obligatoire)
+- Participation obligatoire pour tous les membres
+- Cotisation requise à chaque séance
+- Suivi automatique des présences et pénalités
+
+#### 2. **Tontines Optionnelles**
+- Participation facultative
+- Possibilité de souscrire plusieurs parts
+- Bénéfice multiple possible selon les parts souscrites
+- **Contrainte majeure** : Le montant cumulé perçu ne doit jamais excéder le montant total de cotisation prévu
+
+## ✨ Fonctionnalités
 
 ### 📊 **Dashboard & Analytics**
-- Real-time financial overview with key metrics
-- Interactive area charts with gradient visualization
-- Contribution trends and analytics
-- Recent activity tracking
-- Responsive cards with emerald accent colors
+- Vue d'ensemble financière en temps réel avec métriques clés
+- Graphiques interactifs avec visualisation en dégradé
+- Tendances des cotisations et analyses
+- Suivi des activités récentes
+- Cartes réactives avec couleurs accent émeraude
 
-### 👥 **Member Management**
-- Complete member directory with search and pagination
-- Member details view with financial summary
-- Add/Edit/Delete member operations with API integration
-- Real-time data fetching from backend
-- Toast notifications for user feedback
-- Avatar display with fallback initials
+### 👥 **Gestion des Membres**
+- Répertoire complet des membres avec recherche et pagination
+- Vue détaillée des membres avec résumé financier
+- Opérations CRUD complètes avec intégration API
+- Récupération des données en temps réel depuis Supabase
+- Notifications toast pour feedback utilisateur
+- Affichage d'avatar avec initiales de secours
 
-### 💳 **Tontine Management**
-- Create and manage multiple tontines with full CRUD operations
-- Tontine details view with comprehensive information
-- Search and pagination for tontine listings
-- Track contribution schedules and amounts
-- Member enrollment and participation tracking
-- Status badges for active/completed tontines
-- API-backed persistence
+### 💳 **Gestion des Tontines**
+- Création et gestion de plusieurs tontines avec opérations CRUD complètes
+- Vue détaillée des tontines avec informations exhaustives
+- Recherche et pagination pour les listes
+- Suivi des calendriers et montants de cotisation
+- Inscription et suivi de participation des membres
+- Badges de statut (actif/terminé)
+- Persistance via Supabase
 
-### 💵 **Credit System**
-- Credit request submission and approval
-- Interest rate calculation
-- Repayment tracking
-- Credit history per member
-- Status indicators (approved, pending, rejected)
+### 💵 **Système de Crédit**
+- Soumission et approbation de demandes de crédit
+- Calcul automatique des taux d'intérêt
+- Suivi des remboursements avec échéancier
+- Historique de crédit par membre
+- Indicateurs de statut (approuvé, en attente, rejeté)
+- Contrôle de la contrainte : montant perçu ≤ montant cotisé
 
-### 📅 **Session Tracking**
-- Meeting schedule management
-- Attendance tracking
-- Session notes and minutes
-- Contribution collection during sessions
-- Historical session records
+### 📅 **Suivi des Séances**
+- Gestion du calendrier des réunions
+- Suivi des présences avec pénalités automatiques
+- Notes et procès-verbaux de séance
+- Collecte des cotisations pendant les séances
+- Historique complet des séances
+- Clôture de séance avec validation
 
-### 🏗️ **Project Management**
-- Community project proposals
-- Budget allocation and tracking
-- Project status monitoring
-- Member voting on projects
-- Progress tracking
+### 🏗️ **Gestion de Projets**
+- Propositions de projets communautaires (FIAC)
+- Allocation et suivi budgétaire
+- Suivi de l'état d'avancement
+- Vote des membres sur les projets
+- Rapports de progression
 
-### 🎨 **Modern UI/UX**
-- Sleek, retractable sidebar with emerald green theme
-- Smooth animations powered by Framer Motion
-- Dark/Light mode support
-- Responsive mobile-first design
-- Custom gradients and shadows
-- Empty state components for better UX
-- Form validation with real-time feedback
+### 🎨 **Interface Moderne**
+- Barre latérale rétractable avec thème vert émeraude
+- Animations fluides avec Framer Motion
+- Support mode sombre/clair
+- Design responsive mobile-first
+- Composants d'état vide pour meilleure UX
+- Validation de formulaires en temps réel
 
-## 🛠️ Tech Stack
+## 🛠️ Stack Technologique
 
 ### Frontend
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Framework** | React | 18.3.1 | UI Library |
-| **Language** | TypeScript | 5.5.3 | Type Safety |
-| **Build Tool** | Vite | 5.4.8 | Fast Development & Build |
-| **Styling** | TailwindCSS | 3.4.13 | Utility-first CSS |
-| **UI Components** | ShadCN/UI | Latest | Pre-built Components |
-| **State Management** | Zustand | 5.0.0-rc.2 | Global State |
-| **Forms** | React Hook Form | 7.53.2 | Form Management |
-| **Validation** | Zod | 3.23.8 | Schema Validation |
-| **Charts** | Recharts | 2.15.0 | Data Visualization |
-| **Animations** | Framer Motion | 11.15.0 | Smooth Animations |
-| **Icons** | Lucide React | Latest | Icon Library |
-| **i18n** | i18next | 23.16.8 | Internationalization |
+| Catégorie | Technologie | Version | Objectif |
+|-----------|-------------|---------|----------|
+| **Framework** | React | 18.3.1 | Bibliothèque UI |
+| **Langage** | TypeScript | 5.5.3 | Sécurité des types |
+| **Build Tool** | Vite | 5.4.8 | Développement & Build rapide |
+| **Styling** | TailwindCSS | 3.4.13 | CSS utilitaire |
+| **Composants UI** | ShadCN/UI | Latest | Composants pré-construits |
+| **State Management** | Zustand | 5.0.0-rc.2 | État global |
+| **Forms** | React Hook Form | 7.53.2 | Gestion de formulaires |
+| **Validation** | Zod | 3.23.8 | Validation de schéma |
+| **Charts** | Recharts | 2.15.0 | Visualisation de données |
+| **Animations** | Framer Motion | 11.15.0 | Animations fluides |
+| **Icons** | Lucide React | Latest | Bibliothèque d'icônes |
+| **i18n** | i18next | 23.16.8 | Internationalisation |
 | **Routing** | React Router | 7.1.1 | Navigation |
-| **HTTP Client** | Axios | 1.7.9 | API Communication |
-| **Notifications** | Sonner | 1.7.2 | Toast Notifications |
+| **Notifications** | Custom Toast | - | Notifications utilisateur |
 
 ### Backend
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Framework** | FastAPI | 0.115.6 | REST API Framework |
-| **Language** | Python | 3.12+ | Backend Language |
-| **ORM** | SQLAlchemy | 2.0.36 | Database ORM |
-| **Database** | SQLite/PostgreSQL | - | Data Persistence |
-| **Validation** | Pydantic | 2.10.4 | Data Validation |
-| **Server** | Uvicorn | 0.34.0 | ASGI Server |
-| **CORS** | FastAPI CORS | - | Cross-Origin Support |
+| Catégorie | Technologie | Version | Objectif |
+|-----------|-------------|---------|----------|
+| **BaaS** | Supabase | Latest | Backend as a Service |
+| **Base de données** | PostgreSQL | 15+ | Persistance des données |
+| **Auth** | Supabase Auth | Latest | Authentification |
+| **Storage** | Supabase Storage | Latest | Stockage de fichiers |
+| **Real-time** | Supabase Realtime | Latest | Synchronisation temps réel |
 
-## 🚀 Quick Start
+## 🚀 Démarrage Rapide
 
-### Prerequisites
-- Node.js 18+ 
-- Python 3.12+
-- npm or yarn or pnpm
+### Prérequis
+- Node.js 18+
+- npm, yarn ou pnpm
 - Git
+- Compte Supabase (gratuit)
+- **Docker & Docker Compose** (optionnel, pour déploiement conteneurisé)
 
-### 1. Clone & Setup
+### Option 1: Installation avec Docker 🐳 (Recommandé)
+
+La méthode la plus simple pour déployer l'application:
+
 ```bash
-# Clone the repository
+# 1. Cloner le projet
+git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
+cd Systeme-de-Gestion-de-Tontine
+
+# 2. Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env avec vos identifiants Supabase
+
+# 3. Lancer avec Docker Compose
+docker-compose up -d
+
+# L'application sera disponible sur http://localhost
+```
+
+**📖 Pour plus de détails sur Docker, voir [DOCKER.md](DOCKER.md)**
+
+### Option 2: Installation Manuelle
+
+#### 1. Cloner le Projet
+```bash
+# Cloner le dépôt
 git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
 
-# Navigate to project directory
+# Naviguer vers le répertoire
 cd Systeme-de-Gestion-de-Tontine
 ```
 
-### 2. Backend Setup
+#### 2. Configuration de Supabase
+
+1. Créer un projet sur [supabase.com](https://supabase.com)
+2. Copier l'URL et la clé anonyme du projet
+3. Exécuter les scripts SQL dans l'éditeur SQL de Supabase (voir `/supabase/migrations/`)
+
+#### 3. Configuration Frontend
+- Node.js 18+
+- npm, yarn ou pnpm
+- Git
+- Compte Supabase (gratuit)
+
+### 1. Cloner le Projet
 ```bash
-# Navigate to server directory
-cd server
+# Cloner le dépôt
+git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
 
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create .env file (optional)
-echo "DATABASE_URL=sqlite:///./tontine.db" > .env
-
-# Initialize database
-python init_db.py
-
-# Start backend server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# Backend will be available at http://localhost:8000
-# API docs at http://localhost:8000/docs
+# Naviguer vers le répertoire
+cd Systeme-de-Gestion-de-Tontine
 ```
 
-### 3. Frontend Setup
-```bash
-# Open a new terminal and navigate to project root
-cd Systeme-de-Gestion-de-Tontine
+### 2. Configuration de Supabase
 
-# Install dependencies
+1. Créer un projet sur [supabase.com](https://supabase.com)
+2. Copier l'URL et la clé anonyme du projet
+3. Exécuter les scripts SQL dans l'éditeur SQL de Supabase (voir `/supabase/migrations/`)
+
+### 3. Configuration Frontend
+```bash
+# Installer les dépendances
 npm install
 
-# Create .env file
-echo "VITE_API_URL=http://localhost:8000" > .env
+# Créer le fichier .env
+cp .env.example .env
 
-# Start development server
+# Éditer .env avec vos identifiants Supabase
+# VITE_SUPABASE_URL=votre_url_supabase
+# VITE_SUPABASE_ANON_KEY=votre_cle_anonyme
+
+# Lancer le serveur de développement
 npm run dev
 
-# Frontend will be available at http://localhost:5173
+# L'application sera disponible sur http://localhost:5173
 ```
 
-### 4. Build for Production
+### 4. Build pour Production
 ```bash
-# Build frontend
+# Construire l'application
 npm run build
 
-# Preview production build
+# Prévisualiser le build
 npm run preview
 ```
 
-## 📁 Project Structure
+## 📁 Structure du Projet
 
 ```
 Systeme-de-Gestion-de-Tontine/
-├── 📁 public/                     # Static assets
-│   └── logo.jpeg                 # Application logo
-├── 📁 server/                    # Backend API
-│   ├── main.py                  # FastAPI application
-│   ├── database.py              # Database configuration
-│   ├── models.py                # SQLAlchemy models
-│   ├── schemas.py               # Pydantic schemas
-│   ├── crud.py                  # CRUD operations
-│   ├── routers.py               # API routes
-│   ├── init_db.py               # Database initialization
-│   ├── requirements.txt         # Python dependencies
-│   ├── .env                     # Environment variables
-│   └── tontine.db               # SQLite database (dev)
-├── 📁 src/                       # Frontend source code
-│   ├── 📁 components/            # React components
-│   │   ├── AppSidebar.tsx       # Main navigation sidebar
-│   │   ├── Navbar.tsx           # Top navigation bar
-│   │   ├── EmptyState.tsx       # Empty state component
-│   │   ├── AppInitializer.tsx   # Data fetching on app load
-│   │   ├── theme-provider.tsx   # Dark/Light mode provider
-│   │   ├── 📁 credits/          # Credit management components
-│   │   │   └── AddCreditModal.tsx
-│   │   ├── 📁 members/          # Member management components
-│   │   │   ├── AddMemberModal.tsx
-│   │   │   ├── EditMemberModal.tsx
-│   │   │   ├── MemberDetailsSheet.tsx
-│   │   │   └── MemberFinancialSummary.tsx
-│   │   ├── 📁 projects/         # Project management components
-│   │   │   └── AddProjectModal.tsx
-│   │   ├── 📁 sessions/         # Session tracking components
-│   │   │   ├── AddSessionModal.tsx
-│   │   │   └── MeetingSheet.tsx
-│   │   ├── 📁 tontines/         # Tontine management components
-│   │   │   ├── AddTontineModal.tsx
-│   │   │   └── TontineDetailsSheet.tsx
-│   │   └── 📁 ui/               # ShadCN UI components
-│   │       ├── button.tsx
-│   │       ├── card.tsx
-│   │       ├── dialog.tsx
-│   │       ├── form.tsx
-│   │       ├── input.tsx
-│   │       ├── table.tsx
-│   │       ├── badge.tsx
-│   │       ├── sidebar.tsx
-│   │       ├── sheet.tsx
-│   │       └── ... (more components)
-│   ├── 📁 hooks/                # Custom React hooks
-│   │   └── use-mobile.tsx
-│   ├── 📁 i18n/                 # Internationalization
-│   │   ├── config.ts
-│   │   └── 📁 locales/
-│   │       ├── en.json          # English translations
-│   │       └── fr.json          # French translations
-│   ├── 📁 lib/                  # Utility functions
-│   │   └── utils.ts
-│   ├── 📁 pages/                # Page components
-│   │   ├── Dashboard.tsx        # Main dashboard
-│   │   ├── Members.tsx          # Member management (with search & pagination)
-│   │   ├── Tontines.tsx         # Tontine management (with search & pagination)
-│   │   ├── Credits.tsx          # Credit management
-│   │   ├── Sessions.tsx         # Session tracking
-│   │   └── Projects.tsx         # Project management
-│   ├── 📁 services/             # API services
-│   │   ├── api.ts               # Axios configuration
-│   │   ├── memberService.ts     # Member API calls
-│   │   ├── tontineService.ts    # Tontine API calls
-│   │   ├── sessionService.ts    # Session API calls
-│   │   ├── reportService.ts     # Reports API calls
-│   │   └── index.ts             # Service exports
-│   ├── 📁 stores/               # Zustand state stores
-│   │   ├── memberStore.ts       # Member state with async API
-│   │   ├── tontineStore.ts      # Tontine state with async API
-│   │   ├── creditStore.ts
-│   │   ├── sessionStore.ts      # Session state with async API
-│   │   ├── projectStore.ts
-│   │   ├── contributionStore.ts
-│   │   └── penaltyStore.ts
-│   ├── 📁 types/                # TypeScript type definitions
-│   │   └── index.ts
-│   ├── App.tsx                  # Main application component
-│   ├── index.css                # Global styles & Tailwind
-│   ├── main.tsx                 # Application entry point
-│   └── vite-env.d.ts            # Vite type definitions
-├── 📄 .env                      # Frontend environment variables
-├── 📄 .env.template             # Environment variables template
-├── 📄 components.json           # ShadCN configuration
-├── 📄 eslint.config.js          # ESLint configuration
-├── 📄 index.html                # HTML entry point
-├── 📄 LICENSE                   # MIT License
-├── 📄 CONTRIBUTING.md           # Contribution guidelines
-├── 📄 CHANGELOG.md              # Version history
-├── 📄 package.json              # Frontend dependencies & scripts
-├── 📄 postcss.config.js         # PostCSS configuration
-├── 📄 README.md                 # Documentation
-├── 📄 tailwind.config.js        # TailwindCSS configuration
-├── 📄 tsconfig.json             # TypeScript configuration
-└── 📄 vite.config.ts            # Vite configuration
+├── 📁 public/                     # Ressources statiques
+│   └── logo.jpeg                 # Logo de l'application
+├── 📁 supabase/                  # Configuration Supabase
+│   └── 📁 migrations/            # Scripts SQL de migration
+├── 📁 src/                       # Code source frontend
+│   ├── 📁 components/            # Composants React
+│   │   ├── AppSidebar.tsx       # Barre latérale principale
+│   │   ├── Navbar.tsx           # Barre de navigation
+│   │   ├── EmptyState.tsx       # Composant état vide
+│   │   ├── 📁 auth/             # Composants d'authentification
+│   │   ├── 📁 credits/          # Gestion des crédits
+│   │   ├── 📁 members/          # Gestion des membres
+│   │   ├── 📁 projects/         # Gestion des projets
+│   │   ├── 📁 sessions/         # Suivi des séances
+│   │   ├── 📁 tontines/         # Gestion des tontines
+│   │   └── 📁 ui/               # Composants UI ShadCN
+│   ├── 📁 hooks/                # Hooks React personnalisés
+│   ├── 📁 i18n/                 # Internationalisation (FR/EN)
+│   ├── 📁 lib/                  # Fonctions utilitaires
+│   ├── 📁 pages/                # Composants de pages
+│   │   ├── Dashboard.tsx        # Tableau de bord
+│   │   ├── Members.tsx          # Gestion membres
+│   │   ├── Tontines.tsx         # Gestion tontines
+│   │   ├── Credits.tsx          # Gestion crédits
+│   │   ├── Sessions.tsx         # Suivi séances
+│   │   ├── Projects.tsx         # Gestion projets
+│   │   ├── Penalties.tsx        # Gestion pénalités
+│   │   ├── Tours.tsx            # Gestion tours
+│   │   └── Login.tsx            # Page de connexion
+│   ├── 📁 stores/               # Stores Zustand
+│   │   ├── authStore.ts         # État authentification
+│   │   ├── memberStore.ts       # État membres
+│   │   ├── tontineStore.ts      # État tontines
+│   │   ├── creditStore.ts       # État crédits
+│   │   ├── sessionStore.ts      # État séances
+│   │   └── ...
+│   ├── 📁 types/                # Définitions TypeScript
+│   ├── App.tsx                  # Composant principal
+│   ├── index.css                # Styles globaux + Tailwind
+│   └── main.tsx                 # Point d'entrée
+├── 📄 .env                      # Variables d'environnement
+├── 📄 .env.example              # Template variables
+├── 📄 components.json           # Config ShadCN
+├── 📄 package.json              # Dépendances & scripts
+├── 📄 tailwind.config.js        # Config TailwindCSS
+├── 📄 tsconfig.json             # Config TypeScript
+├── 📄 vite.config.ts            # Config Vite
+├── 📄 LICENSE                   # Licence MIT
+└── 📄 README.md                 # Documentation
 ```
 
-## 🎨 UI/UX Highlights
+## 🎨 Interface Utilisateur
 
-### 🌈 **Color Palette**
-- **Primary**: Emerald Green (`emerald-500`, `emerald-600`)
-- **Accent**: Teal highlights
-- **Backgrounds**: Dynamic light/dark mode
-- **Gradients**: Smooth emerald-to-teal gradients on charts
+### 🌈 **Palette de Couleurs**
+- **Primaire** : Vert Émeraude (`emerald-500`, `emerald-600`)
+- **Accent** : Nuances de Teal
+- **Arrière-plans** : Mode clair/sombre dynamique
+- **Dégradés** : Transitions douces émeraude vers teal sur les graphiques
 
 ### ✨ **Animations**
-- Page transitions with Framer Motion
-- Smooth sidebar collapse/expand
-- Hover effects on interactive elements
-- Loading states and skeletons
-- Entrance animations for modals
+- Transitions de page avec Framer Motion
+- Barre latérale rétractable fluide
+- Effets de survol sur éléments interactifs
+- États de chargement et squelettes
+- Animations d'entrée pour les modales
 
-### 📱 **Responsive Design**
-- Mobile-first approach
-- Collapsible sidebar for small screens
-- Responsive tables with horizontal scroll
-- Adaptive card layouts
-- Touch-friendly interface
+### 📱 **Design Responsive**
+- Approche mobile-first
+- Barre latérale rétractable sur petits écrans
+- Tables responsives avec défilement horizontal
+- Disposition adaptative des cartes
+- Interface tactile conviviale
 
-- **Key UI Components**
-- **Status Badges**: Color-coded indicators for various states
-- **Empty States**: Friendly illustrations when no data exists
-- **Data Tables**: Sortable, searchable tables with pagination (10 items per page)
-- **Charts**: Interactive area charts with tooltips
-- **Forms**: Validated forms with real-time error messages
-- **Cards**: Elevated cards with gradients and shadows
-- **Detail Sheets**: Slide-out panels for viewing detailed information
-- **Toast Notifications**: User feedback for all operations
+### 🧩 **Composants Clés**
+- **Badges de Statut** : Indicateurs colorés pour différents états
+- **États Vides** : Illustrations conviviales quand pas de données
+- **Tables de Données** : Tables triables, recherchables avec pagination (10 éléments/page)
+- **Graphiques** : Graphiques interactifs avec info-bulles
+- **Formulaires** : Formulaires validés avec messages d'erreur en temps réel
+- **Cartes** : Cartes surélevées avec dégradés et ombres
+- **Panneaux de Détails** : Panneaux coulissants pour informations détaillées
+- **Notifications Toast** : Retour utilisateur pour toutes opérations
 
-## 🏗️ Architecture
+## 👥 Équipe de Développement
 
-### Frontend Architecture
-```
-┌─────────────────────────────────────────────┐
-│           React Application (SPA)           │
-├─────────────────────────────────────────────┤
-│  Pages → Components → UI Components         │
-│    ↓          ↓            ↓                │
-│  Stores ← Services ← Axios (HTTP Client)    │
-└─────────────────────────────────────────────┘
-                    ↓ HTTP/REST
-┌─────────────────────────────────────────────┐
-│         FastAPI Backend (REST API)          │
-├─────────────────────────────────────────────┤
-│  Routers → CRUD → Models → Database         │
-│              ↓                               │
-│          Schemas (Pydantic)                 │
-└─────────────────────────────────────────────┘
-```
+**Projet réalisé par le Groupe INF2212 - Janvier 2026**
 
-### State Management Flow
-1. **Page Components** trigger actions (e.g., fetch members)
-2. **Zustand Stores** call service functions
-3. **Services** make HTTP requests via Axios
-4. **Backend API** processes requests through routers
-5. **CRUD Operations** interact with database via SQLAlchemy
-6. **Response** flows back through the same chain
-7. **Store Updates** trigger UI re-renders
+### Chef de Projet
+**TEDOM TAFOTSI DIMITRI WILFRIED** (Matricule: 23V2180)
 
-### Data Transformation
-- **Backend → Frontend**: French field names (nom, prenom) → English (firstName, lastName)
-- **Frontend → Backend**: English field names → French for API compatibility
-- **Service Layer**: Handles all transformations transparently
+### Membres de l'Équipe
 
-## 📜 Available Scripts
+| # | Nom | Matricule |
+|---|-----|-----------|
+| 2 | NBIAH NJOMI ALAN KHALED | 24H2037 |
+| 3 | DJOTASSA WAMBA ADRIEN DJERY | 24F2992 |
+| 4 | TEKENG KAMWÉLÉ JUNIOR CAMBELL | 23U2686 |
+| 5 | ELOUNDOU EMMANUEL RICHARD | 22T2958 |
+| 6 | MAMBOUNE NCHOURUPOUO BASMA | 24F2976 |
+| 7 | ABDEL ADY TCHALLA .N | 23V2538 |
+| 8 | BAKWO NKEN BERNARDIN ULRICH | 23V2277 |
+| 9 | KUEPOUO FOKAM ARIOL IDRISS | 23U2815 |
+| 10 | MDUTU YOUGOUM MARC SAMUEL | 24G2779 |
+| 11 | SARMBOYE PAULINE FIDÈLE | 18S2467 |
+| 12 | AMOUGOU MINKOULOU JOSEPH NEIL | 23V2226 |
+| 13 | PETANG DANIEL | 23V2121 |
+| 14 | DIMITRI DJINKEU DURAND | 23V2285 |
+| 15 | TCHEUTCHOUA LENCHE RAISSA | 24F2440 |
 
-### Frontend Scripts
-| Script | Command | Description |
-|--------|---------|-------------|
-| **Development** | `npm run dev` | Start development server with HMR |
-| **Build** | `npm run build` | Build for production |
-| **Preview** | `npm run preview` | Preview production build locally |
-| **Lint** | `npm run lint` | Run ESLint for code quality |
+### Encadrement Académique
+**Professeur** : Etienne Kouokam  
+**Cours** : INF2212 - Implémentation des Bases de Données  
+**Institution** : Université de Yaoundé I - Faculté des Sciences - Département d'Informatique
 
-### Backend Scripts
-| Script | Command | Description |
-|--------|---------|-------------|
-| **Start Server** | `uvicorn main:app --reload` | Start development server with auto-reload |
-| **Production** | `uvicorn main:app --host 0.0.0.0 --port 8000` | Start production server |
-| **Init DB** | `python init_db.py` | Initialize database tables |
-| **Install Deps** | `pip install -r requirements.txt` | Install Python dependencies |
+## 📄 Licence
 
-## 🔧 Configuration
-
-### Frontend Environment Variables
-Create a `.env` file in the root directory:
-```env
-VITE_API_URL=http://localhost:8000
-VITE_APP_NAME="Système de Gestion de Tontine"
-VITE_DEFAULT_LANGUAGE="fr"
-```
-
-### Backend Environment Variables
-Create a `.env` file in the `server/` directory:
-```env
-DATABASE_URL=sqlite:///./tontine.db
-# For PostgreSQL in production:
-# DATABASE_URL=postgresql://user:password@localhost/tontine_db
-```
-
-### API Endpoints
-The backend provides the following main endpoints:
-
-**Members**
-- `GET /api/membres` - List all members
-- `GET /api/membres/{id}` - Get member by ID
-- `POST /api/membres` - Create new member
-- `PUT /api/membres/{id}` - Update member
-- `DELETE /api/membres/{id}` - Delete member
-
-**Tontines**
-- `GET /api/tontines` - List all tontines
-- `GET /api/tontines/{id}` - Get tontine by ID
-- `POST /api/tontines` - Create new tontine
-- `PUT /api/tontines/{id}` - Update tontine
-- `DELETE /api/tontines/{id}` - Delete tontine
-
-**Sessions**
-- `GET /api/seances` - List all sessions
-- `GET /api/seances/{id}` - Get session by ID
-- `POST /api/seances` - Create new session
-- `PUT /api/seances/{id}` - Update session
-- `DELETE /api/seances/{id}` - Delete session
-
-**Reports**
-- `GET /api/reports/situation_membre/{id}` - Get member financial report
-- `GET /api/dashboard` - Get dashboard statistics
-
-Full API documentation available at `http://localhost:8000/docs` (Swagger UI)
-
-### Tailwind Configuration
-The application uses custom Tailwind configuration with:
-- Emerald as primary color
-- Custom animations
-- Extended shadows and gradients
-- Dark mode support
-
-### TypeScript Configuration
-- Strict mode enabled
-- Path aliases configured (`@/components`, `@/lib`, etc.)
-- Full type safety across the application
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes
-4. Run linter: `npm run lint`
-5. Build to verify: `npm run build`
-6. Commit changes: `git commit -m 'Add amazing feature'`
-7. Push to branch: `git push origin feature/amazing-feature`
-8. Open a Pull Request
-
-### Code Standards
-- ✅ Follow TypeScript best practices
-- ✅ Use meaningful commit messages
-- ✅ Maintain consistent code style
-- ✅ Update documentation when needed
-- ✅ Test thoroughly before committing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ---
 
 <div align="center">
 
-**Built with ❤️ by [DimitriTedom (SnowDev)](https://github.com/DimitriTedom)**
+**Développé avec ❤️ par l'équipe INF2212**
 
-**For the amazing developers at Worketyamo-Students 🎓**
+**Université de Yaoundé I - Faculté des Sciences**  
+**Département d'Informatique - Janvier 2026**
 
 </div>
 

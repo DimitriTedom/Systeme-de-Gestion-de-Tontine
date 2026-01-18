@@ -52,6 +52,15 @@ export function EditProjectModal({ projectId, open, onOpenChange }: EditProjectM
     montant_alloue: z.number().min(0, 'Le montant alloué doit être positif'),
     statut: z.enum(['planifie', 'collecte_fonds', 'en_cours', 'termine', 'annule']),
     notes: z.string().optional(),
+  }).refine((data) => {
+    // Validation : montant_alloue ne doit pas dépasser le budget
+    if (project && data.montant_alloue > project.budget) {
+      return false;
+    }
+    return true;
+  }, {
+    message: `Le montant alloué ne peut pas dépasser le budget total`,
+    path: ['montant_alloue'],
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -86,15 +95,22 @@ export function EditProjectModal({ projectId, open, onOpenChange }: EditProjectM
         montant_alloue: number;
         statut: typeof data.statut;
         notes?: string;
-        date_fin_reelle?: string;
+        date_fin_reelle?: string | null;
       } = {
         montant_alloue: data.montant_alloue,
         statut: data.statut,
         notes: data.notes,
       };
 
-      if (data.statut === 'termine' && !project?.date_fin_reelle) {
-        updates.date_fin_reelle = new Date().toISOString().split('T')[0];
+      // Gérer la date de fin selon le statut
+      if (data.statut === 'termine') {
+        // Si on passe à terminé, mettre la date du jour si pas déjà définie
+        if (!project?.date_fin_reelle) {
+          updates.date_fin_reelle = new Date().toISOString().split('T')[0];
+        }
+      } else if (project?.date_fin_reelle && data.statut !== 'termine') {
+        // Si on repasse à un autre statut, retirer la date de fin
+        updates.date_fin_reelle = null;
       }
 
       await updateProject(projectId, updates);
@@ -168,15 +184,51 @@ export function EditProjectModal({ projectId, open, onOpenChange }: EditProjectM
                 <FormItem>
                   <FormLabel>Montant alloué (XAF)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={field.value}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => field.onChange(project.budget * 0.25)}
+                        >
+                          25%
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => field.onChange(project.budget * 0.5)}
+                        >
+                          50%
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => field.onChange(project.budget * 0.75)}
+                        >
+                          75%
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => field.onChange(project.budget)}
+                        >
+                          100%
+                        </Button>
+                      </div>
+                    </div>
                   </FormControl>
                   <FormDescription>
                     Montant des fonds actuellement alloués à ce projet

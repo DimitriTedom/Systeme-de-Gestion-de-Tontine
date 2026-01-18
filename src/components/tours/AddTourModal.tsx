@@ -152,12 +152,16 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
         nom: b.nom,
         prenom: b.prenom,
         hasReceivedTour: !b.eligible,
+        toursReceived: b.nb_tours_recus,
+        totalContributed: b.total_cotise,
       }))
     : tontineMembers.map(m => ({
         id: m.id,
         nom: m.nom,
         prenom: m.prenom,
         hasReceivedTour: false,
+        toursReceived: 0,
+        totalContributed: 0,
       }));
 
   return (
@@ -281,13 +285,28 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
                             value={member.id}
                             disabled={member.hasReceivedTour}
                           >
-                            <div className="flex items-center justify-between w-full gap-2">
-                              <span>{member.prenom} {member.nom}</span>
-                              {member.hasReceivedTour && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {t('tours.alreadyReceived')}
-                                </Badge>
-                              )}
+                            <div className="flex flex-col gap-1 py-1">
+                              <div className="flex items-center justify-between w-full gap-2">
+                                <span className="font-medium">{member.prenom} {member.nom}</span>
+                                {member.hasReceivedTour ? (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {t('tours.alreadyReceived')}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="default" className="text-xs bg-green-600">
+                                    Éligible
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex gap-3 text-xs text-muted-foreground">
+                                <span>Tours reçus: {member.toursReceived || 0}</span>
+                                <span>•</span>
+                                <span>Total cotisé: {new Intl.NumberFormat('fr-FR', {
+                                  style: 'currency',
+                                  currency: 'XAF',
+                                  minimumFractionDigits: 0,
+                                }).format(member.totalContributed || 0)}</span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))

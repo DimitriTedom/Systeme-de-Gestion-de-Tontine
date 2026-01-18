@@ -119,13 +119,14 @@ CREATE TABLE IF NOT EXISTS penalite (
     id_seance UUID REFERENCES seance(id) ON DELETE SET NULL,
     id_tontine UUID REFERENCES tontine(id) ON DELETE SET NULL,
     montant DECIMAL(12, 2) NOT NULL CHECK (montant >= 0),
+    montant_paye DECIMAL(12, 2) DEFAULT 0 CHECK (montant_paye >= 0),
     raison VARCHAR(255) NOT NULL,
     type_penalite VARCHAR(50) DEFAULT 'autre' 
         CHECK (type_penalite IN ('absence', 'retard_cotisation', 'mauvaise_conduite', 'autre')),
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     date_paiement DATE,
     statut VARCHAR(20) DEFAULT 'non_paye' 
-        CHECK (statut IN ('non_paye', 'paye', 'annule')),
+        CHECK (statut IN ('non_paye', 'paye', 'partiellement_paye', 'annule')),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -621,40 +622,52 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 --              informations de participation et cotisation attendue
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_membres_seance(id_seance_param UUID)
-RETURNS JSON AS $$
-DECLARE
-    v_result JSON;
+RETURNS TABLE (
+    id_membre UUID,
+    nom TEXT,
+    prenom TEXT,
+    email TEXT,
+    telephone TEXT,
+    nb_parts INTEGER,
+    montant_attendu NUMERIC,
+    expected_contribution NUMERIC,
+    present BOOLEAN,
+    montant_paye NUMERIC,
+    montant_cotise NUMERIC,
+    deja_cotise BOOLEAN,
+    statut_cotisation TEXT,
+    penalites_impayees NUMERIC
+) AS $$
 BEGIN
-    SELECT json_agg(
-        json_build_object(
-            'id_membre', m.id,
-            'nom', m.nom,
-            'prenom', m.prenom,
-            'email', m.email,
-            'telephone', m.telephone,
-            'nb_parts', p.nb_parts,
-            'montant_attendu', t.montant_cotisation * p.nb_parts,
-            'present', COALESCE(pr.present, FALSE),
-            'montant_paye', COALESCE(c.montant, 0),
-            'statut_cotisation', c.statut,
-            'penalites_impayees', (
-                SELECT COALESCE(SUM(pen.montant), 0)
-                FROM penalite pen
-                WHERE pen.id_membre = m.id AND pen.statut = 'non_paye'
-            )
-        )
-    )
-    INTO v_result
+    RETURN QUERY
+    SELECT 
+        m.id AS id_membre,
+        m.nom::TEXT,
+        m.prenom::TEXT,
+        m.email::TEXT,
+        m.telephone::TEXT,
+        p.nb_parts,
+        (t.montant_cotisation * p.nb_parts) AS montant_attendu,
+        (t.montant_cotisation * p.nb_parts) AS expected_contribution,
+        COALESCE(pr.present, FALSE) AS present,
+        COALESCE(c.montant, 0) AS montant_paye,
+        COALESCE(c.montant, 0) AS montant_cotise,
+        COALESCE(pr.present, FALSE) AS deja_cotise,
+        c.statut::TEXT AS statut_cotisation,
+        COALESCE(pen_sum.total, 0) AS penalites_impayees
     FROM seance s
     JOIN tontine t ON s.id_tontine = t.id
     JOIN participe p ON p.id_tontine = t.id AND p.statut = 'actif'
     JOIN membre m ON p.id_membre = m.id
     LEFT JOIN presence pr ON pr.id_membre = m.id AND pr.id_seance = s.id
     LEFT JOIN cotisation c ON c.id_membre = m.id AND c.id_seance = s.id
+    LEFT JOIN LATERAL (
+        SELECT SUM(pen.montant) AS total
+        FROM penalite pen
+        WHERE pen.id_membre = m.id AND pen.statut = 'non_paye'
+    ) pen_sum ON TRUE
     WHERE s.id = id_seance_param
     ORDER BY m.nom, m.prenom;
-    
-    RETURN COALESCE(v_result, '[]'::json);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -793,7 +806,208 @@ LEFT JOIN cotisation c ON t.id = c.id_tontine
 GROUP BY t.id;
 
 -- ============================================================================
--- SECTION 7: DONNÉES DE TEST (Optionnel - à supprimer en production)
+-- SECTION 7: FONCTIONS RPC POUR GESTION DES CRÉDITS
+-- ============================================================================
+
+-- FONCTION: verifier_credit_actif
+-- Description: Vérifie si un membre a un crédit actif (en_cours, decaisse, en_retard)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION verifier_credit_actif(id_membre_param UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    v_has_active_credit BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 
+        FROM credit 
+        WHERE id_membre = id_membre_param 
+        AND statut IN ('en_cours', 'decaisse', 'en_retard', 'approuve')
+    ) INTO v_has_active_credit;
+    
+    RETURN v_has_active_credit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- FONCTION: mettre_a_jour_credits_en_retard
+-- Description: Met à jour automatiquement les crédits dont la date de remboursement est dépassée
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION mettre_a_jour_credits_en_retard()
+RETURNS TABLE (
+    credits_mis_a_jour INTEGER,
+    liste_credits_retard JSON
+) AS $$
+DECLARE
+    v_count INTEGER;
+    v_credits JSON;
+BEGIN
+    -- Mettre à jour les crédits en retard
+    WITH updated AS (
+        UPDATE credit
+        SET statut = 'en_retard',
+            updated_at = NOW()
+        WHERE statut IN ('en_cours', 'decaisse')
+        AND date_remboursement_prevue < CURRENT_DATE
+        AND solde > 0
+        RETURNING id, id_membre, montant, solde, date_remboursement_prevue
+    )
+    SELECT 
+        COUNT(*)::INTEGER,
+        COALESCE(json_agg(json_build_object(
+            'id', id,
+            'id_membre', id_membre,
+            'montant', montant,
+            'solde', solde,
+            'date_remboursement_prevue', date_remboursement_prevue
+        )), '[]'::json)
+    INTO v_count, v_credits
+    FROM updated;
+    
+    RETURN QUERY SELECT v_count, v_credits;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- FONCTION: rembourser_credit
+-- Description: Traite un remboursement de crédit (partiel ou total)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION rembourser_credit(
+    id_credit_param UUID,
+    montant_paye NUMERIC
+)
+RETURNS TABLE (
+    id UUID,
+    montant NUMERIC,
+    solde NUMERIC,
+    montant_rembourse NUMERIC,
+    statut TEXT,
+    est_rembourse_complet BOOLEAN
+) AS $$
+DECLARE
+    v_credit RECORD;
+    v_nouveau_solde NUMERIC;
+    v_nouveau_montant_rembourse NUMERIC;
+    v_nouveau_statut TEXT;
+BEGIN
+    -- Récupérer le crédit
+    SELECT * INTO v_credit FROM credit WHERE credit.id = id_credit_param;
+    
+    IF v_credit IS NULL THEN
+        RAISE EXCEPTION 'Crédit non trouvé';
+    END IF;
+    
+    -- Calculer les nouvelles valeurs
+    v_nouveau_montant_rembourse := v_credit.montant_rembourse + montant_paye;
+    v_nouveau_solde := GREATEST(0, v_credit.solde - montant_paye);
+    
+    -- Déterminer le nouveau statut
+    IF v_nouveau_solde = 0 THEN
+        v_nouveau_statut := 'rembourse';
+    ELSIF v_credit.statut = 'en_retard' AND v_nouveau_solde > 0 THEN
+        -- Reste en retard si pas complètement remboursé
+        v_nouveau_statut := 'en_retard';
+    ELSE
+        v_nouveau_statut := 'en_cours';
+    END IF;
+    
+    -- Mettre à jour le crédit
+    UPDATE credit
+    SET 
+        montant_rembourse = v_nouveau_montant_rembourse,
+        solde = v_nouveau_solde,
+        statut = v_nouveau_statut,
+        updated_at = NOW()
+    WHERE credit.id = id_credit_param;
+    
+    -- Retourner les informations du crédit mis à jour
+    RETURN QUERY
+    SELECT 
+        c.id,
+        c.montant,
+        c.solde,
+        c.montant_rembourse,
+        c.statut::TEXT,
+        (c.solde = 0) AS est_rembourse_complet
+    FROM credit c
+    WHERE c.id = id_credit_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ----------------------------------------------------------------------------
+-- FONCTION: payer_penalite
+-- Description: Enregistre un paiement partiel ou total d'une pénalité
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION payer_penalite(
+    id_penalite_param UUID,
+    montant_paye NUMERIC
+)
+RETURNS TABLE(
+    montant_total NUMERIC,
+    montant_paye_total NUMERIC,
+    montant_restant NUMERIC,
+    statut TEXT,
+    est_paye_complet BOOLEAN
+) AS $$
+DECLARE
+    v_penalite RECORD;
+    v_nouveau_montant_paye NUMERIC;
+    v_montant_restant NUMERIC;
+    v_nouveau_statut TEXT;
+BEGIN
+    -- Récupérer la pénalité
+    SELECT * INTO v_penalite FROM penalite WHERE penalite.id = id_penalite_param;
+    
+    IF v_penalite IS NULL THEN
+        RAISE EXCEPTION 'Pénalité non trouvée';
+    END IF;
+    
+    -- Vérifier que la pénalité n'est pas annulée
+    IF v_penalite.statut = 'annule' THEN
+        RAISE EXCEPTION 'Impossible de payer une pénalité annulée';
+    END IF;
+    
+    -- Calculer les nouvelles valeurs
+    v_nouveau_montant_paye := COALESCE(v_penalite.montant_paye, 0) + montant_paye;
+    
+    -- Ne pas dépasser le montant total
+    IF v_nouveau_montant_paye > v_penalite.montant THEN
+        v_nouveau_montant_paye := v_penalite.montant;
+    END IF;
+    
+    v_montant_restant := v_penalite.montant - v_nouveau_montant_paye;
+    
+    -- Déterminer le nouveau statut
+    IF v_montant_restant = 0 THEN
+        v_nouveau_statut := 'paye';
+    ELSIF v_nouveau_montant_paye > 0 THEN
+        v_nouveau_statut := 'partiellement_paye';
+    ELSE
+        v_nouveau_statut := 'non_paye';
+    END IF;
+    
+    -- Mettre à jour la pénalité
+    UPDATE penalite
+    SET 
+        montant_paye = v_nouveau_montant_paye,
+        statut = v_nouveau_statut,
+        date_paiement = CASE 
+            WHEN v_nouveau_statut = 'paye' THEN CURRENT_DATE
+            ELSE date_paiement
+        END,
+        updated_at = NOW()
+    WHERE penalite.id = id_penalite_param;
+    
+    -- Retourner les informations de la pénalité mise à jour
+    RETURN QUERY
+    SELECT 
+        v_penalite.montant,
+        v_nouveau_montant_paye,
+        v_montant_restant,
+        v_nouveau_statut,
+        (v_montant_restant = 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- SECTION 8: DONNÉES DE TEST (Optionnel - à supprimer en production)
 -- ============================================================================
 
 -- Décommenter pour insérer des données de test

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Membre, InsertTables, UpdateTables } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface MemberStore {
   members: Membre[];
@@ -71,8 +72,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       return data;
     } catch (error) {
+      logError('addMember', error);
+      const errorDetails = handleSupabaseError(error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout du membre',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -98,8 +101,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
+      logError('updateMember', error);
+      const errorDetails = handleSupabaseError(error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -123,8 +128,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
+      logError('deleteMember', error);
+      const errorDetails = handleSupabaseError(error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -148,8 +155,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       set({ isLoading: false });
     } catch (error) {
+      logError('registerToTontine', error);
+      const errorDetails = handleSupabaseError(error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de l\'inscription',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -171,8 +180,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       set({ isLoading: false });
     } catch (error) {
+      logError('unregisterFromTontine', error);
+      const errorDetails = handleSupabaseError(error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de la désinscription',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;

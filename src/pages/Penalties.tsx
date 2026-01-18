@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, Ban } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, Ban, DollarSign, X } from 'lucide-react';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import type { Penalite } from '@/types/database.types';
 import {
   Table,
   TableBody,
@@ -18,14 +20,17 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AddPenaltyModal } from '@/components/penalties/AddPenaltyModal';
+import { PayPenaltyModal } from '@/components/penalties/PayPenaltyModal';
 
 export default function Penalties() {
   const { t } = useTranslation();
-  const { penalties, fetchPenalties, markAsPaid, deletePenalty, isLoading, getPendingPenalties, getPaidPenalties } = usePenaltyStore();
+  const { penalties, fetchPenalties, markAsPaid, cancelPenalty, deletePenalty, isLoading, getPendingPenalties, getPaidPenalties } = usePenaltyStore();
   const { getMemberById } = useMemberStore();
   const { getSessionById } = useSessionStore();
   const { getTontineById } = useTontineStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedPenaltyForPayment, setSelectedPenaltyForPayment] = useState<Penalite | null>(null);
 
   useEffect(() => {
     fetchPenalties();
@@ -53,6 +58,8 @@ export default function Penalties() {
         return 'success';
       case 'non_paye':
         return 'warning';
+      case 'partiellement_paye':
+        return 'default';
       case 'annule':
         return 'secondary';
       default:
@@ -64,6 +71,7 @@ export default function Penalties() {
     const labels: Record<string, string> = {
       'paye': 'Payée',
       'non_paye': 'En attente',
+      'partiellement_paye': 'Partiellement payée',
       'annule': 'Annulée',
     };
     return labels[status] || status;
@@ -217,7 +225,19 @@ export default function Penalties() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-orange-600">
-                        {formatCurrency(penalty.montant)}
+                        <div>
+                          <div>{formatCurrency(penalty.montant)}</div>
+                          {penalty.montant_paye > 0 && (
+                            <div className="text-xs text-green-600">
+                              Payé: {formatCurrency(penalty.montant_paye)}
+                            </div>
+                          )}
+                          {penalty.statut === 'partiellement_paye' && (
+                            <div className="text-xs text-orange-600">
+                              Reste: {formatCurrency(penalty.montant - penalty.montant_paye)}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-[200px] truncate" title={penalty.raison}>
@@ -231,24 +251,57 @@ export default function Penalties() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          {penalty.statut === 'non_paye' && (
+                          {(penalty.statut === 'non_paye' || penalty.statut === 'partiellement_paye') && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => markAsPaid(penalty.id)}
-                              title={t('penalties.markAsPaid')}
+                              onClick={() => setSelectedPenaltyForPayment(penalty)}
+                              title="Payer la pénalité"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              {t('penalties.pay')}
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              Payer
+                            </Button>
+                          )}
+                          {(penalty.statut === 'non_paye' || penalty.statut === 'partiellement_paye') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm('Êtes-vous sûr de vouloir annuler cette pénalité ?')) {
+                                  try {
+                                    await cancelPenalty(penalty.id);
+                                    toast.success('Pénalité annulée', {
+                                      description: 'La pénalité a été annulée avec succès',
+                                    });
+                                  } catch (error) {
+                                    toast.error('Erreur', {
+                                      description: error instanceof Error ? error.message : 'Erreur lors de l\'annulation',
+                                    });
+                                  }
+                                }
+                              }}
+                              title="Annuler la pénalité"
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Annuler
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="icon"
                             title={t('common.delete')}
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(t('penalties.confirmDelete'))) {
-                                deletePenalty(penalty.id);
+                                try {
+                                  await deletePenalty(penalty.id);
+                                  toast.success('Pénalité supprimée', {
+                                    description: `La pénalité de ${formatCurrency(penalty.montant)} a été supprimée`,
+                                  });
+                                } catch (error) {
+                                  toast.error('Erreur', {
+                                    description: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+                                  });
+                                }
                               }
                             }}
                           >
@@ -268,6 +321,14 @@ export default function Penalties() {
       <AddPenaltyModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
+      />
+
+      <PayPenaltyModal
+        penalty={selectedPenaltyForPayment}
+        open={selectedPenaltyForPayment !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPenaltyForPayment(null);
+        }}
       />
     </div>
   );

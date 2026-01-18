@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -42,6 +43,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
   const { addProject } = useProjectStore();
   const { tontines } = useTontineStore();
   const { members } = useMemberStore();
+  const { toast } = useToast();
 
   // Schema defined inside component to access t() function for i18n
   const projectSchema = z.object({
@@ -101,25 +103,35 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
     },
   });
 
-  const onSubmit = (data: ProjectFormData) => {
+  const onSubmit = async (data: ProjectFormData) => {
     const dateDebut = new Date(data.startDate).toISOString().split('T')[0];
     const dateCible = data.targetDate ? new Date(data.targetDate).toISOString().split('T')[0] : null;
 
-    addProject({
-      id_tontine: data.tontineId,
-      id_responsable: data.responsibleMemberId || null,
-      nom: data.name,
-      description: data.description,
-      budget: data.budget,
-      montant_alloue: 0,
-      date_debut: dateDebut,
-      date_cible: dateCible,
-      date_fin_reelle: null,
-      statut: 'planifie',
-    });
+    try {
+      await addProject({
+        id_tontine: data.tontineId,
+        id_responsable: data.responsibleMemberId || null,
+        nom: data.name,
+        description: data.description,
+        budget: data.budget,
+        montant_alloue: 0,
+        date_debut: dateDebut,
+        date_cible: dateCible,
+        date_fin_reelle: null,
+        statut: 'planifie',
+      });
 
-    form.reset();
-    onOpenChange(false);
+      toast.success('Projet créé avec succès', {
+        description: `Le projet "${data.name}" a été créé avec un budget de ${data.budget.toLocaleString()} XAF.`,
+      });
+
+      form.reset();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Erreur lors de la création', {
+        description: error instanceof Error ? error.message : 'Impossible de créer le projet.',
+      });
+    }
   };
 
   return (

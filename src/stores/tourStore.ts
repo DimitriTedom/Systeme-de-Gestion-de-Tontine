@@ -173,8 +173,7 @@ export const useTourStore = create<TourStore>((set, get) => ({
       const { data: existingTours, error: tourError } = await supabase
         .from('tour')
         .select('id_beneficiaire')
-        .eq('id_tontine', tontineId)
-        .eq('statut', 'effectue');
+        .eq('id_tontine', tontineId);
 
       if (tourError) throw tourError;
 

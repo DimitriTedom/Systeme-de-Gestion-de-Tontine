@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Cotisation, InsertTables, UpdateTables } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface ContributionStore {
   contributions: Cotisation[];

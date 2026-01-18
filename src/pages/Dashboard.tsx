@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DollarSign, Users, CreditCard, AlertTriangle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,16 +32,36 @@ import { useToast } from '@/components/ui/toast-provider';
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { sessions } = useSessionStore();
-  const { contributions } = useContributionStore();
-  const { credits } = useCreditStore();
-  const { penalties } = usePenaltyStore();
-  const { members } = useMemberStore();
-  const { tontines } = useTontineStore();
+  const { sessions, fetchSessions } = useSessionStore();
+  const { contributions, fetchContributions } = useContributionStore();
+  const { credits, fetchCredits } = useCreditStore();
+  const { penalties, fetchPenalties } = usePenaltyStore();
+  const { members, fetchMembers } = useMemberStore();
+  const { tontines, fetchTontines } = useTontineStore();
   const { toast } = useToast();
   const [showAGReport, setShowAGReport] = useState(false);
   const [agReportData, setAgReportData] = useState<AGSynthesisReport | null>(null);
   const [isLoadingAGReport, setIsLoadingAGReport] = useState(false);
+
+  // Fetch all data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await Promise.all([
+          fetchSessions(),
+          fetchContributions(),
+          fetchCredits(),
+          fetchPenalties(),
+          fetchMembers(),
+          fetchTontines(),
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    };
+    
+    loadData();
+  }, [fetchSessions, fetchContributions, fetchCredits, fetchPenalties, fetchMembers, fetchTontines]);
 
   const handleGenerateAGReport = async () => {
     setIsLoadingAGReport(true);
@@ -58,12 +78,28 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate total cash in hand
-  const totalContributions = contributions.reduce((sum, c) => sum + c.montant, 0);
+  // Calculate total cash in hand - Real money flow tracking
+  // Money IN
+  const totalContributions = contributions
+    .filter(c => c.statut === 'complete') // Only count completed contributions
+    .reduce((sum, c) => sum + c.montant, 0);
+  
+  const totalPenaltiesPaid = penalties
+    .filter(p => p.statut === 'paye' || p.statut === 'partiellement_paye')
+    .reduce((sum, p) => sum + (p.montant_paye || p.montant), 0);
+  
+  const totalCreditRepayments = credits
+    .reduce((sum, c) => sum + (c.montant_rembourse || 0), 0);
+  
+  // Money OUT
   const totalCreditsGranted = credits
     .filter(c => c.statut === 'decaisse' || c.statut === 'en_cours')
     .reduce((sum, c) => sum + c.montant, 0);
-  const totalCashInHand = totalContributions - totalCreditsGranted;
+  
+  // Calculate cash in hand
+  const totalMoneyIn = totalContributions + totalPenaltiesPaid + totalCreditRepayments;
+  const totalMoneyOut = totalCreditsGranted;
+  const totalCashInHand = totalMoneyIn - totalMoneyOut;
 
   // Calculate contribution trends (last 6 sessions)
   const contributionTrends = sessions
@@ -176,7 +212,9 @@ export default function Dashboard() {
             <CardContent className="relative z-10">
               <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(totalCashInHand)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Cotisations - Crédits accordés
+                {totalContributions > 0 || totalCreditsGranted > 0 
+                  ? `Entrées: ${formatCurrency(totalMoneyIn)} • Sorties: ${formatCurrency(totalMoneyOut)}`
+                  : "Aucune transaction enregistrée"}
               </p>
             </CardContent>
           </Card>
@@ -262,6 +300,14 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {contributionTrends.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="text-center">
+                  <p className="text-sm">Aucune session enregistrée</p>
+                  <p className="text-xs mt-1">Les données apparaîtront après la création de sessions</p>
+                </div>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={contributionTrends}>
                 <defs>
@@ -315,6 +361,7 @@ export default function Dashboard() {
                 />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -327,6 +374,14 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {credits.filter(c => c.statut === 'en_cours').length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="text-center">
+                  <p className="text-sm">Aucun crédit actif</p>
+                  <p className="text-xs mt-1">Les statistiques apparaîtront après l'octroi de crédits</p>
+                </div>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -356,6 +411,7 @@ export default function Dashboard() {
                 <Legend wrapperStyle={{ fontSize: '14px', fontWeight: 500 }} />
               </PieChart>
             </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -368,6 +424,14 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {contributionTrends.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="text-center">
+                  <p className="text-sm">Aucune donnée de présence</p>
+                  <p className="text-xs mt-1">Créez des sessions pour suivre la présence</p>
+                </div>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={contributionTrends}>
                 <defs>
@@ -406,6 +470,7 @@ export default function Dashboard() {
                 />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 

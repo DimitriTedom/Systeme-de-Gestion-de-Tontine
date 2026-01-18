@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Projet, InsertTables, UpdateTables } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface ProjectStore {
   projects: Projet[];
@@ -163,7 +164,24 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     if (!project) throw new Error('Projet non trouvé');
 
     const newAmount = project.montant_alloue + amount;
-    const newStatut = newAmount >= project.budget ? 'en_cours' : 'collecte_fonds';
+    
+    // Déterminer le nouveau statut en fonction du montant alloué
+    let newStatut = project.statut;
+    
+    if (project.statut === 'planifie' && newAmount > 0) {
+      // Premier financement : planifie → collecte_fonds
+      newStatut = 'collecte_fonds';
+    }
+    
+    if (newAmount >= project.budget && (project.statut === 'planifie' || project.statut === 'collecte_fonds')) {
+      // Budget atteint : → en_cours
+      newStatut = 'en_cours';
+    }
+    
+    if (newAmount < project.budget && project.statut === 'en_cours') {
+      // Retour en collecte si on retire des fonds
+      newStatut = 'collecte_fonds';
+    }
 
     await get().updateProject(id, {
       montant_alloue: newAmount,

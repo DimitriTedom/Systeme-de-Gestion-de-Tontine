@@ -92,7 +92,15 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
 
     setIsSubmitting(true);
     try {
-      await updateMember(memberId, data);
+      // Mapper les champs du formulaire vers les noms français de la base de données
+      await updateMember(memberId, {
+        nom: data.lastName,
+        prenom: data.firstName,
+        email: data.email,
+        telephone: data.phone,
+        adresse: data.address || null,
+        statut: data.status,
+      });
       
       if (storeError) {
         toast.error(t('members.updateError'), {

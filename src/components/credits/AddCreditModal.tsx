@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useCreditStore } from '@/stores/creditStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -41,6 +42,7 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
   const { addCredit } = useCreditStore();
   const { members } = useMemberStore();
   const { tontines } = useTontineStore();
+  const { toast } = useToast();
 
   const creditSchema = z.object({
     tontineId: z.string().min(1, t('credits.validation.tontineRequired')),
@@ -80,25 +82,39 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
     },
   });
 
-  const onSubmit = (data: CreditFormData) => {
+  const onSubmit = async (data: CreditFormData) => {
     // Calculate repayment amount with interest
     const interestAmount = (data.amount * data.interestRate) / 100;
     const repaymentAmount = data.amount + interestAmount;
 
-    addCredit({
-      id_tontine: data.tontineId,
-      id_membre: data.memberId,
-      montant: data.amount,
-      solde: repaymentAmount,
-      taux_interet: data.interestRate,
-      date_remboursement_prevue: data.dueDate,
-      montant_rembourse: 0,
-      statut: 'en_attente',
-      objet: data.purpose || null,
-    });
+    try {
+      await addCredit({
+        id_tontine: data.tontineId,
+        id_membre: data.memberId,
+        montant: data.amount,
+        solde: repaymentAmount,
+        taux_interet: data.interestRate,
+        date_remboursement_prevue: data.dueDate,
+        montant_rembourse: 0,
+        statut: 'en_attente',
+        objet: data.purpose || null,
+      });
 
-    form.reset();
-    onOpenChange(false);
+      toast.success('Crédit créé avec succès', {
+        description: `Le crédit de ${data.amount.toLocaleString()} XAF a été créé et est en attente d'approbation.`,
+      });
+
+      form.reset();
+      onOpenChange(false);
+    } catch (error) {
+      // Afficher une notification d'erreur
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du crédit';
+      
+      toast.error('Impossible de créer le crédit', {
+        description: errorMessage,
+        duration: 5000,
+      });
+    }
   };
 
   return (

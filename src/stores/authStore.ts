@@ -139,8 +139,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        set({ error: error.message, isLoading: false });
-        return;
+        console.warn('Supabase signOut error:', error.message);
+        // Continue anyway to clear local state
       }
 
       set({
@@ -149,8 +149,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
+      console.error('Error during signOut:', error);
+      // Still clear the session locally even if Supabase fails
       set({
-        error: error instanceof Error ? error.message : 'Erreur de déconnexion',
+        user: null,
+        session: null,
+        error: null, // Don't show error to user on logout
         isLoading: false,
       });
     }

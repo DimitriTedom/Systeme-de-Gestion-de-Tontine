@@ -4,6 +4,7 @@ import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useToast } from '@/components/ui/toast-provider';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
   const { t } = useTranslation();
   const { addSession, getSessionsByTontineId } = useSessionStore();
   const { tontines } = useTontineStore();
+  const { toast } = useToast();
 
   const formSchema = z.object({
     tontineId: z.string().min(1, t('sessions.validation.tontineRequired')),
@@ -73,22 +75,34 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     // Calculate session number based on existing sessions for this tontine
     const existingSessions = getSessionsByTontineId(data.tontineId);
     const sessionNumber = existingSessions.length + 1;
 
-    addSession({
-      id_tontine: data.tontineId,
-      numero_seance: sessionNumber,
-      date: data.date,
-      lieu: data.location,
-      ordre_du_jour: data.agenda,
-      notes: data.notes,
-      statut: 'programmee',
-    });
-    form.reset();
-    onOpenChange(false);
+    try {
+      await addSession({
+        id_tontine: data.tontineId,
+        numero_seance: sessionNumber,
+        date: data.date,
+        lieu: data.location,
+        ordre_du_jour: data.agenda,
+        notes: data.notes,
+        statut: 'programmee',
+      });
+
+      const tontine = tontines.find(t => t.id === data.tontineId);
+      toast.success('Session créée avec succès', {
+        description: `Session n°${sessionNumber} pour ${tontine?.nom} programmée le ${new Date(data.date).toLocaleDateString('fr-FR')}.`,
+      });
+
+      form.reset();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Erreur lors de la création', {
+        description: error instanceof Error ? error.message : 'Impossible de créer la session.',
+      });
+    }
   };
 
   return (

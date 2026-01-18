@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Credit, InsertTables, UpdateTables } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface CreditStore {
   credits: Credit[];
@@ -18,6 +19,8 @@ interface CreditStore {
   repayCredit: (id: string, amount: number) => Promise<void>;
   approveCredit: (id: string) => Promise<void>;
   disburseCredit: (id: string) => Promise<void>;
+  updateOverdueCredits: () => Promise<{ count: number; credits: any[] }>;
+  checkMemberHasActiveCredit: (memberId: string) => Promise<boolean>;
   
   // Getters
   getCreditById: (id: string) => Credit | undefined;
@@ -82,6 +85,13 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Vérifier si le membre a déjà un crédit actif
+      const hasActiveCredit = await get().checkMemberHasActiveCredit(creditData.id_membre);
+      
+      if (hasActiveCredit) {
+        throw new Error('Ce membre a déjà un crédit actif. Il doit d\'abord rembourser son crédit en cours.');
+      }
+
       const { data, error } = await supabase
         .from('credit')
         .insert({
@@ -160,35 +170,23 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
     }
   },
 
-  // Rembourser un crédit
+  // Rembourser un crédit (utilise la fonction RPC)
   repayCredit: async (id, amount) => {
     set({ isLoading: true, error: null });
     
     try {
-      const credit = get().getCreditById(id);
-      if (!credit) throw new Error('Crédit non trouvé');
-
-      const newSolde = credit.solde - amount;
-      const newMontantRembourse = credit.montant_rembourse + amount;
-      const newStatut = newSolde <= 0 ? 'rembourse' : 'en_cours';
-
       const { data, error } = await supabase
-        .from('credit')
-        .update({
-          solde: Math.max(0, newSolde),
-          montant_rembourse: newMontantRembourse,
-          statut: newStatut,
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        .rpc('rembourser_credit', {
+          id_credit_param: id,
+          montant_paye: amount,
+        });
 
       if (error) throw error;
 
-      set((state) => ({
-        credits: state.credits.map((c) => c.id === id ? data : c),
-        isLoading: false,
-      }));
+      // Rafraîchir la liste des crédits
+      await get().fetchCredits();
+
+      set({ isLoading: false });
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Erreur lors du remboursement',
@@ -206,9 +204,48 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
   // Décaisser un crédit
   disburseCredit: async (id) => {
     await get().updateCredit(id, { 
-      statut: 'decaisse',
+      statut: 'en_cours',
       date_decaissement: new Date().toISOString().split('T')[0],
     });
+  },
+
+  // Vérifier si un membre a un crédit actif (RPC)
+  checkMemberHasActiveCredit: async (memberId) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('verifier_credit_actif', {
+          id_membre_param: memberId,
+        });
+
+      if (error) throw error;
+
+      return data as boolean;
+    } catch (error) {
+      console.error('Erreur vérification crédit actif:', error);
+      return false;
+    }
+  },
+
+  // Mettre à jour les crédits en retard (RPC)
+  updateOverdueCredits: async () => {
+    try {
+      const { data, error } = await supabase
+        .rpc('mettre_a_jour_credits_en_retard');
+
+      if (error) throw error;
+
+      // Rafraîchir la liste des crédits après la mise à jour
+      await get().fetchCredits();
+
+      const result = data as any[];
+      return {
+        count: result[0]?.credits_mis_a_jour || 0,
+        credits: result[0]?.liste_credits_retard || [],
+      };
+    } catch (error) {
+      console.error('Erreur mise à jour crédits en retard:', error);
+      return { count: 0, credits: [] };
+    }
   },
 
   // Getters

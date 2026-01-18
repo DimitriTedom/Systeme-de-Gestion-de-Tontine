@@ -16,7 +16,7 @@ export const Footer = () => {
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <span>Développé avec</span>
             <Heart className="h-4 w-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600 dark:fill-emerald-400" />
-            <span>par l'équipe NjangiTech</span>
+            <span>pour le TP 221 de Base de Données</span>
           </div>
         </div>
         

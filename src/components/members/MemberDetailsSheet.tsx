@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users } from 'lucide-react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { supabase } from '@/lib/supabase';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +25,17 @@ interface MemberDetailsSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface MemberTontine {
+  id_tontine: string;
+  nom: string;
+  type: string;
+  montant_cotisation: number;
+  periode: string;
+  nb_parts: number;
+  statut_participation: string;
+  statut_tontine: string;
+}
+
 export function MemberDetailsSheet({
   memberId,
   open,
@@ -34,26 +46,56 @@ export function MemberDetailsSheet({
   const [isLoadingFinancial, setIsLoadingFinancial] = useState(false);
   const [financialData, setFinancialData] = useState<MemberFinancialReport | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [memberTontines, setMemberTontines] = useState<any[]>([]);
+  const [memberTontines, setMemberTontines] = useState<MemberTontine[]>([]);
   const [isLoadingTontines, setIsLoadingTontines] = useState(false);
 
   const member = members.find((m) => m.id === memberId);
 
-  // Function to fetch member tontines
-  const fetchMemberTontines = () => {
+  // Function to fetch member tontines from participe table
+  const fetchMemberTontines = async () => {
     if (!memberId) return;
     
     setIsLoadingTontines(true);
-    reportService.getMemberFinancialReport(memberId)
-      .then((data: any) => {
-        setMemberTontines(data?.tontines || []);
-      })
-      .catch((error: any) => {
-        console.error('Error fetching member tontines:', error);
-      })
-      .finally(() => {
-        setIsLoadingTontines(false);
-      });
+    try {
+      const { data, error } = await supabase
+        .from('participe')
+        .select(`
+          id_tontine,
+          nb_parts,
+          statut,
+          tontine:id_tontine (
+            id,
+            nom,
+            type,
+            montant_cotisation,
+            periode,
+            statut
+          )
+        `)
+        .eq('id_membre', memberId)
+        .eq('statut', 'actif');
+
+      if (error) throw error;
+
+      // Transformer les données pour l'affichage
+      const tontines = (data || []).map((p: any) => ({
+        id_tontine: p.id_tontine,
+        nom: p.tontine?.nom || '',
+        type: p.tontine?.type || '',
+        montant_cotisation: p.tontine?.montant_cotisation || 0,
+        periode: p.tontine?.periode || '',
+        nb_parts: p.nb_parts,
+        statut_participation: p.statut,
+        statut_tontine: p.tontine?.statut || '',
+      }));
+
+      setMemberTontines(tontines);
+    } catch (error) {
+      console.error('Error fetching member tontines:', error);
+      setMemberTontines([]);
+    } finally {
+      setIsLoadingTontines(false);
+    }
   };
 
   // Fetch member's tontines when modal opens
@@ -236,16 +278,22 @@ export function MemberDetailsSheet({
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex-1">
-                          <p className="font-medium">{tontine.description || `Tontine #${tontine.id_tontine}`}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <p className="font-medium">{tontine.nom}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Badge variant="outline" className="text-xs">
-                              {tontine.type}
+                              {tontine.type === 'presence' ? 'Présence' : 'Optionnelle'}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
                               {formatCurrency(tontine.montant_cotisation)} / {tontine.periode}
                             </span>
                             <Badge variant="secondary" className="text-xs">
                               {tontine.nb_parts} {tontine.nb_parts > 1 ? 'parts' : 'part'}
+                            </Badge>
+                            <Badge 
+                              variant={tontine.statut_tontine === 'Actif' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {tontine.statut_tontine}
                             </Badge>
                           </div>
                         </div>

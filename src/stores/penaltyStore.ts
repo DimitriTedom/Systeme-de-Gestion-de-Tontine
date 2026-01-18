@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Penalite, InsertTables, UpdateTables } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface PenaltyStore {
   penalties: Penalite[];
@@ -16,6 +17,7 @@ interface PenaltyStore {
   deletePenalty: (id: string) => Promise<void>;
   
   // Actions spécifiques
+  payPenalty: (id: string, amount: number) => Promise<{ success: boolean; remaining: number; status: string }>;
   markAsPaid: (id: string) => Promise<void>;
   cancelPenalty: (id: string) => Promise<void>;
   
@@ -189,6 +191,39 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
     });
   },
 
+  // Payer une pénalité (paiement partiel ou total)
+  payPenalty: async (id, amount) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('payer_penalite', {
+          id_penalite_param: id,
+          montant_paye: amount,
+        })
+        .single();
+
+      if (error) throw error;
+
+      // Rafraîchir la liste des pénalités
+      await get().fetchPenalties();
+
+      set({ isLoading: false });
+
+      return {
+        success: true,
+        remaining: data.montant_restant,
+        status: data.statut,
+      };
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Erreur lors du paiement',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
   // Annuler une pénalité
   cancelPenalty: async (id) => {
     await get().updatePenalty(id, { statut: 'annule' });
@@ -208,7 +243,7 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
   },
 
   getPendingPenalties: () => {
-    return get().penalties.filter((p) => p.statut === 'non_paye');
+    return get().penalties.filter((p) => p.statut === 'non_paye' || p.statut === 'partiellement_paye');
   },
 
   getPaidPenalties: () => {
@@ -217,8 +252,8 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
 
   getTotalUnpaidAmount: () => {
     return get().penalties
-      .filter((p) => p.statut === 'non_paye')
-      .reduce((sum, p) => sum + p.montant, 0);
+      .filter((p) => p.statut === 'non_paye' || p.statut === 'partiellement_paye')
+      .reduce((sum, p) => sum + (p.montant - (p.montant_paye || 0)), 0);
   },
 
   clearError: () => {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import type { Tontine, InsertTables, UpdateTables, Participe } from '@/types/database.types';
+import { handleSupabaseError, logError } from '@/lib/errorHandler';
 
 interface TontineWithMembers extends Tontine {
   membres_count?: number;

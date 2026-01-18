@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ export default function Projects() {
   const { projects, deleteProject } = useProjectStore();
   const { getTontineById } = useTontineStore();
   const { getMemberById } = useMemberStore();
+  const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editProjectId, setEditProjectId] = useState<string | null>(null);
 
@@ -37,12 +39,12 @@ export default function Projects() {
     }).format(new Date(dateString));
   };
 
-  const getStatusColor = (status: string): "default" | "destructive" | "outline" | "secondary" => {
+  const getStatusColor = (status: string) => {
     const colors: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       planifie: 'secondary',
       collecte_fonds: 'default',
       en_cours: 'default',
-      termine: 'default',
+      termine: 'outline', // Vert via className personnalisée
       annule: 'destructive',
     };
     return colors[status] || 'secondary';
@@ -102,7 +104,10 @@ export default function Projects() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
                       <CardTitle className="text-lg">{project.nom}</CardTitle>
-                      <Badge variant={getStatusColor(project.statut)}>
+                      <Badge 
+                        variant={getStatusColor(project.statut)}
+                        className={project.statut === 'termine' ? 'bg-green-600 text-white border-green-600' : ''}
+                      >
                         {t(`projects.statuses.${project.statut}`)}
                       </Badge>
                     </div>
@@ -118,9 +123,18 @@ export default function Projects() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
+                        onClick={async () => {
                           if (confirm('Êtes-vous sûr de vouloir supprimer ce projet?')) {
-                            deleteProject(project.id);
+                            try {
+                              await deleteProject(project.id);
+                              toast.success('Projet supprimé', {
+                                description: `${project.nom} a été supprimé avec succès`,
+                              });
+                            } catch (error) {
+                              toast.error('Erreur', {
+                                description: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+                              });
+                            }
                           }
                         }}
                       >

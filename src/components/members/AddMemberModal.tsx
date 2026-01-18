@@ -4,6 +4,7 @@ import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatErrorForToast } from '@/lib/errorHandler';
 import { useState } from 'react';
 import {
   Dialog,
@@ -89,8 +90,9 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
       form.reset();
       onOpenChange(false);
     } catch (error) {
-      toast.error(t('members.addError'), {
-        description: error instanceof Error ? error.message : t('common.unknownError'),
+      const { title, description } = formatErrorForToast(error);
+      toast.error(title, {
+        description: description || t('common.unknownError'),
       });
     } finally {
       setIsSubmitting(false);

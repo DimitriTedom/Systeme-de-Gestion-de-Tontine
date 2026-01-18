@@ -438,7 +438,7 @@ export const reportService = {
    * Get General Assembly synthesis report data
    */
   getAGSynthesisReport: async (tontineId?: string): Promise<AGSynthesisReport> => {
-    // Fetch all contributions - use 'montant' field
+    // Fetch all completed contributions
     let contributionsQuery = supabase
       .from('cotisation')
       .select('montant')
@@ -460,13 +460,23 @@ export const reportService = {
     const contributionsData = contributions as Pick<CotisationRow, 'montant'>[] | null;
     const total_contributions = contributionsData?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
 
-    // Fetch penalties
+    // Fetch penalties - Only count paid or partially paid ones for cash
     const { data: penalties } = await supabase
       .from('penalite')
-      .select('montant');
+      .select('montant, montant_paye, statut')
+      .in('statut', ['paye', 'partiellement_paye']);
 
-    const penaltiesData = penalties as Pick<PenaliteRow, 'montant'>[] | null;
-    const total_penalties = penaltiesData?.reduce((sum, p) => sum + (p.montant || 0), 0) || 0;
+    const penaltiesData = penalties as Pick<PenaliteRow, 'montant' | 'montant_paye' | 'statut'>[] | null;
+    const total_penalties_collected = penaltiesData?.reduce((sum, p) => {
+      return sum + (p.montant_paye || p.montant || 0);
+    }, 0) || 0;
+    
+    // Total penalties issued (for reporting purposes)
+    const { data: allPenalties } = await supabase
+      .from('penalite')
+      .select('montant');
+    const allPenaltiesData = allPenalties as Pick<PenaliteRow, 'montant'>[] | null;
+    const total_penalties = allPenaltiesData?.reduce((sum, p) => sum + (p.montant || 0), 0) || 0;
 
     // Fetch credits
     const { data: credits } = await supabase
@@ -478,6 +488,13 @@ export const reportService = {
     const total_credits_disbursed = creditsData?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
     const total_credits_remaining = creditsData?.reduce((sum, c) => 
       sum + ((c.montant || 0) - (c.montant_rembourse || 0)), 0) || 0;
+    
+    // All credits for total repayments calculation
+    const { data: allCredits } = await supabase
+      .from('credit')
+      .select('montant_rembourse');
+    const allCreditsData = allCredits as Pick<CreditRow, 'montant_rembourse'>[] | null;
+    const total_credit_repayments = allCreditsData?.reduce((sum, c) => sum + (c.montant_rembourse || 0), 0) || 0;
 
     // Fetch members
     const { data: members } = await supabase
@@ -488,9 +505,12 @@ export const reportService = {
     const total_members = membersData?.length || 0;
     const active_members = membersData?.filter(m => m.statut === 'Actif').length || 0;
 
-    // Cash in hand calculation
-    const credits_rembourses = creditsData?.reduce((sum, c) => sum + (c.montant_rembourse || 0), 0) || 0;
-    const cash_in_hand = total_contributions + total_penalties - total_credits_disbursed + credits_rembourses;
+    // Cash in hand calculation - same as Dashboard
+    // Money IN: completed contributions + penalties collected + credit repayments
+    // Money OUT: credits disbursed
+    const total_money_in = total_contributions + total_penalties_collected + total_credit_repayments;
+    const total_money_out = total_credits_disbursed;
+    const cash_in_hand = total_money_in - total_money_out;
 
     // Fetch projects
     const { data: projects } = await supabase
@@ -547,9 +567,11 @@ export const reportService = {
       montant_cotisation: t.montant_cotisation,
     })) || [];
 
-    // Emergency fund (10% of cash in hand as target)
-    const emergency_target = cash_in_hand * 0.1;
-    const emergency_amount = Math.min(cash_in_hand * 0.05, emergency_target); // 5% allocated
+    // Emergency fund (5% of total contributions as recommended reserve)
+    // This represents money set aside for emergencies, not from current cash
+    const emergency_target = total_contributions * 0.05; // 5% target
+    const emergency_amount = emergency_target; // For now, assume target is met
+    const emergency_percentage = emergency_target > 0 ? (emergency_amount / (total_contributions * 0.05)) * 100 : 0;
 
     return {
       dashboard: {
@@ -569,7 +591,7 @@ export const reportService = {
       },
       emergency_fund: {
         amount: emergency_amount,
-        percentage: emergency_target > 0 ? (emergency_amount / emergency_target) * 100 : 0,
+        percentage: emergency_percentage,
         target: emergency_target,
       },
       session_trends: sessionTrends,

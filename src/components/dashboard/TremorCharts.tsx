@@ -8,7 +8,19 @@ import { AreaChart } from '@tremor/react';
 import { DonutChart } from '@tremor/react';
 import { BarChart } from '@tremor/react';
 import { BadgeDelta } from '@tremor/react';
-import { formatMontantXAF, formatPourcentage } from '@/lib/mockDashboardData';
+
+// Utility formatters
+const formatMontantXAF = (montant: number): string => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'XAF',
+    minimumFractionDigits: 0,
+  }).format(montant);
+};
+
+const formatPourcentage = (pourcentage: number): string => {
+  return `${pourcentage.toFixed(1)}%`;
+};
 
 /**
  * 1. Evolution de la Caisse (AreaChart)
