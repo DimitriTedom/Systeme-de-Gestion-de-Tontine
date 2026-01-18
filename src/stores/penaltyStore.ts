@@ -205,6 +205,9 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Type the response data
+      const resultData = data as { montant_restant: number; statut: string };
+
       // Rafraîchir la liste des pénalités
       await get().fetchPenalties();
 
@@ -212,8 +215,8 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
 
       return {
         success: true,
-        remaining: data.montant_restant,
-        status: data.statut,
+        remaining: resultData.montant_restant,
+        status: resultData.statut,
       };
     } catch (error) {
       set({

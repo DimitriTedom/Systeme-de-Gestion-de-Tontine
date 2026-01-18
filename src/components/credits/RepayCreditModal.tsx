@@ -45,7 +45,7 @@ export function RepayCreditModal({ credit, open, onOpenChange }: RepayCreditModa
   type RepayFormData = z.infer<typeof repaySchema>;
 
   const form = useForm<RepayFormData>({
-    resolver: zodResolver(repaySchema),
+    resolver: zodResolver(repaySchema) as any,
     defaultValues: {
       amount: credit?.solde || 0,
     },

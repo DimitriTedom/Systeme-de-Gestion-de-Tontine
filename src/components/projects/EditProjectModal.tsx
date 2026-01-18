@@ -108,7 +108,7 @@ export function EditProjectModal({ projectId, open, onOpenChange }: EditProjectM
         if (!project?.date_fin_reelle) {
           updates.date_fin_reelle = new Date().toISOString().split('T')[0];
         }
-      } else if (project?.date_fin_reelle && data.statut !== 'termine') {
+      } else if (project?.date_fin_reelle) {
         // Si on repasse à un autre statut, retirer la date de fin
         updates.date_fin_reelle = null;
       }
