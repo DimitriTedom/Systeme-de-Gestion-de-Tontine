@@ -138,7 +138,8 @@
       "amountPositive": "Amount must be greater than 0",
       "frequencyRequired": "Frequency is required",
       "typeRequired": "Type is required",
-      "startDateRequired": "Start date is required"
+      "startDateRequired": "Start date is required",
+      "endDateAfterStart": "End date must be after start date"
     }
   },
   "sessions": {
@@ -159,6 +160,7 @@
     "viewMeetingSheet": "View Meeting Sheet",
     "attendance": "Attendance",
     "contribution": "Contribution",
+    "parts": "Parts",
     "expectedAmount": "Expected Amount",
     "actualAmount": "Actual Amount",
     "present": "Present",
@@ -181,7 +183,13 @@
     "contributionsSaved": "Contributions saved successfully!",
     "contributionsSaveFailed": "Failed to save contributions",
     "closeSessionFailed": "Failed to close session",
+    "meetingSaved": "Meeting saved successfully",
+    "meetingSaveFailed": "Failed to save meeting",
     "saveContributions": "Save Contributions",
+    "saveAndClose": "Save & Close Session",
+    "contributions": "Contributions",
+    "penalties": "Penalties",
+    "total": "Total",
     "viewReport": "View Report",
     "sessionReport": "Session Report",
     "ofExpected": "of expected",
@@ -198,6 +206,7 @@
       "dateRequired": "Date is required",
       "tontineRequired": "Please select a tontine",
       "sessionNumberRequired": "Session number is required",
+      "dateAfterTontineStart": "Session date must be on or after the tontine start date",
       "presenceMustBeExact": "For presence tontines, amount must be exactly the required contribution",
       "optionalMustBeMultiple": "For optional tontines, amount must be 0 or a multiple of the base contribution",
       "fixErrors": "Please fix validation errors before saving"
@@ -367,7 +376,7 @@
       "budgetPositive": "Budget must be positive",
       "tontineRequired": "Tontine is required",
       "startDateRequired": "Start date is required",
-      "startDateFuture": "Start date must be in the future",
+      "startDateAfterTontine": "Project start date must be on or after the tontine start date",
       "targetDateAfterStart": "Target date must be after start date"
     },
     "noProjects": "No projects found",

@@ -38,7 +38,7 @@ interface AddSessionModalProps {
 export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
   const { t } = useTranslation();
   const { addSession, getSessionsByTontineId } = useSessionStore();
-  const { tontines } = useTontineStore();
+  const { tontines, getTontineById } = useTontineStore();
 
   const formSchema = z.object({
     tontineId: z.string().min(1, t('sessions.validation.tontineRequired')),
@@ -46,6 +46,18 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
     location: z.string().optional(),
     agenda: z.string().optional(),
     notes: z.string().optional(),
+  }).refine((data) => {
+    if (!data.tontineId || !data.date) return true;
+    const tontine = tontines.find(t => t.id === data.tontineId);
+    if (!tontine) return true;
+    const sessionDate = new Date(data.date);
+    const tontineStartDate = new Date(tontine.startDate);
+    sessionDate.setHours(0, 0, 0, 0);
+    tontineStartDate.setHours(0, 0, 0, 0);
+    return sessionDate >= tontineStartDate;
+  }, {
+    message: t('sessions.validation.dateAfterTontineStart'),
+    path: ['date'],
   });
 
   type FormValues = z.infer<typeof formSchema>;

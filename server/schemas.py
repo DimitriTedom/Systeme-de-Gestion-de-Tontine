@@ -232,16 +232,32 @@ class AttendanceRecord(BaseModel):
     present: bool
     montant: Optional[float] = None
 
-class CloseSessionRequest(BaseModel):
-    attendance: List[AttendanceRecord]
-    montant_penalite_absence: float = 5000.0
-
 class PenaltySummary(BaseModel):
     id_membre: int
     nom: str
     prenom: str
     montant: float
     raison: str
+
+class SaveMeetingRecord(BaseModel):
+    id_membre: int
+    present: bool
+    montant_paye: Optional[float] = None
+
+class SaveMeetingRequest(BaseModel):
+    records: List[SaveMeetingRecord]
+
+class SaveMeetingResponse(BaseModel):
+    id_seance: int
+    statut: str
+    contributions_created: int
+    penalties_created: List[PenaltySummary]
+    total_contributions: float
+    total_penalties: float
+
+class CloseSessionRequest(BaseModel):
+    attendance: List[AttendanceRecord]
+    montant_penalite_absence: float = 5000.0
 
 class CloseSessionResponse(BaseModel):
     id_seance: int

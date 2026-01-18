@@ -35,8 +35,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { createBulkContributions, type CotisationCreate } from '@/services/sessionService';
-import type { AttendanceRecord, PenaltySummary } from '@/types';
+import { createBulkContributions, getSessionAttendance, saveSessionMeeting, type CotisationCreate, type SaveMeetingRecord } from '@/services/sessionService';
+import type { AttendanceRecord, PenaltySummary, SessionAttendanceMember } from '@/types';
 
 interface MeetingSheetProps {
   sessionId: string;
@@ -45,7 +45,7 @@ interface MeetingSheetProps {
 }
 
 interface MemberContribution {
-  memberId: string;
+  memberId: number;
   isPresent: boolean;
   amount: number;
 }
@@ -59,66 +59,87 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
 
   const session = getSessionById(sessionId);
   const tontine = session ? getTontineById(session.tontineId) : null;
-  const members = tontine?.memberIds.map(id => getMemberById(id)).filter(Boolean) || [];
   const existingContributions = getContributionsBySessionId(sessionId);
 
-  const [contributions, setContributions] = useState<Record<string, MemberContribution>>({});
+  const [members, setMembers] = useState<SessionAttendanceMember[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [contributions, setContributions] = useState<Record<number, MemberContribution>>({});
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closingSummary, setClosingSummary] = useState<PenaltySummary[] | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<number, string>>({});
   
   // Default penalty amount for absences (5000 XAF as per MCD)
   const ABSENCE_PENALTY_AMOUNT = 5000;
+
+  // Fetch members with nb_parts from backend
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!session?.id) return;
+      
+      setLoading(true);
+      try {
+        const attendanceMembers = await getSessionAttendance(session.id);
+        setMembers(attendanceMembers);
+      } catch (error) {
+        console.error('Failed to fetch session attendance:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (open) {
+      fetchMembers();
+    }
+  }, [session?.id, open]);
 
   useEffect(() => {
     if (!members.length) return;
 
     // Initialize contributions from existing data or defaults
-    const initialContributions: Record<string, MemberContribution> = {};
+    const initialContributions: Record<number, MemberContribution> = {};
     
     members.forEach(member => {
       if (!member) return;
       
-      const existing = existingContributions.find(c => c.memberId === member.id);
-      initialContributions[member.id] = {
-        memberId: member.id,
+      const existing = existingContributions.find(c => String(c.memberId) === String(member.id_membre));
+      initialContributions[member.id_membre] = {
+        memberId: member.id_membre,
         isPresent: existing ? existing.status === 'completed' : false,
-        amount: existing?.amount || (tontine?.contributionAmount || 0),
+        amount: existing?.amount || member.expected_contribution,
       };
     });
 
     setContributions(initialContributions);
-  }, [sessionId, members.length]);
+  }, [members.length, existingContributions]);
 
-  if (!session || !tontine) {
-    return null;
-  }
+  const handleAttendanceChange = (memberId: number, isPresent: boolean) => {
+    const member = members.find(m => m.id_membre === memberId);
+    if (!member) return;
 
-  const handleAttendanceChange = (memberId: string, isPresent: boolean) => {
     setContributions(prev => ({
       ...prev,
       [memberId]: {
         ...prev[memberId],
         isPresent,
-        // If presence tontine and marking present, set default amount
-        amount: isPresent && tontine.type === 'presence' 
-          ? tontine.contributionAmount 
+        // If presence tontine and marking present, set expected amount based on nb_parts
+        amount: isPresent && tontine?.type === 'presence' 
+          ? member.expected_contribution
           : prev[memberId]?.amount || 0,
       },
     }));
   };
 
-  const handleAmountChange = (memberId: string, amount: number) => {
+  const handleAmountChange = (memberId: number, amount: number) => {
     const cleanAmount = isNaN(amount) ? 0 : amount;
+    const member = members.find(m => m.id_membre === memberId);
     
     // Validate based on tontine type
     let error = '';
-    if (tontine && contributions[memberId]?.isPresent) {
+    if (tontine && contributions[memberId]?.isPresent && member) {
       if (tontine.type === 'presence') {
         // For presence tontines: must be exactly nb_parts * montant_cotisation
-        // Since we don't have nb_parts in this mock, we use contributionAmount
-        if (cleanAmount !== tontine.contributionAmount) {
+        if (cleanAmount !== member.expected_contribution) {
           error = t('sessions.validation.presenceMustBeExact');
         }
       } else if (tontine.type === 'optional') {
@@ -163,50 +184,45 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
       return;
     }
     
-    // Prepare contributions for bulk save
-    const contributionsData: CotisationCreate[] = Object.values(contributions)
-      .filter(c => c.isPresent && c.amount > 0)
-      .map(c => ({
-        montant: c.amount,
-        date_paiement: session.date instanceof Date 
-          ? session.date.toISOString().split('T')[0]
-          : session.date,
-        id_membre: parseInt(c.memberId, 10),
-        id_seance: parseInt(session.id, 10),
-      }));
+    // Prepare meeting records for the new consolidated endpoint
+    const meetingRecords: SaveMeetingRecord[] = members.map(member => ({
+      id_membre: parseInt(member.id_membre, 10),
+      present: contributions[member.id_membre]?.isPresent || false,
+      montant_paye: contributions[member.id_membre]?.isPresent 
+        ? contributions[member.id_membre].amount 
+        : undefined,
+    }));
 
     try {
-      // Bulk save contributions to backend
-      if (contributionsData.length > 0) {
-        await createBulkContributions(contributionsData);
-      }
-
-      // Update local store
-      const localContributions = Object.values(contributions)
-        .filter(c => c.isPresent)
-        .map(c => ({
-          sessionId: session.id,
-          memberId: c.memberId,
-          tontineId: tontine.id,
-          amount: c.amount,
-          expectedAmount: tontine.contributionAmount,
-          paymentDate: session.date,
-          paymentMethod: 'cash' as const,
-          status: c.amount >= tontine.contributionAmount ? 'completed' as const : 'partial' as const,
-        }));
-
-      bulkUpsertContributions(localContributions);
-
-      // Update session totals
+      // Save meeting using the new consolidated endpoint
+      const result = await saveSessionMeeting(session.id, meetingRecords);
+      
+      // Update session status
       updateSession(session.id, {
-        totalContributions: calculateTotal(),
+        status: 'completed',
+        totalContributions: result.total_contributions,
+        totalPenalties: result.total_penalties,
         attendanceCount: calculateAttendanceCount(),
       });
 
-      alert(t('sessions.contributionsSaved'));
+      // Show success message with summary
+      const message = `${t('sessions.meetingSaved')}!\n\n` +
+        `${t('sessions.contributions')}: ${result.contributions_created}\n` +
+        `${t('sessions.penalties')}: ${result.penalties_created.length}\n` +
+        `${t('sessions.total')}: ${formatCurrency(result.total_contributions)}`;
+      
+      alert(message);
+      
+      // If penalties were created, show them
+      if (result.penalties_created.length > 0) {
+        setClosingSummary(result.penalties_created);
+        setTimeout(() => setClosingSummary(null), 5000);
+      }
+      
+      onOpenChange(false);
     } catch (error) {
-      console.error('Failed to save contributions:', error);
-      alert(t('sessions.contributionsSaveFailed'));
+      console.error('Failed to save meeting:', error);
+      alert(t('sessions.meetingSaveFailed'));
     }
   };
 
@@ -265,9 +281,13 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     }).format(date);
   };
 
+  if (!session || !tontine) {
+    return null;
+  }
+
   const total = calculateTotal();
   const attendanceCount = calculateAttendanceCount();
-  const isPresenceTontine = tontine.type === 'presence';
+  const isPresenceTontine = tontine?.type === 'presence';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -321,85 +341,102 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
               <CardTitle className="text-lg">{t('sessions.attendance')} & {t('sessions.contribution')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">#</TableHead>
-                    <TableHead>{t('sessions.member')}</TableHead>
-                    <TableHead className="w-[100px] text-center">
-                      {t('sessions.attendance')}
-                    </TableHead>
-                    <TableHead className="w-[150px]">
-                      {t('sessions.expectedAmount')}
-                    </TableHead>
-                    <TableHead className="w-[200px]">
-                      {t('sessions.actualAmount')}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members.map((member, index) => {
-                    if (!member) return null;
-                    
-                    const contrib = contributions[member.id] || {
-                      memberId: member.id,
-                      isPresent: false,
-                      amount: tontine.contributionAmount,
-                    };
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="text-muted-foreground">{t('common.loading')}...</div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead>{t('sessions.member')}</TableHead>
+                      <TableHead className="w-[80px] text-center">
+                        {t('sessions.parts')}
+                      </TableHead>
+                      <TableHead className="w-[100px] text-center">
+                        {t('sessions.attendance')}
+                      </TableHead>
+                      <TableHead className="w-[150px]">
+                        {t('sessions.expectedAmount')}
+                      </TableHead>
+                      <TableHead className="w-[200px]">
+                        {t('sessions.actualAmount')}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {members.map((member, index) => {
+                      if (!member) return null;
+                      
+                      const contrib = contributions[member.id_membre] || {
+                        memberId: member.id_membre,
+                        isPresent: false,
+                        amount: member.expected_contribution,
+                      };
 
-                    return (
-                      <TableRow key={member.id}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>
-                          <div>
+                      return (
+                        <TableRow key={member.id_membre}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">
+                                {member.prenom} {member.nom}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {member.email}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary">{member.nb_parts}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={contrib.isPresent}
+                              onCheckedChange={(checked) =>
+                                handleAttendanceChange(member.id_membre, checked as boolean)
+                              }
+                              disabled={session.status === 'closed'}
+                            />
+                          </TableCell>
+                          <TableCell>
                             <div className="font-medium">
-                              {member.firstName} {member.lastName}
+                              {formatCurrency(member.expected_contribution)}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {member.email}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={contrib.isPresent}
-                            onCheckedChange={(checked) =>
-                              handleAttendanceChange(member.id, checked as boolean)
-                            }
-                            disabled={session.status === 'closed'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">
-                            {formatCurrency(tontine.contributionAmount)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={contrib.amount}
-                            onChange={(e) =>
-                              handleAmountChange(member.id, parseFloat(e.target.value))
-                            }
-                            disabled={!contrib.isPresent || session.status === 'closed'}
-                            min={0}
-                            className={
-                              validationErrors[member.id]
-                                ? 'border-red-500'
-                                : ''
-                            }
-                          />
-                          {validationErrors[member.id] && (
-                            <p className="text-xs text-red-500 mt-1">
-                              {validationErrors[member.id]}
-                            </p>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                            {member.nb_parts > 1 && (
+                              <div className="text-xs text-muted-foreground">
+                                {member.nb_parts} × {formatCurrency(tontine?.contributionAmount || 0)}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={contrib.amount}
+                              onChange={(e) =>
+                                handleAmountChange(member.id_membre, parseFloat(e.target.value))
+                              }
+                              disabled={!contrib.isPresent || session.status === 'closed'}
+                              min={0}
+                              className={
+                                validationErrors[member.id_membre]
+                                  ? 'border-red-500'
+                                  : ''
+                              }
+                            />
+                            {validationErrors[member.id_membre] && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {validationErrors[member.id_membre]}
+                              </p>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
@@ -462,17 +499,10 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
               
               {session.status !== 'closed' && (
                 <>
-                  <Button onClick={handleSave} variant="secondary">
+                  <Button onClick={handleSave} className="bg-primary">
                     <Save className="mr-2 h-4 w-4" />
-                    {t('sessions.saveContributions')}
+                    {t('sessions.saveAndClose')}
                   </Button>
-                  
-                  {tontine.type === 'presence' && (
-                    <Button onClick={handleCloseSession}>
-                      <Lock className="mr-2 h-4 w-4" />
-                      {t('sessions.closeSession')}
-                    </Button>
-                  )}
                 </>
               )}
             </div>

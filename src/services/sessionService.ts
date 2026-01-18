@@ -224,3 +224,39 @@ export const getSessionAttendance = async (sessionId: string): Promise<SessionAt
   const response = await api.get<SessionAttendanceMember[]>(`/seances/${sessionId}/attendance`);
   return response.data;
 };
+
+/**
+ * Save session meeting (attendance and contributions)
+ * Endpoint: POST /seances/{id_seance}/save-meeting
+ */
+export interface SaveMeetingRecord {
+  id_membre: number;
+  present: boolean;
+  montant_paye?: number;
+}
+
+export interface SaveMeetingResponse {
+  id_seance: number;
+  statut: string;
+  contributions_created: number;
+  penalties_created: Array<{
+    id_membre: number;
+    nom: string;
+    prenom: string;
+    montant: number;
+    raison: string;
+  }>;
+  total_contributions: number;
+  total_penalties: number;
+}
+
+export const saveSessionMeeting = async (
+  sessionId: string,
+  records: SaveMeetingRecord[]
+): Promise<SaveMeetingResponse> => {
+  const response = await api.post<SaveMeetingResponse>(
+    `/seances/${sessionId}/save-meeting`,
+    { records }
+  );
+  return response.data;
+};

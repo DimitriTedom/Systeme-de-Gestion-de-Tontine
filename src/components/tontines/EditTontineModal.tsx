@@ -55,11 +55,15 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
     status: z.enum(['active', 'completed', 'cancelled']),
   }).refine((data) => {
     if (data.endDate && data.startDate) {
-      return new Date(data.endDate) > new Date(data.startDate);
+      const endDate = new Date(data.endDate);
+      const startDate = new Date(data.startDate);
+      endDate.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+      return endDate > startDate;
     }
     return true;
   }, {
-    message: 'End date must be after start date',
+    message: t('tontines.validation.endDateAfterStart'),
     path: ['endDate'],
   });
 

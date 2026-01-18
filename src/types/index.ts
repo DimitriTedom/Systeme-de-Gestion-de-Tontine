@@ -135,6 +135,18 @@ export interface ProjectWithTontine extends Project {
 }
 
 // Session Management Types
+export interface SessionAttendanceMember {
+  id_membre: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string;
+  nb_parts: number;
+  expected_contribution: number;
+  statut: string;
+  total_penalties: number;
+}
+
 export interface AttendanceRecord {
   id_membre: string;
   present: boolean;

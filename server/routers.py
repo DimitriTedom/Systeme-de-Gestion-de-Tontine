@@ -180,6 +180,15 @@ def read_seance(id_seance: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     return db_seance
 
+@router.get("/seances/{id_seance}/attendance")
+def get_session_attendance(id_seance: int, db: Session = Depends(get_db)):
+    """
+    Get all members subscribed to the tontine associated with this session,
+    with their expected contribution amount based on nb_parts.
+    """
+    attendance = crud.get_session_attendance(db, id_seance)
+    return attendance
+
 @router.post("/seances", response_model=schemas.Seance)
 def create_seance(seance: schemas.SeanceCreate, db: Session = Depends(get_db)):
     try:
@@ -215,14 +224,21 @@ def close_session(id_seance: int, close_request: schemas.CloseSessionRequest, db
         raise HTTPException(status_code=404, detail="Session or tontine not found")
     return result
 
-@router.get("/seances/{id_seance}/attendance")
-def get_session_attendance(id_seance: int, db: Session = Depends(get_db)):
+@router.post("/seances/{id_seance}/save-meeting", response_model=schemas.SaveMeetingResponse)
+def save_session_meeting(id_seance: int, save_request: schemas.SaveMeetingRequest, db: Session = Depends(get_db)):
     """
-    Get all members subscribed to the tontine associated with this session,
-    with their expected contribution amount based on nb_parts.
+    Save attendance sheet for a session:
+    - Create contributions for present members who paid
+    - Create penalties for absent members (presence tontines only)
+    - Update session status to 'tenue' (held)
     """
-    attendance = crud.get_session_attendance(db, id_seance)
-    return attendance
+    try:
+        result = crud.save_session_meeting(db, id_seance, save_request)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ============================================
 # CONTRIBUTIONS (COTISATIONS) ENDPOINTS

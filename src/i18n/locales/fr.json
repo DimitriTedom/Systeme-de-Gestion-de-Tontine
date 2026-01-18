@@ -138,7 +138,8 @@
       "amountPositive": "Le montant doit être supérieur à 0",
       "frequencyRequired": "La fréquence est obligatoire",
       "typeRequired": "Le type est obligatoire",
-      "startDateRequired": "La date de début est obligatoire"
+      "startDateRequired": "La date de début est obligatoire",
+      "endDateAfterStart": "La date de fin doit être postérieure à la date de début"
     }
   },
   "sessions": {
@@ -158,8 +159,7 @@
     "meetingSheet": "Feuille de séance",
     "viewMeetingSheet": "Voir la feuille de séance",
     "attendance": "Présence",
-    "contribution": "Cotisation",
-    "expectedAmount": "Montant attendu",
+    "contribution": "Cotisation",    "parts": "Parts",    "expectedAmount": "Montant attendu",
     "actualAmount": "Montant réel",
     "present": "Présent",
     "absent": "Absent",
@@ -181,7 +181,13 @@
     "contributionsSaved": "Cotisations enregistrées avec succès !",
     "contributionsSaveFailed": "Échec de l'enregistrement des cotisations",
     "closeSessionFailed": "Échec de la clôture de la session",
+    "meetingSaved": "Séance enregistrée avec succès",
+    "meetingSaveFailed": "Échec de l'enregistrement de la séance",
     "saveContributions": "Enregistrer les cotisations",
+    "saveAndClose": "Enregistrer et clôturer",
+    "contributions": "Cotisations",
+    "penalties": "Pénalités",
+    "total": "Total",
     "viewReport": "Voir le rapport",
     "sessionReport": "Rapport de session",
     "ofExpected": "de l'attendu",
@@ -198,6 +204,7 @@
       "dateRequired": "La date est obligatoire",
       "tontineRequired": "Veuillez sélectionner une tontine",
       "sessionNumberRequired": "Le numéro de session est obligatoire",
+      "dateAfterTontineStart": "La date de la session doit être égale ou postérieure à la date de début de la tontine",
       "presenceMustBeExact": "Pour les tontines de présence, le montant doit être exactement la cotisation requise",
       "optionalMustBeMultiple": "Pour les tontines optionnelles, le montant doit être 0 ou un multiple de la cotisation de base",
       "fixErrors": "Veuillez corriger les erreurs de validation avant d'enregistrer"
@@ -363,7 +370,7 @@
       "budgetPositive": "Le budget doit être positif",
       "tontineRequired": "La tontine est requise",
       "startDateRequired": "La date de début est requise",
-      "startDateFuture": "La date de début doit être dans le futur",
+      "startDateAfterTontine": "La date de début du projet doit être égale ou postérieure à la date de début de la tontine",
       "targetDateAfterStart": "La date cible doit être après la date de début"
     },
     "noProjects": "Aucun projet trouvé",

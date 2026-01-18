@@ -101,7 +101,6 @@ export default function Dashboard() {
   const handleExportReport = () => {
     alert('📄 Export PDF - Synthèse AG\n\nFonctionnalité en développement.\nLe rapport sera généré avec:\n- Résumé financier\n- État des cotisations\n- Statut des crédits\n- Liste des pénalités\n- Progression des projets');
   };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -399,7 +398,7 @@ export default function Dashboard() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{tontine.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {tontine.memberIds.length} membres • {formatCurrency(tontine.contributionAmount)}
+                      {tontine.membersCount || 0} membres • {formatCurrency(tontine.contributionAmount)}
                     </p>
                   </div>
                   <Badge variant={tontine.type === 'presence' ? 'default' : 'secondary'}>

@@ -405,6 +405,78 @@ def create_bulk_cotisations(db: Session, cotisations: List[schemas.CotisationCre
     
     return created_cotisations
 
+def save_session_meeting(db: Session, id_seance: int, save_request: schemas.SaveMeetingRequest):
+    """
+    Save attendance and contributions for a session in one go.
+    For present members: create a contribution.
+    For absent members in 'presence' tontines: create a penalty.
+    Update session status to 'tenue' (held).
+    """
+    # Get session and tontine
+    seance = db.query(models.Seance).filter(models.Seance.id_seance == id_seance).first()
+    if not seance:
+        raise ValueError("Session not found")
+    
+    tontine = db.query(models.Tontine).filter(models.Tontine.id_tontine == seance.id_tontine).first()
+    if not tontine:
+        raise ValueError("Tontine not found")
+    
+    contributions_count = 0
+    penalties_created = []
+    
+    for record in save_request.records:
+        membre = db.query(models.Membre).filter(models.Membre.id_membre == record.id_membre).first()
+        if not membre:
+            continue
+        
+        if record.present and record.montant_paye is not None and record.montant_paye > 0:
+            # Create contribution
+            cotisation = models.Cotisation(
+                montant=record.montant_paye,
+                date_paiement=seance.date,
+                id_membre=record.id_membre,
+                id_seance=id_seance
+            )
+            db.add(cotisation)
+            contributions_count += 1
+        elif not record.present and tontine.type == 'presence':
+            # Create penalty for absence in presence tontine
+            penalite = models.Penalite(
+                montant=5000.0,  # Default penalty amount
+                raison="Absence",
+                date_penalite=seance.date,
+                id_membre=record.id_membre,
+                id_seance=id_seance
+            )
+            db.add(penalite)
+            db.flush()
+            penalties_created.append({
+                "id_membre": record.id_membre,
+                "nom": membre.nom,
+                "prenom": membre.prenom,
+                "montant": 5000.0,
+                "raison": "Absence"
+            })
+    
+    # Update session status
+    seance.statut = "tenue"
+    
+    db.commit()
+    db.refresh(seance)
+    
+    # Calculate totals
+    total_contributions = sum(c.montant for c in seance.cotisations)
+    total_penalties = sum(p.montant for p in seance.penalites)
+    
+    return {
+        "id_seance": id_seance,
+        "statut": seance.statut,
+        "contributions_created": contributions_count,
+        "penalties_created": penalties_created,
+        "total_contributions": total_contributions,
+        "total_penalties": total_penalties
+    }
+
 # ============================================
 # CREDITS CRUD FUNCTIONS
 # ============================================

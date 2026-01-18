@@ -53,17 +53,23 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
     targetDate: z.string().optional(),
     responsibleMemberId: z.string().optional(),
   }).refine((data) => {
-    const startDate = new Date(data.startDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return startDate >= today;
+    if (!data.tontineId || !data.startDate) return true;
+    const tontine = tontines.find(t => t.id === data.tontineId);
+    if (!tontine) return true;
+    const projectStartDate = new Date(data.startDate);
+    const tontineStartDate = new Date(tontine.startDate);
+    projectStartDate.setHours(0, 0, 0, 0);
+    tontineStartDate.setHours(0, 0, 0, 0);
+    return projectStartDate >= tontineStartDate;
   }, {
-    message: t('projects.validation.startDateFuture'),
+    message: t('projects.validation.startDateAfterTontine'),
     path: ["startDate"],
   }).refine((data) => {
     if (data.targetDate) {
       const targetDate = new Date(data.targetDate);
       const startDate = new Date(data.startDate);
+      targetDate.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
       return targetDate > startDate;
     }
     return true;

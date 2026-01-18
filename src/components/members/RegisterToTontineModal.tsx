@@ -167,7 +167,11 @@ export function RegisterToTontineModal({
                       min="1"
                       disabled={isPresenceTontine}
                       placeholder="1"
-                      {...field}
+                      value={field.value}
+                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                     />
                   </FormControl>
                   <FormDescription>
