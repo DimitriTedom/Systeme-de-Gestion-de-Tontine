@@ -1,15 +1,16 @@
 # Multi-stage Docker build for React + Vite + TypeScript application
 # Stage 1: Build the application
-FROM node:18-alpine AS builder
+FROM node:20-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
-# Install dependencies (including devDependencies for build)
-RUN npm ci
+# Install ALL dependencies (including devDependencies for build)
+# Using npm install instead of npm ci to avoid Alpine compatibility issues
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy source code
 COPY . .
@@ -66,23 +67,16 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:80/ || exit 1
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
-
 # Development stage (optional)
-FROM node:18-alpine AS development
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # Install all dependencies (including dev dependencies)
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

@@ -8,7 +8,7 @@ export default {
   theme: {
   	extend: {
   		fontFamily: {
-  			sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+  			sans: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
