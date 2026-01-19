@@ -52,9 +52,20 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
     }
   },
 
-  // Ajouter un membre
+  // Ajouter un membre (avec optimistic UI)
   addMember: async (memberData) => {
-    set({ isLoading: true, error: null });
+    // Optimistic update: add member immediately with temporary ID
+    const optimisticMember: Membre = {
+      ...memberData,
+      id: `temp-${Date.now()}`, // Temporary ID
+      created_at: new Date().toISOString(),
+    } as Membre;
+
+    set((state) => ({ 
+      members: [...state.members, optimisticMember],
+      isLoading: true,
+      error: null,
+    }));
     
     try {
       const { data, error } = await supabase
@@ -65,26 +76,41 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Replace optimistic member with real data
       set((state) => ({ 
-        members: [...state.members, data],
+        members: state.members.map(m => 
+          m.id === optimisticMember.id ? data : m
+        ),
         isLoading: false 
       }));
 
       return data;
     } catch (error) {
+      // Rollback optimistic update on error
+      set((state) => ({
+        members: state.members.filter(m => m.id !== optimisticMember.id),
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout du membre',
+        isLoading: false,
+      }));
       logError('addMember', error);
       const errorDetails = handleSupabaseError(error);
-      set({ 
-        error: errorDetails.message,
-        isLoading: false 
-      });
       throw error;
     }
   },
 
-  // Mettre à jour un membre
+  // Mettre à jour un membre (avec optimistic UI)
   updateMember: async (id, memberData) => {
-    set({ isLoading: true, error: null });
+    // Store previous state for rollback
+    const previousMember = get().members.find(m => m.id === id);
+    
+    // Optimistic update
+    set((state) => ({
+      members: state.members.map((m) => 
+        m.id === id ? { ...m, ...memberData } as Membre : m
+      ),
+      isLoading: true,
+      error: null,
+    }));
     
     try {
       const { data, error } = await supabase
@@ -96,24 +122,37 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Update with server response
       set((state) => ({
         members: state.members.map((m) => m.id === id ? data : m),
         isLoading: false,
       }));
     } catch (error) {
+      // Rollback to previous state on error
+      if (previousMember) {
+        set((state) => ({
+          members: state.members.map((m) => m.id === id ? previousMember : m),
+          error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+          isLoading: false,
+        }));
+      }
       logError('updateMember', error);
       const errorDetails = handleSupabaseError(error);
-      set({ 
-        error: errorDetails.message,
-        isLoading: false 
-      });
       throw error;
     }
   },
 
-  // Supprimer un membre
+  // Supprimer un membre (avec optimistic UI)
   deleteMember: async (id) => {
-    set({ isLoading: true, error: null });
+    // Store previous state for rollback
+    const previousMember = get().members.find(m => m.id === id);
+    
+    // Optimistic delete
+    set((state) => ({
+      members: state.members.filter((m) => m.id !== id),
+      isLoading: true,
+      error: null,
+    }));
     
     try {
       const { error } = await supabase
@@ -123,17 +162,18 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       if (error) throw error;
 
-      set((state) => ({
-        members: state.members.filter((m) => m.id !== id),
-        isLoading: false,
-      }));
+      set({ isLoading: false });
     } catch (error) {
+      // Rollback - restore deleted member on error
+      if (previousMember) {
+        set((state) => ({
+          members: [...state.members, previousMember],
+          error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+          isLoading: false,
+        }));
+      }
       logError('deleteMember', error);
       const errorDetails = handleSupabaseError(error);
-      set({ 
-        error: errorDetails.message,
-        isLoading: false 
-      });
       throw error;
     }
   },

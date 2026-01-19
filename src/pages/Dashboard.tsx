@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import CountUp from 'react-countup';
 import {
   AreaChart,
   Area,
@@ -19,6 +20,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from 'recharts';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useContributionStore } from '@/stores/contributionStore';
@@ -29,6 +32,8 @@ import { useTontineStore } from '@/stores/tontineStore';
 import { AGReportViewer } from '@/components/reports/ReportViewers';
 import { reportService, AGSynthesisReport } from '@/services/reportService';
 import { useToast } from '@/components/ui/toast-provider';
+import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
+import { getGreeting, getTimeEmoji } from '@/lib/greetings';
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -176,7 +181,9 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            {getGreeting()} <span className="text-3xl">{getTimeEmoji()}</span>
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
             {t('dashboard.subtitle')}
           </p>
@@ -201,7 +208,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300">
+          <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 hover:scale-[1.02]">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.cashInHand')}</CardTitle>
@@ -210,12 +217,34 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(totalCashInHand)}</div>
+              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                <CountUp 
+                  end={totalCashInHand} 
+                  duration={2}
+                  separator=" "
+                  suffix=" XAF"
+                  decimals={0}
+                />
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalContributions > 0 || totalCreditsGranted > 0 
                   ? t('dashboard.moneyInOut', { moneyIn: formatCurrency(totalMoneyIn), moneyOut: formatCurrency(totalMoneyOut) })
                   : t('dashboard.noTransactions')}
               </p>
+              {/* Mini trend chart */}
+              <div className="mt-3 h-12">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={contributionTrends.slice(-4)}>
+                    <Line 
+                      type="monotone" 
+                      dataKey="contributions" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -225,7 +254,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="glass-card overflow-hidden group hover:shadow-lg hover:shadow-slate-500/10 transition-all duration-300">
+          <Card className="glass-card overflow-hidden group hover:shadow-lg hover:shadow-slate-500/10 transition-all duration-300 hover:scale-[1.02]">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeMembers')}</CardTitle>
@@ -234,10 +263,26 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold">{members.filter(m => m.statut === 'Actif').length}</div>
+              <div className="text-2xl font-bold">
+                <CountUp 
+                  end={members.filter(m => m.statut === 'Actif').length} 
+                  duration={1.5}
+                />
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t('dashboard.outOf', { total: members.length })}
               </p>
+              {/* Mini bar chart */}
+              <div className="mt-3 h-12">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { name: 'Actifs', value: members.filter(m => m.statut === 'Actif').length },
+                    { name: 'Inactifs', value: members.filter(m => m.statut === 'Inactif').length },
+                  ]}>
+                    <Bar dataKey="value" fill="#64748b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -247,7 +292,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300">
+          <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:scale-[1.02]">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeCredits')}</CardTitle>
@@ -508,6 +553,9 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Recent Activity Feed */}
+        <RecentActivityFeed />
       </div>
 
       <AGReportViewer
