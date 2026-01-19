@@ -194,21 +194,23 @@ export default function Credits() {
             <CardTitle>Liste des crédits</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('sessions.member')}</TableHead>
-                  <TableHead>{t('nav.tontines')}</TableHead>
-                  <TableHead>{t('credits.amount')}</TableHead>
-                  <TableHead>{t('credits.interestRate')}</TableHead>
-                  <TableHead>{t('credits.repaymentAmount')}</TableHead>
-                  <TableHead>{t('credits.balance')}</TableHead>
-                  <TableHead>{t('credits.dueDate')}</TableHead>
-                  <TableHead>{t('credits.status')}</TableHead>
-                  <TableHead>{t('common.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">{t('sessions.member')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">{t('nav.tontines')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('credits.amount')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden lg:table-cell">{t('credits.interestRate')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">{t('credits.repaymentAmount')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('credits.balance')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">{t('credits.dueDate')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('credits.status')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                 {credits.map((credit) => {
                   const member = getMemberById(credit.id_membre);
                   const tontine = credit.id_tontine ? getTontineById(credit.id_tontine) : null;
@@ -219,25 +221,25 @@ export default function Credits() {
                     <TableRow key={credit.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">
+                          <div className="font-medium whitespace-nowrap">
                             {member?.prenom} {member?.nom}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground hidden sm:block">
                             {member?.email}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{tontine?.nom}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="hidden md:table-cell">{tontine?.nom}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
                         {formatCurrency(credit.montant)}
                       </TableCell>
-                      <TableCell>{credit.taux_interet}%</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="hidden lg:table-cell">{credit.taux_interet}%</TableCell>
+                      <TableCell className="font-medium hidden sm:table-cell whitespace-nowrap">
                         {formatCurrency(credit.solde)}
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium text-orange-600">
+                          <div className="font-medium text-orange-600 whitespace-nowrap">
                             {formatCurrency(balance)}
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -245,8 +247,8 @@ export default function Credits() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
+                      <TableCell className="hidden md:table-cell">
+                        <div className="text-sm whitespace-nowrap">
                           {formatDate(credit.date_remboursement_prevue)}
                         </div>
                       </TableCell>
@@ -262,6 +264,7 @@ export default function Credits() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               title="Approuver"
                               onClick={() => handleApproveCredit(credit.id)}
                             >
@@ -274,6 +277,7 @@ export default function Credits() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               title="Décaisser"
                               onClick={() => handleDisburseCredit(credit.id)}
                             >
@@ -286,6 +290,7 @@ export default function Credits() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               title="Rembourser"
                               onClick={() => setSelectedCreditForRepay(credit)}
                             >
@@ -297,6 +302,7 @@ export default function Credits() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             title={t('common.delete')}
                             onClick={() => handleDeleteCredit(credit.id)}
                           >
@@ -307,8 +313,10 @@ export default function Credits() {
                     </TableRow>
                   );
                 })}
-              </TableBody>
-            </Table>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -1,0 +1,389 @@
+================================================================================
+                         MANUEL D'UTILISATION
+                            NjangiTech
+               Système de Gestion de Tontine v1.0
+================================================================================
+
+                    Université de Yaoundé I
+              Faculté des Sciences - Département d'Informatique
+                 INF2212 : Implémentation des Bases de Données
+                           Janvier 2026
+
+================================================================================
+                         TABLE DES MATIÈRES
+================================================================================
+
+1. Introduction
+2. Accès à l'Application
+3. Tableau de Bord (Dashboard)
+4. Gestion des Membres
+5. Gestion des Tontines
+6. Gestion des Sessions
+7. Gestion des Crédits
+8. Gestion des Pénalités
+9. Gestion des Tours & Gains
+10. Gestion des Projets
+11. Paramètres et Préférences
+12. Version Mobile
+
+================================================================================
+                         1. INTRODUCTION
+================================================================================
+
+NjangiTech est une application web moderne de gestion de tontines permettant 
+de gérer efficacement :
+- Les cotisations périodiques des membres
+- La distribution des gains lors des tours
+- Les crédits internes contractés par les membres
+- L'application de pénalités
+- Le financement de projets collectifs (FIAC)
+- La génération de rapports financiers détaillés
+
+Technologies utilisées : React, TypeScript, Supabase, TailwindCSS
+
+================================================================================
+                    2. ACCÈS À L'APPLICATION
+================================================================================
+
+URL de l'application : https://tontine-app-inf-221.vercel.app/
+
+ÉTAPE 1 : Connexion
+-------------------
+- Ouvrez l'URL dans votre navigateur
+- Entrez vos identifiants (email et mot de passe)
+- Cliquez sur "Se connecter"
+
+[📸 CAPTURE D'ÉCRAN : Page de connexion]
+
+================================================================================
+                    3. TABLEAU DE BORD (DASHBOARD)
+================================================================================
+
+Le tableau de bord offre une vue d'ensemble de l'état financier de la tontine.
+
+INDICATEURS CLÉS :
+------------------
+• Cash en Caisse : Montant total disponible (entrées - sorties)
+• Membres Actifs : Nombre de membres actifs sur le total
+• Crédits Actifs : Nombre de crédits en cours
+• Pénalités : Nombre de pénalités non payées
+
+[📸 CAPTURE D'ÉCRAN : Vue d'ensemble du tableau de bord avec les 4 cartes]
+
+GRAPHIQUES :
+------------
+• Tendance des Cotisations : Évolution sur les 6 dernières sessions
+• Statut des Crédits : Répartition (en bonne voie / en retard)
+• Présence aux Sessions : Taux de participation
+
+[📸 CAPTURE D'ÉCRAN : Section des graphiques]
+
+EXPORT SYNTHÈSE AG :
+--------------------
+Cliquez sur le bouton "Exporter Synthèse AG" pour générer un rapport PDF 
+complet pour l'Assemblée Générale.
+
+================================================================================
+                    4. GESTION DES MEMBRES
+================================================================================
+
+Accès : Menu latéral → "Membres"
+
+LISTE DES MEMBRES :
+-------------------
+Affiche tous les membres avec :
+- Prénom et Nom
+- Email
+- Téléphone
+- Statut (Actif/Inactif)
+
+[📸 CAPTURE D'ÉCRAN : Liste des membres]
+
+AJOUTER UN MEMBRE :
+-------------------
+1. Cliquez sur le bouton "+ Ajouter un membre"
+2. Remplissez le formulaire :
+   - Prénom (obligatoire)
+   - Nom (obligatoire)
+   - Email
+   - Téléphone
+   - Adresse
+3. Cliquez sur "Enregistrer"
+
+[📸 CAPTURE D'ÉCRAN : Formulaire d'ajout de membre]
+
+ACTIONS SUR UN MEMBRE :
+-----------------------
+• 📊 Export Excel : Exporter la fiche financière du membre
+• 👁️ Voir détails : Afficher le résumé financier complet
+• ✏️ Modifier : Éditer les informations
+• 🗑️ Supprimer : Supprimer le membre
+
+[📸 CAPTURE D'ÉCRAN : Détails d'un membre avec résumé financier]
+
+RECHERCHE :
+-----------
+Utilisez la barre de recherche pour filtrer par nom, email ou téléphone.
+
+================================================================================
+                    5. GESTION DES TONTINES
+================================================================================
+
+Accès : Menu latéral → "Tontines"
+
+CRÉER UNE TONTINE :
+-------------------
+1. Cliquez sur "+ Ajouter une tontine"
+2. Remplissez :
+   - Nom de la tontine
+   - Type (Présence obligatoire / Optionnelle)
+   - Montant de cotisation (XAF)
+   - Fréquence (Hebdomadaire / Mensuelle / etc.)
+   - Description (optionnel)
+3. Cliquez sur "Créer"
+
+[📸 CAPTURE D'ÉCRAN : Formulaire de création de tontine]
+
+TYPES DE TONTINES :
+-------------------
+• Tontine de Présence : Participation obligatoire pour tous
+• Tontine Optionnelle : Participation facultative, plusieurs parts possibles
+
+[📸 CAPTURE D'ÉCRAN : Liste des tontines]
+
+DÉTAILS D'UNE TONTINE :
+-----------------------
+Cliquez sur l'icône 👁️ pour voir :
+- Informations générales
+- Liste des membres inscrits
+- Historique des sessions
+
+[📸 CAPTURE D'ÉCRAN : Panneau de détails d'une tontine]
+
+================================================================================
+                    6. GESTION DES SESSIONS
+================================================================================
+
+Accès : Menu latéral → "Sessions"
+
+CRÉER UNE SESSION :
+-------------------
+1. Cliquez sur "+ Nouvelle session"
+2. Sélectionnez la tontine concernée
+3. Définissez la date et le lieu
+4. Ajoutez des notes si nécessaire
+5. Cliquez sur "Créer"
+
+[📸 CAPTURE D'ÉCRAN : Formulaire de création de session]
+
+FEUILLE DE PRÉSENCE :
+---------------------
+1. Cliquez sur "Ouvrir feuille" pour une session
+2. Pour chaque membre :
+   - Cochez la case de présence
+   - Entrez le montant payé
+3. Cliquez sur "Enregistrer"
+
+[📸 CAPTURE D'ÉCRAN : Feuille de présence avec les cases à cocher]
+
+CLÔTURER UNE SESSION :
+----------------------
+1. Après avoir enregistré toutes les présences
+2. Cliquez sur "Clôturer la session"
+3. Le système génère automatiquement les pénalités pour les absents
+
+[📸 CAPTURE D'ÉCRAN : Session clôturée avec résumé]
+
+================================================================================
+                    7. GESTION DES CRÉDITS
+================================================================================
+
+Accès : Menu latéral → "Crédits" (ou via "Plus" sur mobile)
+
+DEMANDER UN CRÉDIT :
+--------------------
+1. Cliquez sur "+ Ajouter un crédit"
+2. Sélectionnez le membre demandeur
+3. Sélectionnez la tontine (optionnel)
+4. Entrez le montant demandé
+5. Définissez le taux d'intérêt (%)
+6. Définissez la date de remboursement prévue
+7. Cliquez sur "Soumettre"
+
+[📸 CAPTURE D'ÉCRAN : Formulaire de demande de crédit]
+
+CYCLE DE VIE D'UN CRÉDIT :
+--------------------------
+1. En attente → 2. Approuvé → 3. Décaissé → 4. En cours → 5. Remboursé
+
+ACTIONS :
+---------
+• ✅ Approuver : Valider la demande
+• 📤 Décaisser : Transférer les fonds
+• 💵 Rembourser : Enregistrer un remboursement partiel ou total
+• 🗑️ Supprimer : Annuler le crédit
+
+[📸 CAPTURE D'ÉCRAN : Liste des crédits avec différents statuts]
+
+MAJ RETARDS :
+-------------
+Cliquez sur "MAJ Retards" pour mettre à jour automatiquement les crédits 
+en retard (dépassant la date de remboursement prévue).
+
+================================================================================
+                    8. GESTION DES PÉNALITÉS
+================================================================================
+
+Accès : Menu latéral → "Pénalités" (ou via "Plus" sur mobile)
+
+Les pénalités sont générées automatiquement lors de la clôture des sessions
+pour les membres absents ou n'ayant pas payé leur cotisation.
+
+TYPES DE PÉNALITÉS :
+--------------------
+• Absence : Membre absent à une session
+• Retard de paiement : Cotisation non réglée à temps
+• Autre : Pénalité manuelle
+
+[📸 CAPTURE D'ÉCRAN : Liste des pénalités]
+
+PAYER UNE PÉNALITÉ :
+--------------------
+1. Cliquez sur l'icône 💵 à côté de la pénalité
+2. Entrez le montant payé (paiement partiel ou total possible)
+3. Confirmez le paiement
+
+[📸 CAPTURE D'ÉCRAN : Modal de paiement de pénalité]
+
+================================================================================
+                    9. GESTION DES TOURS & GAINS
+================================================================================
+
+Accès : Menu latéral → "Tours & Gains" (ou via "Plus" sur mobile)
+
+Un "tour" représente l'attribution du gain collecté à un membre bénéficiaire.
+
+ATTRIBUER UN GAIN :
+-------------------
+1. Cliquez sur "+ Nouveau tour"
+2. Sélectionnez la session concernée
+3. Sélectionnez le membre bénéficiaire
+4. Le montant est calculé automatiquement
+5. Cliquez sur "Attribuer"
+
+[📸 CAPTURE D'ÉCRAN : Attribution d'un tour]
+
+CONTRAINTE IMPORTANTE :
+-----------------------
+Pour les tontines optionnelles, le montant cumulé perçu par un membre 
+ne peut jamais excéder le montant total de cotisation prévu.
+
+[📸 CAPTURE D'ÉCRAN : Liste des tours effectués]
+
+================================================================================
+                    10. GESTION DES PROJETS
+================================================================================
+
+Accès : Menu latéral → "Projets" (ou via "Plus" sur mobile)
+
+Les projets représentent les initiatives collectives financées par la tontine
+(FIAC - Fonds d'Investissement et d'Action Collective).
+
+CRÉER UN PROJET :
+-----------------
+1. Cliquez sur "+ Nouveau projet"
+2. Remplissez :
+   - Nom du projet
+   - Description
+   - Budget prévu
+   - Date de début / fin
+3. Cliquez sur "Créer"
+
+[📸 CAPTURE D'ÉCRAN : Formulaire de création de projet]
+
+SUIVI DE PROJET :
+-----------------
+• Progression budgétaire
+• Fonds alloués vs dépensés
+• Statut (En cours / Terminé / Annulé)
+
+[📸 CAPTURE D'ÉCRAN : Détails d'un projet avec progression]
+
+================================================================================
+                    11. PARAMÈTRES ET PRÉFÉRENCES
+================================================================================
+
+CHANGER LA LANGUE :
+-------------------
+Cliquez sur l'icône 🌐 dans la barre de navigation pour basculer entre :
+- Français (FR)
+- Anglais (EN)
+
+[📸 CAPTURE D'ÉCRAN : Bouton de changement de langue]
+
+CHANGER LE THÈME :
+------------------
+Cliquez sur l'icône ☀️/🌙 pour basculer entre :
+- Mode Clair
+- Mode Sombre
+- Système (automatique)
+
+[📸 CAPTURE D'ÉCRAN : Menu de sélection du thème]
+
+SE DÉCONNECTER :
+----------------
+- Sur desktop : Cliquez sur "Déconnexion" dans le menu latéral
+- Sur mobile : Ouvrez "Plus" → Cliquez sur "Déconnexion"
+
+================================================================================
+                    12. VERSION MOBILE
+================================================================================
+
+L'application est entièrement responsive et optimisée pour les smartphones.
+
+NAVIGATION MOBILE :
+-------------------
+La barre de navigation est située en bas de l'écran, comme une application 
+Android/iOS native :
+
+• 🏠 Tableau de bord
+• 👥 Membres
+• 🏛️ Tontines
+• 📅 Sessions
+• ⋯ Plus (Crédits, Pénalités, Tours, Projets, Paramètres)
+
+[📸 CAPTURE D'ÉCRAN : Navigation mobile en bas de l'écran]
+
+MENU "PLUS" :
+-------------
+Appuyez sur "Plus" pour accéder à :
+- Crédits
+- Pénalités
+- Tours & Gains
+- Projets
+- Changement de langue
+- Changement de thème
+- Déconnexion
+
+[📸 CAPTURE D'ÉCRAN : Menu "Plus" ouvert sur mobile]
+
+TABLEAUX ADAPTATIFS :
+---------------------
+Sur mobile, les tableaux affichent uniquement les colonnes essentielles.
+Faites défiler horizontalement pour voir plus de détails si nécessaire.
+
+[📸 CAPTURE D'ÉCRAN : Tableau adapté sur mobile]
+
+================================================================================
+                         CONTACTS & SUPPORT
+================================================================================
+
+Application développée par l'équipe INF2212 - Janvier 2026
+
+Pour toute question technique, veuillez contacter :
+- Email : dimitritedom@example.com
+- GitHub : https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine
+
+================================================================================
+                         FIN DU MANUEL
+================================================================================

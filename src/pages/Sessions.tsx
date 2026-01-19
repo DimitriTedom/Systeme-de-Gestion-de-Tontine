@@ -79,64 +79,68 @@ export default function Sessions() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t('sessions.title')}</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('sessions.title')}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
+        <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           {t('sessions.addSession')}
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>{t('sessions.title')}</CardTitle>
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="text-lg sm:text-xl">{t('sessions.title')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {sessions.length === 0 ? (
-            <InteractiveEmptyState
-              title={t('sessions.noSessions')}
-              description="Créez votre première séance pour commencer à gérer les contributions et tours de votre tontine."
-              icons={[
-                <Calendar key="1" className="h-6 w-6" />,
-                <CalendarClock key="2" className="h-6 w-6" />,
-                <CalendarDays key="3" className="h-6 w-6" />
-              ]}
-              action={{
+            <div className="p-4 sm:p-0">
+              <InteractiveEmptyState
+                title={t('sessions.noSessions')}
+                description="Créez votre première séance pour commencer à gérer les contributions et tours de votre tontine."
+                icons={[
+                  <Calendar key="1" className="h-6 w-6" />,
+                  <CalendarClock key="2" className="h-6 w-6" />,
+                  <CalendarDays key="3" className="h-6 w-6" />
+                ]}
+                action={{
                 label: t('sessions.addSession'),
                 icon: <Plus className="h-4 w-4" />,
                 onClick: () => setIsAddModalOpen(true)
               }}
             />
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('sessions.sessionNumber')}</TableHead>
-                  <TableHead>{t('tontines.name')}</TableHead>
-                  <TableHead>{t('sessions.date')}</TableHead>
-                  <TableHead>{t('sessions.location')}</TableHead>
-                  <TableHead>{t('sessions.attendanceCount')}</TableHead>
-                  <TableHead>{t('sessions.totalContributions')}</TableHead>
-                  <TableHead>{t('common.status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessions.map((session) => {
-                  const tontine = getTontineById(session.id_tontine);
-                  return (
-                    <TableRow key={session.id}>
-                      <TableCell className="font-medium">
-                        #{session.numero_seance}
-                      </TableCell>
-                      <TableCell>
-                        <div>
+            <div className="overflow-x-auto -mx-0 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('sessions.sessionNumber')}</TableHead>
+                      <TableHead>{t('tontines.name')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('sessions.date')}</TableHead>
+                      <TableHead className="hidden md:table-cell">{t('sessions.location')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('sessions.attendanceCount')}</TableHead>
+                      <TableHead>{t('sessions.totalContributions')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('common.status')}</TableHead>
+                      <TableHead className="text-right">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((session) => {
+                      const tontine = getTontineById(session.id_tontine);
+                      return (
+                        <TableRow key={session.id}>
+                          <TableCell className="font-medium">
+                            #{session.numero_seance}
+                          </TableCell>
+                          <TableCell>
+                            <div>
                           <div className="font-medium">{tontine?.nom || 'N/A'}</div>
                           {session.ordre_du_jour && (
                             <div className="text-xs text-muted-foreground">
@@ -145,9 +149,9 @@ export default function Sessions() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(new Date(session.date))}</TableCell>
-                      <TableCell className="text-sm">{session.lieu}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">{formatDate(new Date(session.date))}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">{session.lieu}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant="secondary">
                           {session.nombre_presents}
                         </Badge>
@@ -155,7 +159,7 @@ export default function Sessions() {
                       <TableCell className="font-medium">
                         {formatCurrency(session.total_cotisations)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge
                           variant={session.statut === 'terminee' ? 'default' : 'secondary'}
                         >
@@ -163,10 +167,11 @@ export default function Sessions() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => handleGenerateReport(session.id)}
                             title="Générer le rapport PDF"
                           >
@@ -175,6 +180,7 @@ export default function Sessions() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => setSelectedSessionId(session.id)}
                             title={t('sessions.viewMeetingSheet')}
                           >
@@ -183,6 +189,7 @@ export default function Sessions() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => handleDelete(session.id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -192,8 +199,10 @@ export default function Sessions() {
                     </TableRow>
                   );
                 })}
-              </TableBody>
-            </Table>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -169,92 +169,99 @@ export default function Tontines() {
             />
           ) : (
             <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('tontines.name')}</TableHead>
-                  <TableHead>{t('tontines.type')}</TableHead>
-                  <TableHead>{t('tontines.contributionAmount')}</TableHead>
-                  <TableHead>{t('tontines.frequency')}</TableHead>
-                  <TableHead>{t('tontines.members')}</TableHead>
-                  <TableHead>{t('common.status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedTontines.map((tontine, index) => (
-                  <motion.tr
-                    key={tontine.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="group hover:bg-accent/50 transition-colors"
-                  >
-                    <TableCell className="font-medium">
-                      <div>
-                        <div>{tontine.nom}</div>
-                        {tontine.description && (
-                          <div className="text-xs text-muted-foreground">
-                            {tontine.description}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {t(`tontines.types.${tontine.type}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(tontine.montant_cotisation)}
-                    </TableCell>
-                    <TableCell>
-                      {t(`tontines.frequencies.${tontine.periode}`)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {tontine.membres_count || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={tontine.statut === 'Actif' ? 'default' : 'secondary'}
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">{t('tontines.name')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">{t('tontines.type')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('tontines.contributionAmount')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">{t('tontines.frequency')}</TableHead>
+                      <TableHead className="whitespace-nowrap hidden lg:table-cell">{t('tontines.members')}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t('common.status')}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTontines.map((tontine, index) => (
+                      <motion.tr
+                        key={tontine.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group hover:bg-accent/50 transition-colors"
                       >
-                        {t(`common.${tontine.statut}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setSelectedTontineId(tontine.id)}
-                          title={t('tontines.tontineDetails')}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setEditTontineId(tontine.id)}
-                          title={t('tontines.editTontine')}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(tontine.id, tontine.nom)}
-                          title={t('members.confirmDelete')}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </motion.tr>
-                ))}
-              </TableBody>
-            </Table>
+                        <TableCell className="font-medium">
+                          <div>
+                            <div className="whitespace-nowrap">{tontine.nom}</div>
+                            {tontine.description && (
+                              <div className="text-xs text-muted-foreground line-clamp-1">
+                                {tontine.description}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline">
+                            {t(`tontines.types.${tontine.type}`)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {formatCurrency(tontine.montant_cotisation)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {t(`tontines.frequencies.${tontine.periode}`)}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge variant="secondary">
+                            {tontine.membres_count || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={tontine.statut === 'Actif' ? 'default' : 'secondary'}
+                          >
+                            {t(`common.${tontine.statut}`)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1 sm:gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 sm:h-9 sm:w-9"
+                              onClick={() => setSelectedTontineId(tontine.id)}
+                              title={t('tontines.tontineDetails')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 sm:h-9 sm:w-9"
+                              onClick={() => setEditTontineId(tontine.id)}
+                              title={t('tontines.editTontine')}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 sm:h-9 sm:w-9"
+                              onClick={() => handleDelete(tontine.id, tontine.nom)}
+                              title={t('members.confirmDelete')}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
             </>
           )}
         </CardContent>

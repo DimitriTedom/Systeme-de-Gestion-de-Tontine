@@ -420,6 +420,19 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* ============================================
+   GLOBAL OVERFLOW CONTROL
+   ============================================ */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Mobile-specific scrolling improvements */
 @media (max-width: 767px) {
   html {
@@ -432,15 +445,23 @@
     overscroll-behavior-y: none;
   }
 
-  /* Better touch targets */
-  button, a, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
+  /* Better touch targets - exclude icon buttons */
+  button:not([class*="h-8"]):not([class*="h-9"]):not([class*="size-"]), 
+  a:not([class*="h-8"]):not([class*="h-9"]), 
+  [role="button"]:not([class*="h-8"]):not([class*="h-9"]) {
+    min-height: 40px;
   }
 
   /* Improve table scrolling on mobile */
   .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure cards don't overflow */
+  .glass-card,
+  [class*="Card"] {
+    max-width: 100%;
+    overflow: hidden;
   }
 }

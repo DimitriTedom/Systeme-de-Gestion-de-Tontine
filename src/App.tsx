@@ -24,24 +24,24 @@ import LoginPage from '@/pages/Login';
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Navbar visible only on desktop */}
           <div className="hidden md:block">
             <Navbar />
           </div>
           {/* Mobile header */}
-          <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-14 px-4 bg-white dark:bg-neutral-900 border-b border-border/50">
+          <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-14 px-4 bg-white dark:bg-neutral-900 border-b border-border/50 w-full">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg flex-shrink-0">
                 <img src="/logo.jpeg" alt="Logo" className="w-6 h-6 object-contain rounded" />
               </div>
-              <span className="font-bold text-lg text-emerald-700 dark:text-emerald-400">NjangiTech</span>
+              <span className="font-bold text-lg text-emerald-700 dark:text-emerald-400 truncate">NjangiTech</span>
             </div>
           </header>
-          <main className="flex-1 pb-20 md:pb-0">
-            <div className="container mx-auto px-4 md:px-6">
+          <main className="flex-1 pb-20 md:pb-0 overflow-x-hidden">
+            <div className="w-full max-w-full px-4 md:px-6 mx-auto md:container">
               {children}
             </div>
           </main>
