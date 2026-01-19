@@ -109,61 +109,9 @@ export const MobileSidebar = ({
   children,
   ...props
 }: React.ComponentProps<"div">) => {
-  const { open, setOpen } = useSidebar();
-  return (
-    <>
-      <div
-        className={cn(
-          "h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-white dark:bg-neutral-900 border-b border-border/50 w-full"
-        )}
-        {...props}
-      >
-        <div className="flex justify-between items-center z-20 w-full">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
-              <img 
-                src="/logo.jpeg" 
-                alt="Tontine Logo" 
-                className="w-7 h-7 object-contain rounded"
-              />
-            </div>
-            <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
-              NjangiTech
-            </span>
-          </div>
-          <Menu
-            className="text-emerald-700 dark:text-emerald-400 cursor-pointer"
-            onClick={() => setOpen(!open)}
-          />
-        </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn(
-                "fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
-                className
-              )}
-            >
-              <div
-                className="absolute right-10 top-10 z-50 text-emerald-700 dark:text-emerald-400 cursor-pointer"
-                onClick={() => setOpen(!open)}
-              >
-                <X />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
-  );
+  // Mobile sidebar is now handled by MobileBottomNav component
+  // This component is kept for compatibility but hidden
+  return null;
 };
 
 export const SidebarLink = ({

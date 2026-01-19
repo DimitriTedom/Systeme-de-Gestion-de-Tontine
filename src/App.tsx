@@ -4,6 +4,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { ProtectedRoute, PublicRoute } from '@/components/auth/ProtectedRoute';
 import { useAuthStore } from '@/stores/authStore';
@@ -26,14 +27,30 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <Navbar />
-          <main className="flex-1">
-            <div className="container mx-auto">
+          {/* Navbar visible only on desktop */}
+          <div className="hidden md:block">
+            <Navbar />
+          </div>
+          {/* Mobile header */}
+          <header className="md:hidden sticky top-0 z-40 flex items-center justify-between h-14 px-4 bg-white dark:bg-neutral-900 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg">
+                <img src="/logo.jpeg" alt="Logo" className="w-6 h-6 object-contain rounded" />
+              </div>
+              <span className="font-bold text-lg text-emerald-700 dark:text-emerald-400">NjangiTech</span>
+            </div>
+          </header>
+          <main className="flex-1 pb-20 md:pb-0">
+            <div className="container mx-auto px-4 md:px-6">
               {children}
             </div>
           </main>
-          <Footer />
+          <div className="hidden md:block">
+            <Footer />
+          </div>
         </div>
+        {/* Mobile bottom navigation */}
+        <MobileBottomNav />
       </div>
     </SidebarProvider>
   );

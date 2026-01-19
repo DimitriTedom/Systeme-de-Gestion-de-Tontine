@@ -165,18 +165,20 @@ export default function Members() {
             />
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('members.firstName')}</TableHead>
-                    <TableHead>{t('members.lastName')}</TableHead>
-                    <TableHead>{t('members.email')}</TableHead>
-                    <TableHead>{t('members.phone')}</TableHead>
-                    <TableHead>{t('common.status')}</TableHead>
-                    <TableHead className="text-right">{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="inline-block min-w-full align-middle">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">{t('members.firstName')}</TableHead>
+                        <TableHead className="whitespace-nowrap">{t('members.lastName')}</TableHead>
+                        <TableHead className="whitespace-nowrap hidden sm:table-cell">{t('members.email')}</TableHead>
+                        <TableHead className="whitespace-nowrap hidden md:table-cell">{t('members.phone')}</TableHead>
+                        <TableHead className="whitespace-nowrap">{t('common.status')}</TableHead>
+                        <TableHead className="text-right whitespace-nowrap">{t('common.actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                   {paginatedMembers.map((member, index) => (
                   <motion.tr
                     key={member.id}
@@ -185,10 +187,10 @@ export default function Members() {
                     transition={{ delay: index * 0.05 }}
                     className="group hover:bg-accent/50 transition-colors"
                   >
-                    <TableCell className="font-medium">{member.prenom}</TableCell>
-                    <TableCell>{member.nom}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.telephone}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{member.prenom}</TableCell>
+                    <TableCell className="whitespace-nowrap">{member.nom}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{member.email}</TableCell>
+                    <TableCell className="hidden md:table-cell">{member.telephone}</TableCell>
                     <TableCell>
                       <Badge
                         variant={member.statut === 'Actif' ? 'default' : 'secondary'}
@@ -197,10 +199,11 @@ export default function Members() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1 sm:gap-2">
                         <Button 
                           variant="ghost" 
                           size="icon"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
                           onClick={() => {
                             setExportMemberId(parseInt(member.id));
                             setExportMemberName(`${member.prenom} ${member.nom}`);
@@ -212,6 +215,7 @@ export default function Members() {
                         <Button 
                           variant="ghost" 
                           size="icon"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
                           onClick={() => setSelectedMemberId(member.id)}
                           title={t('members.memberDetails')}
                         >
@@ -219,7 +223,8 @@ export default function Members() {
                         </Button>
                         <Button 
                           variant="ghost" 
-                          size="icon" 
+                          size="icon"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
                           onClick={() => setEditMemberId(member.id)}
                           title={t('members.editMember')}
                         >
@@ -228,6 +233,7 @@ export default function Members() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
                           onClick={() => handleDelete(member.id, `${member.prenom} ${member.nom}`)}
                           title={t('members.confirmDelete')}
                         >
@@ -237,8 +243,10 @@ export default function Members() {
                     </TableCell>
                   </motion.tr>
 ))}
-              </TableBody>
-            </Table>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </>
           )}
         </CardContent>
