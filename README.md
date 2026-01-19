@@ -8,6 +8,8 @@
 ![Vite](https://img.shields.io/badge/Vite-5.4.8-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.13-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
+<img src="public/tontine-app.png" alt="Apercu de l'application NjangiTech" width="820" />
+
 **Application complète de gestion de tontines avec suivi financier, gestion des membres et analyses détaillées**
 
 **Projet académique - Université de Yaoundé I**  
