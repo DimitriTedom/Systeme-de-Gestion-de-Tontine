@@ -18,6 +18,7 @@
 3. Tableau de Bord (Dashboard)
 4. Gestion des Membres
 5. Gestion des Tontines
+   5.1 Règles Fondamentales de la Tontine
 6. Gestion des Sessions
 7. Gestion des Crédits
 8. Gestion des Pénalités
@@ -25,6 +26,7 @@
 10. Gestion des Projets
 11. Paramètres et Préférences
 12. Version Mobile
+13. Règles Métier et Validations
 
 ================================================================================
                          1. INTRODUCTION
@@ -172,6 +174,57 @@ Cliquez sur l'icône 👁️ pour voir :
 - Historique des sessions
 
 [📸 CAPTURE D'ÉCRAN : Panneau de détails d'une tontine]
+
+INSCRIPTION D'UN MEMBRE À UNE TONTINE :
+---------------------------------------
+1. Accédez au profil du membre (cliquez sur 👁️ dans la liste des membres)
+2. Dans la section "Mes Tontines", cliquez sur "+ S'inscrire à une tontine"
+3. Sélectionnez la tontine désirée
+4. Indiquez le nombre de parts (pour tontines optionnelles)
+5. Cliquez sur "Enregistrer"
+
+⚠️ RÈGLE IMPORTANTE : INSCRIPTION AU DÉBUT DU CYCLE UNIQUEMENT
+Vous ne pouvez rejoindre une tontine QUE lorsque le prochain tour est celui
+du premier membre inscrit (début d'un nouveau cycle). Cette règle garantit
+l'équité dans la distribution des tours.
+
+Exemple :
+• Tontine avec 3 membres (A, B, C)
+• Tours distribués : Tour 1 (A), Tour 2 (B), Tour 3 (C)
+• ✅ Vous pouvez rejoindre : Le cycle est terminé, le prochain est Tour 4 (A)
+• Si Tour 4 (A) est distribué, mais pas Tour 5 (B)
+• ❌ Vous ne pouvez PAS rejoindre : On est en milieu de cycle
+
+Si vous tentez de rejoindre en milieu de cycle, vous verrez ce message :
+"Vous ne pouvez rejoindre cette tontine qu'au début d'un nouveau cycle.
+Le prochain tour n'est pas celui du premier membre."
+
+RETRAIT D'UN MEMBRE D'UNE TONTINE :
+-----------------------------------
+1. Accédez au profil du membre
+2. Dans la section "Mes Tontines", cliquez sur l'icône 🗑️ à côté de la tontine
+3. Confirmez le retrait
+
+⚠️ RÈGLE IMPORTANTE : RETRAIT UNIQUEMENT LORS DE VOTRE TOUR
+Un membre ne peut être retiré d'une tontine QUE lorsque c'est son tour de 
+gagner. Dans ce cas, le membre ne reçoit AUCUN gain et est immédiatement 
+retiré. Cette règle :
+• Empêche les retraits opportunistes qui perturberaient l'ordre
+• Protège les autres membres qui attendent leur tour
+• Pénalise l'abandon en faisant perdre le gain
+
+Exemple :
+• Tontine avec 3 membres (A, B, C)
+• Tours distribués : Tour 1 (A), Tour 2 (B)
+• Prochain tour : Tour 3 (C)
+• ❌ Retrait de A ou B impossible : Ce n'est pas leur tour
+• ✅ Retrait de C possible : C'est son tour, mais il ne recevra AUCUN gain
+
+Si vous tentez de retirer un membre hors de son tour, vous verrez :
+"Ce membre ne peut être retiré que lorsque c'est son tour de gagner.
+Actuellement, le prochain tour appartient à un autre membre."
+
+[📸 CAPTURE D'ÉCRAN : Bouton de retrait avec icône poubelle]
 
 ================================================================================
                     6. GESTION DES SESSIONS
@@ -407,6 +460,121 @@ Faites défiler horizontalement pour voir plus de détails si nécessaire.
 [📸 CAPTURE D'ÉCRAN : Tableau adapté sur mobile]
 
 ================================================================================
+                   13. RÈGLES MÉTIER ET VALIDATIONS
+================================================================================
+
+Le système NjangiTech implémente des règles métier strictes pour garantir
+l'équité et la transparence dans la gestion des tontines. Ces règles sont
+automatiquement appliquées par le système.
+
+RÈGLE 1 : INSCRIPTION À UNE TONTINE AU DÉBUT DU CYCLE
+------------------------------------------------------
+📋 DESCRIPTION :
+Un membre ne peut rejoindre une tontine existante QUE lorsque le prochain 
+tour est celui du premier membre inscrit (début d'un nouveau cycle).
+
+🎯 OBJECTIF :
+• Garantir l'équité dans la distribution des tours
+• Éviter les perturbations de l'ordre établi
+• Maintenir la transparence du système
+
+🔍 COMMENT ÇA MARCHE :
+Le système calcule automatiquement :
+1. Le nombre total de tours déjà distribués
+2. Le nombre de membres participants
+3. L'index du prochain tour = (tours distribués) % (nombre de membres)
+4. Si index ≠ 0, l'inscription est refusée (milieu de cycle)
+
+📊 EXEMPLES PRATIQUES :
+
+Exemple 1 - INSCRIPTION AUTORISÉE ✅
+• Tontine : 3 membres (Alice, Bob, Charles)
+• Tours distribués : 
+  - Tour 1 → Alice (5 000 XAF)
+  - Tour 2 → Bob (5 000 XAF)
+  - Tour 3 → Charles (5 000 XAF)
+• Calcul : 3 tours ÷ 3 membres = 1 cycle complet
+• Index : 3 % 3 = 0 ✅ (début de nouveau cycle)
+• ➡️ Diana peut rejoindre, le prochain tour sera Alice (Tour 4)
+
+Exemple 2 - INSCRIPTION REFUSÉE ❌
+• Même tontine, mais 4 tours distribués :
+  - Tour 4 → Alice (5 000 XAF)
+• Calcul : 4 tours ÷ 3 membres = 1 cycle + 1 tour
+• Index : 4 % 3 = 1 ❌ (milieu de cycle)
+• ➡️ Diana ne peut PAS rejoindre, le prochain tour est Bob (Tour 5)
+• Elle devra attendre la fin du cycle (après Tour 6)
+
+⚠️ MESSAGE D'ERREUR AFFICHÉ :
+"Vous ne pouvez rejoindre cette tontine qu'au début d'un nouveau cycle.
+Le prochain tour n'est pas celui du premier membre."
+
+RÈGLE 2 : RETRAIT D'UN MEMBRE UNIQUEMENT LORS DE SON TOUR
+----------------------------------------------------------
+📋 DESCRIPTION :
+Un membre ne peut être retiré d'une tontine QUE lorsque c'est son tour de
+gagner. Dans ce cas, le membre ne reçoit AUCUN gain et est immédiatement
+retiré de la tontine.
+
+🎯 OBJECTIF :
+• Empêcher les retraits opportunistes
+• Protéger les membres qui attendent leur tour
+• Pénaliser l'abandon par perte du gain
+
+🔍 COMMENT ÇA MARCHE :
+Le système vérifie :
+1. Quel membre devrait recevoir le prochain tour
+2. Si c'est le membre concerné, le retrait est autorisé
+3. Confirmation explicite : "Le membre ne recevra AUCUN gain"
+4. Suppression sans création de tour/gain
+
+📊 EXEMPLES PRATIQUES :
+
+Exemple 1 - RETRAIT REFUSÉ ❌
+• Tontine : 3 membres (Alice, Bob, Charles)
+• Tours distribués :
+  - Tour 1 → Alice (5 000 XAF)
+  - Tour 2 → Bob (5 000 XAF)
+• Prochain tour : Charles (Tour 3)
+• ➡️ Retrait d'Alice : ❌ REFUSÉ (pas son tour)
+• ➡️ Retrait de Bob : ❌ REFUSÉ (pas son tour)
+• ➡️ Retrait de Charles : ✅ AUTORISÉ (c'est son tour)
+
+Exemple 2 - RETRAIT AUTORISÉ AVEC PERTE ✅
+• Même situation, Charles demande son retrait
+• Système demande confirmation :
+  "Êtes-vous sûr de vouloir retirer ce membre ?
+   Le membre ne recevra AUCUN gain et sera immédiatement retiré."
+• Si confirmé :
+  - Charles est retiré de la tontine
+  - Charles ne reçoit PAS les 5 000 XAF du Tour 3
+  - Le prochain tour (Tour 3) ira à Alice (nouveau cycle avec 2 membres)
+
+⚠️ MESSAGES AFFICHÉS :
+
+Message d'erreur :
+"Ce membre ne peut être retiré que lorsque c'est son tour de gagner.
+Actuellement, le prochain tour appartient à un autre membre."
+
+Message de confirmation :
+"Êtes-vous sûr de vouloir retirer ce membre de [Nom Tontine] ?
+Le membre ne recevra AUCUN gain et sera immédiatement retiré."
+
+AUTRES VALIDATIONS AUTOMATIQUES :
+----------------------------------
+✅ Validation des fonds avant attribution de crédit
+✅ Validation des fonds avant distribution de tour
+✅ Validation des fonds avant allocation à un projet
+✅ Vérification de l'unicité des emails et téléphones
+✅ Calcul automatique des intérêts sur les crédits
+✅ Application automatique des pénalités de retard
+✅ Solde calculé en temps réel depuis la base de données
+
+📚 DOCUMENTATION TECHNIQUE :
+Pour plus de détails techniques sur l'implémentation de ces règles,
+consultez le fichier BUSINESS_RULES.md dans le dépôt GitHub du projet.
+
+================================================================================
                          CONTACTS & SUPPORT
 ================================================================================
 
@@ -439,13 +607,29 @@ FONCTIONNALITÉS PRINCIPALES :
 ✅ Support multilingue (Français/Anglais)
 ✅ Validation des fonds pour toutes les opérations financières
 
+RÈGLES MÉTIER IMPLÉMENTÉES :
+----------------------------
+🔒 RÈGLE 1 : Inscription au début du cycle uniquement
+   • Les membres ne peuvent rejoindre une tontine qu'au début d'un nouveau cycle
+   • Garantit l'équité dans la distribution des tours
+   • Validation automatique avec message d'erreur explicite
+
+🔒 RÈGLE 2 : Retrait uniquement lors du tour du membre
+   • Un membre ne peut être retiré que lorsque c'est son tour de gagner
+   • Le membre retiré ne reçoit AUCUN gain
+   • Empêche les retraits opportunistes et protège les autres membres
+
 AMÉLIORATIONS RÉCENTES :
 ------------------------
+• Implémentation des règles fondamentales de la tontine (Janvier 2026)
+• Ajout du bouton de retrait dans le profil des membres
+• Validation stricte des inscriptions et retraits
 • Correction du calcul des soldes pour utiliser les données réelles de la BD
 • Validation des fonds avant attribution de crédits, tours et projets
 • Prévisualisation automatique des rapports PDF
 • Interface utilisateur améliorée avec thème émeraude
 • Ajout du bouton "Voir plus/moins" pour les cartes de solde
+• Documentation complète des règles métier (BUSINESS_RULES.md)
 
 ================================================================================
                          FIN DU MANUEL
