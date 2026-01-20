@@ -7,6 +7,7 @@ import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { formatErrorForToast } from '@/lib/errorHandler';
+import { formatDateToLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -210,7 +211,7 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
                 <FormControl>
                   <DatePicker
                     date={field.value ? new Date(field.value) : undefined}
-                    onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                    onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                     placeholder="Sélectionner la date d'échéance"
                   />
                 </FormControl>

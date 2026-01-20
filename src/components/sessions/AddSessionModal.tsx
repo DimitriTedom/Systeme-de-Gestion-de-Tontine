@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatDateToLocal } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -163,7 +164,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
               <FormControl>
                 <DatePicker
                   date={field.value ? new Date(field.value) : undefined}
-                  onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                  onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                   placeholder="Sélectionner la date de la séance"
                 />
               </FormControl>

@@ -7,6 +7,7 @@ import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { formatErrorForToast } from '@/lib/errorHandler';
+import { formatDateToLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -100,8 +101,9 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
   });
 
   const onSubmit = async (data: ProjectFormData) => {
-    const dateDebut = new Date(data.startDate).toISOString().split('T')[0];
-    const dateCible = data.targetDate ? new Date(data.targetDate).toISOString().split('T')[0] : null;
+    // Dates are already in YYYY-MM-DD format from formatDateToLocal
+    const dateDebut = data.startDate;
+    const dateCible = data.targetDate || null;
 
     try {
       await addProject({
@@ -222,7 +224,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                   <FormControl>
                     <DatePicker
                       date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                       placeholder="Sélectionner la date de début"
                     />
                   </FormControl>
@@ -240,7 +242,7 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                   <FormControl>
                     <DatePicker
                       date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                       placeholder="Sélectionner la date cible"
                     />
                   </FormControl>

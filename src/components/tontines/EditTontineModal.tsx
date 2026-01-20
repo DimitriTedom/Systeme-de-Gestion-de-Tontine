@@ -4,6 +4,7 @@ import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatDateToLocal } from '@/lib/utils';
 import { useTontineStore } from '@/stores/tontineStore';
 import {
   Dialog,
@@ -265,7 +266,7 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
                     <FormControl>
                       <DatePicker
                         date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                         placeholder="Sélectionner la date de début"
                       />
                     </FormControl>
@@ -283,7 +284,7 @@ export function EditTontineModal({ tontineId, open, onOpenChange }: EditTontineM
                     <FormControl>
                       <DatePicker
                         date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                         placeholder="Sélectionner la date de fin"
                       />
                     </FormControl>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/toast-provider';
 import { formatErrorForToast } from '@/lib/errorHandler';
+import { formatDateToLocal } from '@/lib/utils';
 import { useTontineStore } from '@/stores/tontineStore';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -225,7 +226,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                   <FormControl>
                     <DatePicker
                       date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                       placeholder="Sélectionner la date de début"
                     />
                   </FormControl>
@@ -246,7 +247,7 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                   <FormControl>
                     <DatePicker
                       date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      onDateChange={(date) => field.onChange(formatDateToLocal(date))}
                       placeholder="Sélectionner la date de fin"
                     />
                   </FormControl>
