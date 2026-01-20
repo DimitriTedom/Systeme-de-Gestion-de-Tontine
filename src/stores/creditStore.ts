@@ -120,20 +120,8 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Enregistrer la transaction de crédit accordé (argent sortant)
-      if (creditData.id_tontine) {
-        const { useTransactionStore } = await import('./transactionStore');
-        const transactionStore = useTransactionStore.getState();
-        transactionStore.addTransaction({
-          tontineId: creditData.id_tontine,
-          type: 'credit_granted',
-          amount: -creditData.montant, // Négatif car c'est une sortie d'argent
-          description: `Crédit accordé à ${data.id}`,
-          relatedEntityId: data.id,
-          relatedEntityType: 'credit',
-          memberId: creditData.id_membre || undefined,
-        });
-      }
+      // Ne pas créer de transaction ici - le crédit est en attente d'approbation
+      // La transaction sera créée lors du décaissement (disburseCredit)
 
       set((state) => ({ 
         credits: [data, ...state.credits],
@@ -287,10 +275,31 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
   // Décaisser un crédit
   disburseCredit: async (id) => {
+    const credit = get().getCreditById(id);
+    if (!credit) {
+      throw new Error('Crédit non trouvé');
+    }
+
+    // Mettre à jour le statut du crédit
     await get().updateCredit(id, { 
-      statut: 'en_cours',
+      statut: 'decaisse',
       date_decaissement: new Date().toISOString().split('T')[0],
     });
+
+    // Créer la transaction de décaissement (argent sortant)
+    if (credit.id_tontine) {
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      transactionStore.addTransaction({
+        tontineId: credit.id_tontine,
+        type: 'credit_granted',
+        amount: -credit.montant, // Négatif car c'est une sortie d'argent
+        description: `Crédit décaissé pour ${credit.id}`,
+        relatedEntityId: credit.id,
+        relatedEntityType: 'credit',
+        memberId: credit.id_membre || undefined,
+      });
+    }
   },
 
   // Vérifier si un membre a un crédit actif (RPC)
