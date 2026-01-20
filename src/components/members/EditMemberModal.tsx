@@ -6,14 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -31,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface EditMemberModalProps {
   memberId: string | null;
@@ -122,128 +116,129 @@ export function EditMemberModal({ memberId, open, onOpenChange }: EditMemberModa
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>{t('members.editMember')}</DialogTitle>
-          <DialogDescription>{t('members.memberDetails')}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.firstName')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Jean" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.lastName')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Dupont" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('members.editMember')}
+      description={t('members.memberDetails')}
+      className="sm:max-w-[525px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="email"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.email')}</FormLabel>
+                  <FormLabel>{t('members.firstName')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="jean.dupont@example.com"
-                      {...field}
-                    />
+                    <Input placeholder="Jean" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
-              name="phone"
+              name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.phone')}</FormLabel>
+                  <FormLabel>{t('members.lastName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+237 6 77 88 99 00" {...field} />
+                    <Input placeholder="Dupont" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('members.address')}</FormLabel>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.email')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="jean.dupont@example.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.phone')}</FormLabel>
+                <FormControl>
+                  <Input placeholder="+237 6 77 88 99 00" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.address')}</FormLabel>
+                <FormControl>
+                  <Input placeholder="Yaoundé, Cameroun" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('common.status')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input placeholder="Yaoundé, Cameroun" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('common.status')} />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="Actif">{t('common.active')}</SelectItem>
+                    <SelectItem value="Inactif">{t('common.inactive')}</SelectItem>
+                    <SelectItem value="Suspendu">{t('common.suspended')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('common.status')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('common.status')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Actif">{t('common.active')}</SelectItem>
-                      <SelectItem value="Inactif">{t('common.inactive')}</SelectItem>
-                      <SelectItem value="Suspendu">{t('common.suspended')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : t('common.save')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? t('common.saving') : t('common.save')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

@@ -6,14 +6,7 @@ import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { formatErrorForToast } from '@/lib/errorHandler';
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -31,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddMemberModalProps {
   open: boolean;
@@ -100,59 +94,24 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>{t('members.addMember')}</DialogTitle>
-          <DialogDescription>
-            {t('members.addMemberDescription')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="prenom"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.firstName')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Jean" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="nom"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.lastName')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Dupont" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('members.addMember')}
+      description={t('members.addMemberDescription')}
+      className="sm:max-w-[525px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="email"
+              name="prenom"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.email')}</FormLabel>
+                  <FormLabel>{t('members.firstName')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="jean.dupont@email.com"
-                      {...field}
-                    />
+                    <Input placeholder="Jean" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -161,89 +120,122 @@ export function AddMemberModal({ open, onOpenChange }: AddMemberModalProps) {
 
             <FormField
               control={form.control}
-              name="telephone"
+              name="nom"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.phone')}</FormLabel>
+                  <FormLabel>{t('members.lastName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+237 6XX XXX XXX" {...field} />
+                    <Input placeholder="Dupont" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.email')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="jean.dupont@email.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="telephone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.phone')}</FormLabel>
+                <FormControl>
+                  <Input placeholder="+237 6XX XXX XXX" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="adresse"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('members.address')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123 Rue Principale" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="adresse"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.address')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="123 Rue Principale" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="commune"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('members.commune')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Yaoundé" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="statut"
+              name="commune"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('members.status')}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('members.selectStatus')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Actif">{t('common.Actif')}</SelectItem>
-                      <SelectItem value="Inactif">{t('common.Inactif')}</SelectItem>
-                      <SelectItem value="Suspendu">{t('common.Suspendu')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>{t('members.commune')}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Yaoundé" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.loading') : t('common.add')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="statut"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.status')}</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('members.selectStatus')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Actif">{t('common.Actif')}</SelectItem>
+                    <SelectItem value="Inactif">{t('common.Inactif')}</SelectItem>
+                    <SelectItem value="Suspendu">{t('common.Suspendu')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? t('common.loading') : t('common.add')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

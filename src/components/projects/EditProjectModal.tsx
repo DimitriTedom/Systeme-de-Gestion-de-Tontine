@@ -6,14 +6,7 @@ import { useToast } from '@/components/ui/toast-provider';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '@/stores/projectStore';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -32,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface EditProjectModalProps {
   projectId: string | null;
@@ -136,170 +130,172 @@ export function EditProjectModal({ projectId, open, onOpenChange }: EditProjectM
   const progressPercentage = ((form.watch('montant_alloue') || 0) / project.budget) * 100;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Mettre à jour le projet</DialogTitle>
-          <DialogDescription>
-            {project.nom}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Budget Info */}
-            <div className="rounded-lg bg-muted p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Budget total:</span>
-                <span className="font-bold">{project.budget.toLocaleString()} XAF</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Montant alloué actuel:</span>
-                <span className="font-semibold text-green-600">
-                  {(form.watch('montant_alloue') || 0).toLocaleString()} XAF
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Reste à allouer:</span>
-                <span className={remainingBudget >= 0 ? 'font-semibold' : 'font-semibold text-red-600'}>
-                  {remainingBudget.toLocaleString()} XAF
-                </span>
-              </div>
-              <div className="pt-2">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all ${progressPercentage > 100 ? 'bg-red-500' : 'bg-green-500'}`}
-                    style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-center mt-1 text-muted-foreground">
-                  {progressPercentage.toFixed(1)}% du budget
-                </p>
-              </div>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Mettre à jour le projet"
+      description={project.nom}
+      className="sm:max-w-[600px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="rounded-lg bg-muted p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Budget total:</span>
+              <span className="font-bold">{project.budget.toLocaleString()} XAF</span>
             </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Montant alloué actuel:</span>
+              <span className="font-semibold text-green-600">
+                {(form.watch('montant_alloue') || 0).toLocaleString()} XAF
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Reste à allouer:</span>
+              <span className={remainingBudget >= 0 ? 'font-semibold' : 'font-semibold text-red-600'}>
+                {remainingBudget.toLocaleString()} XAF
+              </span>
+            </div>
+            <div className="pt-2">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all ${progressPercentage > 100 ? 'bg-red-500' : 'bg-green-500'}`}
+                  style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-center mt-1 text-muted-foreground">
+                {progressPercentage.toFixed(1)}% du budget
+              </p>
+            </div>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="montant_alloue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Montant alloué (XAF)</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        value={field.value}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => field.onChange(project.budget * 0.25)}
-                        >
-                          25%
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => field.onChange(project.budget * 0.5)}
-                        >
-                          50%
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => field.onChange(project.budget * 0.75)}
-                        >
-                          75%
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => field.onChange(project.budget)}
-                        >
-                          100%
-                        </Button>
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Montant des fonds actuellement alloués à ce projet
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="statut"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Statut du projet</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un statut" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="planifie">{t('projects.statuses.planned')}</SelectItem>
-                      <SelectItem value="collecte_fonds">{t('projects.statuses.fundraising')}</SelectItem>
-                      <SelectItem value="en_cours">{t('projects.statuses.in_progress')}</SelectItem>
-                      <SelectItem value="termine">{t('projects.statuses.completed')}</SelectItem>
-                      <SelectItem value="annule">{t('projects.statuses.cancelled')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Mettre à jour l'état d'avancement du projet
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (optionnel)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Ajouter des notes sur l'avancement du projet..."
-                      className="resize-none"
-                      {...field}
+          <FormField
+            control={form.control}
+            name="montant_alloue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Montant alloué (XAF)</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={field.value}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => field.onChange(project.budget * 0.25)}
+                        className="w-full sm:w-auto"
+                      >
+                        25%
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => field.onChange(project.budget * 0.5)}
+                        className="w-full sm:w-auto"
+                      >
+                        50%
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => field.onChange(project.budget * 0.75)}
+                        className="w-full sm:w-auto"
+                      >
+                        75%
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => field.onChange(project.budget)}
+                        className="w-full sm:w-auto"
+                      >
+                        100%
+                      </Button>
+                    </div>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Montant des fonds actuellement alloués à ce projet
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : 'Mettre à jour'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="statut"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Statut du projet</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un statut" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="planifie">{t('projects.statuses.planned')}</SelectItem>
+                    <SelectItem value="collecte_fonds">{t('projects.statuses.fundraising')}</SelectItem>
+                    <SelectItem value="en_cours">{t('projects.statuses.in_progress')}</SelectItem>
+                    <SelectItem value="termine">{t('projects.statuses.completed')}</SelectItem>
+                    <SelectItem value="annule">{t('projects.statuses.cancelled')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Mettre à jour l'état d'avancement du projet
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes (optionnel)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Ajouter des notes sur l'avancement du projet..."
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? t('common.saving') : 'Mettre à jour'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

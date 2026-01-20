@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ToastProvider } from '@/components/ui/toast-provider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProtectedRoute, PublicRoute } from '@/components/auth/ProtectedRoute';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -69,109 +70,111 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <Routes>
-        {/* Route publique - Login */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
+      <ErrorBoundary>
+        <Routes>
+          {/* Route publique - Login */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
 
-        {/* Routes protégées */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Dashboard />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/members"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Members />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tontines"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Tontines />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/sessions"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Sessions />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/credits"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Credits />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/penalties"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Penalties />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tours"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Tours />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Projects />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/transactions"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout>
-                <Transactions />
-              </ProtectedLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          {/* Routes protégées */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Dashboard />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/members"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Members />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tontines"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Tontines />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sessions"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Sessions />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/credits"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Credits />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/penalties"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Penalties />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tours"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Tours />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Projects />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Transactions />
+                </ProtectedLayout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </ErrorBoundary>
     </ToastProvider>
   );
 }

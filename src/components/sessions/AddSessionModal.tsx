@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -30,6 +32,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AddSessionModalProps {
   open: boolean;
@@ -41,6 +52,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
   const { addSession, getSessionsByTontineId } = useSessionStore();
   const { tontines } = useTontineStore();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formSchema = z.object({
     tontineId: z.string().min(1, t('sessions.validation.tontineRequired')),
@@ -76,18 +88,22 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
   });
 
   const onSubmit = async (data: FormValues) => {
-    // Calculate session number based on existing sessions for this tontine
-    const existingSessions = getSessionsByTontineId(data.tontineId);
-    const sessionNumber = existingSessions.length + 1;
-
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     try {
+      // Calculate session number based on existing sessions for this tontine
+      const existingSessions = getSessionsByTontineId(data.tontineId);
+      const sessionNumber = existingSessions.length + 1;
+
       await addSession({
         id_tontine: data.tontineId,
         numero_seance: sessionNumber,
         date: data.date,
-        lieu: data.location,
-        ordre_du_jour: data.agenda,
-        notes: data.notes,
+        lieu: data.location || '',
+        ordre_du_jour: data.agenda || '',
+        notes: data.notes || '',
         statut: 'programmee',
       });
 
@@ -99,11 +115,147 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
       form.reset();
       onOpenChange(false);
     } catch (error) {
+      console.error('Error creating session:', error);
       toast.error('Erreur lors de la création', {
         description: error instanceof Error ? error.message : 'Impossible de créer la session.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isMobile = useIsMobile();
+
+  const formContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="tontineId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('sessions.selectTontine')}</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('sessions.selectTontine')} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {tontines.map((tontine) => (
+                    <SelectItem key={tontine.id} value={tontine.id}>
+                      {tontine.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('sessions.date')}</FormLabel>
+              <FormControl>
+                <DatePicker
+                  date={field.value ? new Date(field.value) : undefined}
+                  onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                  placeholder="Sélectionner la date de la séance"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('sessions.location')}</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Salle de réunion, Yaoundé"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="agenda"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('sessions.agenda')}</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Ordre du jour de la session"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('sessions.notes')}</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Notes additionnelles"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+            className="w-full sm:w-auto"
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+            {isSubmitting ? 'Création...' : t('common.save')}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[90vh] overflow-y-auto pt-10">
+          <SheetHeader className="text-left">
+            <SheetTitle>{t('sessions.addSession')}</SheetTitle>
+            <SheetDescription>{t('sessions.sessionDetails')}</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 pb-6">
+            {formContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,114 +264,7 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
           <DialogTitle>{t('sessions.addSession')}</DialogTitle>
           <DialogDescription>{t('sessions.sessionDetails')}</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tontineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.selectTontine')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('sessions.selectTontine')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.date')}</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                      placeholder="Sélectionner la date de la séance"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.location')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Salle de réunion, Yaoundé"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="agenda"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.agenda')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ordre du jour de la session"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.notes')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Notes additionnelles"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit">{t('common.save')}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        {formContent}
       </DialogContent>
     </Dialog>
   );

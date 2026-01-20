@@ -5,14 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/toast-provider';
 import { useTontineStore } from '@/stores/tontineStore';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -31,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddTontineModalProps {
   open: boolean;
@@ -119,98 +113,118 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>{t('tontines.addTontine')}</DialogTitle>
-          <DialogDescription>{t('tontines.tontineDetails')}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('tontines.addTontine')}
+      description={t('tontines.tontineDetails')}
+      className="sm:max-w-[525px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tontines.name')}</FormLabel>
+                <FormControl>
+                  <Input placeholder="Tontine des Enseignants" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="name"
+              name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('tontines.name')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Tontine des Enseignants" {...field} />
-                  </FormControl>
+                  <FormLabel>{t('tontines.type')}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('tontines.type')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="presence">
+                        {t('tontines.types.presence')}
+                      </SelectItem>
+                      <SelectItem value="optional">
+                        {t('tontines.types.optional')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('tontines.type')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('tontines.type')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="presence">
-                          {t('tontines.types.presence')}
-                        </SelectItem>
-                        <SelectItem value="optional">
-                          {t('tontines.types.optional')}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('tontines.frequency')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('tontines.frequency')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="weekly">
-                          {t('tontines.frequencies.weekly')}
-                        </SelectItem>
-                        <SelectItem value="biweekly">
-                          {t('tontines.frequencies.biweekly')}
-                        </SelectItem>
-                        <SelectItem value="monthly">
-                          {t('tontines.frequencies.monthly')}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="contributionAmount"
+              name="frequency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('tontines.contributionAmount')}</FormLabel>
+                  <FormLabel>{t('tontines.frequency')}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('tontines.frequency')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="weekly">
+                        {t('tontines.frequencies.weekly')}
+                      </SelectItem>
+                      <SelectItem value="biweekly">
+                        {t('tontines.frequencies.biweekly')}
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        {t('tontines.frequencies.monthly')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="contributionAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tontines.contributionAmount')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="50000"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('tontines.startDate')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="50000"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      value={field.value || ''}
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date de début"
                     />
                   </FormControl>
                   <FormMessage />
@@ -218,63 +232,44 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('tontines.startDate')}</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                        placeholder="Sélectionner la date de début"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t('tontines.endDate')} 
+                    <span className="text-muted-foreground text-xs ml-1">({t('common.optional')})</span>
+                  </FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date de fin"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t('tontines.endDate')} 
-                      <span className="text-muted-foreground text-xs ml-1">({t('common.optional')})</span>
-                    </FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                        placeholder="Sélectionner la date de fin"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : t('common.save')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? t('common.saving') : t('common.save')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

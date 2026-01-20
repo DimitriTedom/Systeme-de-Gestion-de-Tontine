@@ -8,14 +8,7 @@ import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -33,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddPenaltyModalProps {
   open: boolean;
@@ -116,168 +110,170 @@ export function AddPenaltyModal({ open, onOpenChange }: AddPenaltyModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{t('penalties.addPenalty')}</DialogTitle>
-          <DialogDescription>
-            {t('penalties.addPenaltyDescription')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="id_tontine"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('nav.tontines')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('penalties.selectTontine')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="id_seance"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('penalties.session')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={!selectedTontineId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('penalties.selectSession')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {filteredSessions.map((session) => (
-                        <SelectItem key={session.id} value={session.id}>
-                          Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="id_membre"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.member')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={!selectedTontineId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('penalties.selectMember')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(tontineMembers.length > 0 ? tontineMembers : members).map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.prenom} {member.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="type_penalite"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('penalties.type')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('penalties.selectType')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="absence">{t('penalties.types.absence')}</SelectItem>
-                      <SelectItem value="retard_cotisation">{t('penalties.types.lateContribution')}</SelectItem>
-                      <SelectItem value="mauvaise_conduite">{t('penalties.types.misconduct')}</SelectItem>
-                      <SelectItem value="autre">{t('penalties.types.other')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="montant"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('penalties.amount')}</FormLabel>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('penalties.addPenalty')}
+      description={t('penalties.addPenaltyDescription')}
+      className="sm:max-w-[500px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="id_tontine"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('nav.tontines')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="5000"
-                      {...field}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('penalties.selectTontine')} />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {tontines.map((tontine) => (
+                      <SelectItem key={tontine.id} value={tontine.id}>
+                        {tontine.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="raison"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('penalties.reason')}</FormLabel>
+          <FormField
+            control={form.control}
+            name="id_seance"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('penalties.session')}</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  disabled={!selectedTontineId}
+                >
                   <FormControl>
-                    <Textarea
-                      placeholder={t('penalties.reasonPlaceholder')}
-                      {...field}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('penalties.selectSession')} />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {filteredSessions.map((session) => (
+                      <SelectItem key={session.id} value={session.id}>
+                        Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit">{t('common.save')}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="id_membre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('sessions.member')}</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  disabled={!selectedTontineId}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('penalties.selectMember')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(tontineMembers.length > 0 ? tontineMembers : members).map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.prenom} {member.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="type_penalite"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('penalties.type')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('penalties.selectType')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="absence">{t('penalties.types.absence')}</SelectItem>
+                    <SelectItem value="retard_cotisation">{t('penalties.types.lateContribution')}</SelectItem>
+                    <SelectItem value="mauvaise_conduite">{t('penalties.types.misconduct')}</SelectItem>
+                    <SelectItem value="autre">{t('penalties.types.other')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="montant"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('penalties.amount')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="5000"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="raison"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('penalties.reason')}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={t('penalties.reasonPlaceholder')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto">{t('common.save')}</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

@@ -7,14 +7,7 @@ import { useState, useEffect } from 'react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -32,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface RegisterToTontineModalProps {
   open: boolean;
@@ -115,93 +109,92 @@ export function RegisterToTontineModal({
   const isPresenceTontine = selectedTontineType.toLowerCase() === 'presence';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{t('members.registerToTontine')}</DialogTitle>
-          <DialogDescription>
-            {t('members.registerDescription', { name: memberName })}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tontineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('nav.tontines')}</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleTontineChange(value);
-                    }} 
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('members.selectTontine')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom} ({tontine.type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="nbParts"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('members.nbParts')}</FormLabel>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('members.registerToTontine')}
+      description={t('members.registerDescription', { name: memberName })}
+      className="sm:max-w-[500px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="tontineId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('nav.tontines')}</FormLabel>
+                <Select 
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    handleTontineChange(value);
+                  }} 
+                  value={field.value}
+                >
                   <FormControl>
-                    <Input
-                      type="number"
-                      min="1"
-                      disabled={isPresenceTontine}
-                      placeholder="1"
-                      value={field.value}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('members.selectTontine')} />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormDescription>
-                    {isPresenceTontine 
-                      ? t('members.presenceTontineNote')
-                      : t('members.optionalTontineNote')
-                    }
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {tontines.map((tontine) => (
+                      <SelectItem key={tontine.id} value={tontine.id}>
+                        {tontine.nom} ({tontine.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.saving') : t('members.register')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="nbParts"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('members.nbParts')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    disabled={isPresenceTontine}
+                    placeholder="1"
+                    value={field.value}
+                    onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {isPresenceTontine 
+                    ? t('members.presenceTontineNote')
+                    : t('members.optionalTontineNote')
+                  }
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? t('common.saving') : t('members.register')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

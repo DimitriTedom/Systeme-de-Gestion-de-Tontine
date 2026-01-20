@@ -7,14 +7,7 @@ import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -33,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddProjectModalProps {
   open: boolean;
@@ -136,67 +130,98 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t('projects.addProject')}</DialogTitle>
-          <DialogDescription>
-            Créez un nouveau projet communautaire (FIAC)
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tontineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('nav.tontines')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une tontine" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('projects.name')}</FormLabel>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('projects.addProject')}
+      description="Créez un nouveau projet communautaire (FIAC)"
+      className="sm:max-w-[600px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="tontineId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('nav.tontines')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Construction École Primaire" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une tontine" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {tontines.map((tontine) => (
+                      <SelectItem key={tontine.id} value={tontine.id}>
+                        {tontine.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('projects.name')}</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex: Construction École Primaire" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('projects.description')}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Décrivez le projet en détail..."
+                    rows={3}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="budget"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('projects.budget')} (XAF)</FormLabel>
+                <FormControl>
+                  <Input type="number" min="0" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="description"
+              name="startDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('projects.description')}</FormLabel>
+                  <FormLabel>{t('projects.startDate')}</FormLabel>
                   <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Décrivez le projet en détail..."
-                      rows={3}
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date de début"
                     />
                   </FormControl>
                   <FormMessage />
@@ -206,94 +231,61 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
 
             <FormField
               control={form.control}
-              name="budget"
+              name="targetDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('projects.budget')} (XAF)</FormLabel>
+                  <FormLabel>{t('projects.targetDate')} (optionnel)</FormLabel>
                   <FormControl>
-                    <Input type="number" min="0" {...field} />
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date cible"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('projects.startDate')}</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                        placeholder="Sélectionner la date de début"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="responsibleMemberId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('projects.responsibleMember')} (optionnel)</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un membre responsable" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.prenom} {member.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="targetDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('projects.targetDate')} (optionnel)</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        date={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                        placeholder="Sélectionner la date cible"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="responsibleMemberId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('projects.responsibleMember')} (optionnel)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un membre responsable" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.prenom} {member.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit">{t('common.save')}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto">{t('common.save')}</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

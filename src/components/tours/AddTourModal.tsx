@@ -10,14 +10,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -36,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Trophy, AlertCircle } from 'lucide-react';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddTourModalProps {
   open: boolean;
@@ -165,201 +159,199 @@ export function AddTourModal({ open, onOpenChange }: AddTourModalProps) {
       }));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
-            {t('tours.assignTour')}
-          </DialogTitle>
-          <DialogDescription>
-            {t('tours.assignTourDescription')}
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-500" />
+          {t('tours.assignTour')}
+        </span>
+      }
+      description={t('tours.assignTourDescription')}
+      className="sm:max-w-[500px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {selectedTontineId && (
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              <span className="text-sm">{t('tours.nextTour')}:</span>
+              <Badge variant="secondary" className="font-mono text-lg">
+                #{nextTourNumber}
+              </Badge>
+            </div>
+          )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Tour Number Badge */}
-            {selectedTontineId && (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <Trophy className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm">{t('tours.nextTour')}:</span>
-                <Badge variant="secondary" className="font-mono text-lg">
-                  #{nextTourNumber}
-                </Badge>
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="tontineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('nav.tontines')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('tours.selectTontine')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="sessionId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('tours.session')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={!selectedTontineId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('tours.selectSession')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {filteredSessions.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          {t('tours.noClosedSessions')}
-                        </div>
-                      ) : (
-                        filteredSessions.map((session) => (
-                          <SelectItem key={session.id} value={session.id}>
-                            Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t('tours.sessionNote')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="beneficiaryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('tours.beneficiary')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={!selectedTontineId || isLoadingEligible}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          isLoadingEligible ? t('common.loading') : t('tours.selectBeneficiary')
-                        } />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {beneficiaryOptions.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          {t('tours.noEligibleMembers')}
-                        </div>
-                      ) : (
-                        beneficiaryOptions.map((member) => (
-                          <SelectItem 
-                            key={member.id} 
-                            value={member.id}
-                            disabled={member.hasReceivedTour}
-                          >
-                            <div className="flex flex-col gap-1 py-1">
-                              <div className="flex items-center justify-between w-full gap-2">
-                                <span className="font-medium">{member.prenom} {member.nom}</span>
-                                {member.hasReceivedTour ? (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {t('tours.alreadyReceived')}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="default" className="text-xs bg-green-600">
-                                    Éligible
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex gap-3 text-xs text-muted-foreground">
-                                <span>Tours reçus: {member.toursReceived || 0}</span>
-                                <span>•</span>
-                                <span>Total cotisé: {new Intl.NumberFormat('fr-FR', {
-                                  style: 'currency',
-                                  currency: 'XAF',
-                                  minimumFractionDigits: 0,
-                                }).format(member.totalContributed || 0)}</span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {eligibleBeneficiaries.filter(b => b.eligible).length} {t('tours.eligibleMembers')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('tours.amount')}</FormLabel>
+          <FormField
+            control={form.control}
+            name="tontineId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('nav.tontines')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="100000"
-                      {...field}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('tours.selectTontine')} />
+                    </SelectTrigger>
                   </FormControl>
-                  {suggestedAmount > 0 && (
-                    <FormDescription>
-                      {t('tours.suggestedAmount')}: {new Intl.NumberFormat('fr-FR', {
-                        style: 'currency',
-                        currency: 'XAF',
-                        minimumFractionDigits: 0,
-                      }).format(suggestedAmount)}
-                    </FormDescription>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {tontines.map((tontine) => (
+                      <SelectItem key={tontine.id} value={tontine.id}>
+                        {tontine.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit">
-                <Trophy className="mr-2 h-4 w-4" />
-                {t('tours.assignTour')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="sessionId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tours.session')}</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  disabled={!selectedTontineId}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('tours.selectSession')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {filteredSessions.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" />
+                        {t('tours.noClosedSessions')}
+                      </div>
+                    ) : (
+                      filteredSessions.map((session) => (
+                        <SelectItem key={session.id} value={session.id}>
+                          Séance #{session.numero_seance} - {new Date(session.date).toLocaleDateString('fr-FR')}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {t('tours.sessionNote')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="beneficiaryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tours.beneficiary')}</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  disabled={!selectedTontineId || isLoadingEligible}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        isLoadingEligible ? t('common.loading') : t('tours.selectBeneficiary')
+                      } />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {beneficiaryOptions.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" />
+                        {t('tours.noEligibleMembers')}
+                      </div>
+                    ) : (
+                      beneficiaryOptions.map((member) => (
+                        <SelectItem 
+                          key={member.id} 
+                          value={member.id}
+                          disabled={member.hasReceivedTour}
+                        >
+                          <div className="flex flex-col gap-1 py-1">
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span className="font-medium">{member.prenom} {member.nom}</span>
+                              {member.hasReceivedTour ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  {t('tours.alreadyReceived')}
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="text-xs bg-green-600">
+                                  Éligible
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-3 text-xs text-muted-foreground">
+                              <span>Tours reçus: {member.toursReceived || 0}</span>
+                              <span>•</span>
+                              <span>Total cotisé: {new Intl.NumberFormat('fr-FR', {
+                                style: 'currency',
+                                currency: 'XAF',
+                                minimumFractionDigits: 0,
+                              }).format(member.totalContributed || 0)}</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {eligibleBeneficiaries.filter(b => b.eligible).length} {t('tours.eligibleMembers')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tours.amount')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="100000"
+                    {...field}
+                  />
+                </FormControl>
+                {suggestedAmount > 0 && (
+                  <FormDescription>
+                    {t('tours.suggestedAmount')}: {new Intl.NumberFormat('fr-FR', {
+                      style: 'currency',
+                      currency: 'XAF',
+                      minimumFractionDigits: 0,
+                    }).format(suggestedAmount)}
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              <Trophy className="mr-2 h-4 w-4" />
+              {t('tours.assignTour')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }

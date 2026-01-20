@@ -7,14 +7,7 @@ import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -32,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface AddCreditModalProps {
   open: boolean;
@@ -119,140 +113,138 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{t('credits.requestCredit')}</DialogTitle>
-          <DialogDescription>
-            Remplissez le formulaire pour demander un crédit
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tontineId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('nav.tontines')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('sessions.selectTontine')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tontines.map((tontine) => (
-                        <SelectItem key={tontine.id} value={tontine.id}>
-                          {tontine.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="memberId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sessions.member')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un membre" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.prenom} {member.nom}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('credits.amount')} (XAF)</FormLabel>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('credits.requestCredit')}
+      description="Remplissez le formulaire pour demander un crédit"
+      className="sm:max-w-[500px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="tontineId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('nav.tontines')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input type="number" min="0" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('sessions.selectTontine')} />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {tontines.map((tontine) => (
+                      <SelectItem key={tontine.id} value={tontine.id}>
+                        {tontine.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="interestRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('credits.interestRate')}</FormLabel>
+          <FormField
+            control={form.control}
+            name="memberId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('sessions.member')}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input type="number" min="0" step="0.1" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un membre" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.prenom} {member.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('credits.dueDate')}</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                      placeholder="Sélectionner la date d'échéance"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('credits.amount')} (XAF)</FormLabel>
+                <FormControl>
+                  <Input type="number" min="0" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="purpose"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('credits.purpose')} (optionnel)</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ex: Achat de matériel" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="interestRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('credits.interestRate')}</FormLabel>
+                <FormControl>
+                  <Input type="number" min="0" step="0.1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit">{t('common.save')}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="dueDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('credits.dueDate')}</FormLabel>
+                <FormControl>
+                  <DatePicker
+                    date={field.value ? new Date(field.value) : undefined}
+                    onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                    placeholder="Sélectionner la date d'échéance"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="purpose"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('credits.purpose')} (optionnel)</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex: Achat de matériel" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" className="w-full sm:w-auto">{t('common.save')}</Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </ResponsiveModal>
   );
 }
