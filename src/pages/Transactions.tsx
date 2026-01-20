@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -210,9 +211,9 @@ export default function Transactions() {
             </CardHeader>
             <CardContent className="relative z-10">
               {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
-                  <span className="text-sm text-muted-foreground">Calcul...</span>
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-32" />
+                  <Skeleton className="h-4 w-24" />
                 </div>
               ) : (
                 <>
@@ -263,9 +264,9 @@ export default function Transactions() {
             </CardHeader>
             <CardContent className="relative z-10">
               {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-red-600" />
-                  <span className="text-sm text-muted-foreground">Calcul...</span>
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-32" />
+                  <Skeleton className="h-4 w-24" />
                 </div>
               ) : (
                 <>

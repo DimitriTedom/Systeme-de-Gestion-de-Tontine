@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Trophy,
   FolderKanban,
+  ArrowLeftRight,
   X,
   LogOut,
   User,
@@ -57,6 +58,13 @@ export function MobileMoreMenu({ open, onOpenChange }: MobileMoreMenuProps) {
       icon: FolderKanban,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+    },
+    {
+      label: t('nav.transactions'),
+      href: '/transactions',
+      icon: ArrowLeftRight,
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
     },
   ];
 

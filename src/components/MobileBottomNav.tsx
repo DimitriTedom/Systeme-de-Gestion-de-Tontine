@@ -58,7 +58,7 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="flex flex-col items-center justify-center flex-1 py-2 relative"
+                className="relative flex flex-col items-center justify-center flex-1 py-2"
               >
                 <motion.div
                   initial={false}
@@ -88,9 +88,11 @@ export function MobileBottomNav() {
                 {isActive && (
                   <motion.div
                     layoutId="bottomNavIndicator"
-                    className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-emerald-500 rounded-full"
+                    className="absolute top-0 left-0 right-0 flex justify-center"
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  />
+                  >
+                    <div className="w-8 h-1 bg-emerald-500 rounded-full" />
+                  </motion.div>
                 )}
               </Link>
             );
@@ -99,7 +101,7 @@ export function MobileBottomNav() {
           {/* More Button */}
           <button
             onClick={() => setShowMore(true)}
-            className="flex flex-col items-center justify-center flex-1 py-2 relative"
+            className="relative flex flex-col items-center justify-center flex-1 py-2"
           >
             <motion.div
               initial={false}
@@ -129,9 +131,11 @@ export function MobileBottomNav() {
             {isMoreActive && (
               <motion.div
                 layoutId="bottomNavIndicator"
-                className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-emerald-500 rounded-full"
+                className="absolute top-0 left-0 right-0 flex justify-center"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
+              >
+                <div className="w-8 h-1 bg-emerald-500 rounded-full" />
+              </motion.div>
             )}
           </button>
         </div>

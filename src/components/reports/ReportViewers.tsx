@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PDFViewer, PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Download, Printer, Eye } from 'lucide-react';
 import { SessionReportDocument, AGSynthesisDocument } from '../../services/pdfGenerator';
 import { SessionReportData, AGSynthesisReport } from '@/services/reportService';
@@ -205,9 +206,25 @@ export function AGReportViewer({ open, onClose, data, isLoading }: AGReportViewe
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
-            <p className="text-sm text-muted-foreground">Génération du rapport en cours...</p>
+          <div className="space-y-6 py-8">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-64 mx-auto" />
+              <Skeleton className="h-4 w-48 mx-auto" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2 p-4 border rounded-lg">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
