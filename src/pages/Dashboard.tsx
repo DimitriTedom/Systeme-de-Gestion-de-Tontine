@@ -210,40 +210,60 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          whileHover={{ scale: 1.02, y: -4 }}
+          whileHover={{ scale: 1.03, y: -6 }}
         >
-          <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-2xl hover:shadow-emerald-400/50 dark:hover:shadow-emerald-600/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="relative glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/50 dark:hover:shadow-emerald-600/50 transition-all duration-300">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Animated orb */}
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-400/10 dark:bg-emerald-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+            {/* Pulse effect for important metric */}
+            {totalCashInHand > 0 && (
+              <div className="absolute top-4 right-4">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+              </div>
+            )}
+            
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.cashInHand')}</CardTitle>
-              <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900 dark:to-emerald-800">
-                <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-100 via-emerald-200 to-green-100 dark:from-emerald-900 dark:via-emerald-800 dark:to-green-900 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+              <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 dark:from-emerald-400 dark:via-green-400 dark:to-emerald-500 bg-clip-text text-transparent">
                 <CountUp 
                   end={totalCashInHand} 
-                  duration={2}
+                  duration={2.5}
                   separator=" "
                   suffix=" XAF"
                   decimals={0}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
                 {totalContributions > 0 || totalCreditsGranted > 0 
                   ? t('dashboard.moneyInOut', { moneyIn: formatCurrency(totalMoneyIn), moneyOut: formatCurrency(totalMoneyOut) })
                   : t('dashboard.noTransactions')}
               </p>
-              {/* Mini trend chart */}
-              <div className="mt-3 h-12">
+              {/* Mini trend chart with enhanced styling */}
+              <div className="mt-4 h-14 -mx-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={contributionTrends.slice(-4)}>
-                    <Line 
-                      type="monotone" 
-                      dataKey="contributions" 
-                      stroke="#10b981" 
-                      strokeWidth={2}
+                    <defs>
+                      <linearGradient id="colorContribution" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <Area
+                      type="monotone"
+                      dataKey="contributions"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fill="url(#colorContribution)"
                       dot={false}
                     />
                   </LineChart>
@@ -257,34 +277,42 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.02, y: -4 }}
+          whileHover={{ scale: 1.03, y: -6 }}
         >
-          <Card className="glass-card overflow-hidden group hover:shadow-2xl hover:shadow-slate-400/50 dark:hover:shadow-slate-600/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="relative glass-card overflow-hidden group hover:shadow-2xl hover:shadow-blue-500/30 dark:hover:shadow-blue-600/30 transition-all duration-300 border-blue-200 dark:border-blue-900">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+            
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeMembers')}</CardTitle>
-              <div className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                <Users className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-100 via-blue-200 to-sky-100 dark:from-blue-900 dark:via-blue-800 dark:to-sky-900 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 dark:from-blue-400 dark:to-sky-400 bg-clip-text text-transparent">
                 <CountUp 
                   end={members.filter(m => m.statut === 'Actif').length} 
-                  duration={1.5}
+                  duration={2}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-2">
                 {t('dashboard.outOf', { total: members.length })}
               </p>
-              {/* Mini bar chart */}
-              <div className="mt-3 h-12">
+              {/* Mini bar chart with gradient */}
+              <div className="mt-4 h-14 -mx-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={[
                     { name: 'Actifs', value: members.filter(m => m.statut === 'Actif').length },
                     { name: 'Inactifs', value: members.filter(m => m.statut === 'Inactif').length },
                   ]}>
-                    <Bar dataKey="value" fill="#64748b" radius={[4, 4, 0, 0]} />
+                    <defs>
+                      <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.7}/>
+                      </linearGradient>
+                    </defs>
+                    <Bar dataKey="value" fill="url(#colorBar)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -296,23 +324,41 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.02, y: -4 }}
+          whileHover={{ scale: 1.03, y: -6 }}
         >
-          <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-2xl hover:shadow-amber-400/50 dark:hover:shadow-amber-600/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="relative glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-2xl hover:shadow-amber-500/40 dark:hover:shadow-amber-600/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-amber-400/10 dark:bg-amber-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+            
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeCredits')}</CardTitle>
-              <div className="p-2 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800">
-                <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-100 via-amber-200 to-yellow-100 dark:from-amber-900 dark:via-amber-800 dark:to-yellow-900 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <CreditCard className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                {credits.filter(c => c.statut === 'en_cours').length}
+              <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-400 dark:to-yellow-400 bg-clip-text text-transparent">
+                <CountUp
+                  end={credits.filter(c => c.statut === 'en_cours').length}
+                  duration={2}
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-2">
                 {t('dashboard.onTrack', { onTrack: creditsOnTrack, late: creditsLate })}
               </p>
+              {/* Status indicators */}
+              <div className="flex gap-2 mt-4">
+                {creditsOnTrack > 0 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                    {creditsOnTrack} à jour
+                  </span>
+                )}
+                {creditsLate > 0 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                    {creditsLate} retard
+                  </span>
+                )}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -321,21 +367,51 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          whileHover={{ scale: 1.02, y: -4 }}
+          whileHover={{ scale: 1.03, y: -6 }}
         >
-          <Card className="glass-card border-red-200 dark:border-red-900 overflow-hidden group hover:shadow-2xl hover:shadow-red-400/50 dark:hover:shadow-red-600/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="relative glass-card border-red-200 dark:border-red-900 overflow-hidden group hover:shadow-2xl hover:shadow-red-500/40 dark:hover:shadow-red-600/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-red-400/10 dark:bg-red-600/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+            {/* Alert pulse for pending penalties */}
+            {pendingPenalties > 0 && (
+              <div className="absolute top-4 right-4">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              </div>
+            )}
+            
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.penalties')}</CardTitle>
-              <div className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-100 via-red-200 to-orange-100 dark:from-red-900 dark:via-red-800 dark:to-orange-900 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-2xl font-bold text-red-700 dark:text-red-300">{pendingPenalties}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
+                <CountUp
+                  end={pendingPenalties}
+                  duration={2}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
                 {t('dashboard.paidOf', { paid: paidPenalties, total: penalties.length })}
               </p>
+              {/* Progress bar */}
+              {penalties.length > 0 && (
+                <div className="mt-4">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${(paidPenalties / penalties.length) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 text-right">
+                    {Math.round((paidPenalties / penalties.length) * 100)}% payées
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

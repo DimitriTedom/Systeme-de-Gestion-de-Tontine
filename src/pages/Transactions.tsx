@@ -6,7 +6,10 @@ import {
   TrendingDown, 
   Filter,
   Download,
-  Calendar
+  Calendar,
+  Loader2,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +33,7 @@ import { useTransactionStore, TransactionType } from '@/stores/transactionStore'
 import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { motion } from 'framer-motion';
+import CountUp from 'react-countup';
 import * as XLSX from 'xlsx';
 import { TontineBalance } from '@/components/dashboard/TontineBalance';
 
@@ -42,10 +46,15 @@ export default function Transactions() {
   const [selectedTontine, setSelectedTontine] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchTontines();
-    fetchMembers();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchTontines(), fetchMembers()]);
+      setIsLoading(false);
+    };
+    loadData();
   }, [fetchTontines, fetchMembers]);
 
   // Filter transactions
@@ -184,21 +193,51 @@ export default function Transactions() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-3">
+          <Card className="relative overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/30 dark:hover:shadow-emerald-600/30 transition-all duration-300 border-emerald-200 dark:border-emerald-800">
+            {/* Animated gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-green-50 to-transparent dark:from-emerald-950/30 dark:via-green-950/20 dark:to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-400/10 dark:bg-emerald-600/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+            
+            <CardHeader className="pb-3 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                Total Entrées
+                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
+                  <ArrowUpRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span>Total Entrées</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(totalIn)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {filteredTransactions.filter(t => t.amount > 0).length} transaction(s)
-              </p>
+            <CardContent className="relative z-10">
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+                  <span className="text-sm text-muted-foreground">Calcul...</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 bg-clip-text text-transparent">
+                    <CountUp 
+                      end={totalIn} 
+                      duration={2}
+                      separator=" "
+                      suffix=" XAF"
+                      decimals={0}
+                    />
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {filteredTransactions.filter(t => t.amount > 0).length} transaction(s)
+                    </p>
+                    {totalIn > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Actif
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -207,21 +246,51 @@ export default function Transactions() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="border-l-4 border-l-red-500">
-            <CardHeader className="pb-3">
+          <Card className="relative overflow-hidden group hover:shadow-2xl hover:shadow-red-500/30 dark:hover:shadow-red-600/30 transition-all duration-300 border-red-200 dark:border-red-800">
+            {/* Animated gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-orange-50 to-transparent dark:from-red-950/30 dark:via-orange-950/20 dark:to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-red-400/10 dark:bg-red-600/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+            
+            <CardHeader className="pb-3 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-red-500" />
-                Total Sorties
+                <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/50">
+                  <ArrowDownRight className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <span>Total Sorties</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(totalOut)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {filteredTransactions.filter(t => t.amount < 0).length} transaction(s)
-              </p>
+            <CardContent className="relative z-10">
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-red-600" />
+                  <span className="text-sm text-muted-foreground">Calcul...</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
+                    <CountUp 
+                      end={totalOut} 
+                      duration={2}
+                      separator=" "
+                      suffix=" XAF"
+                      decimals={0}
+                    />
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {filteredTransactions.filter(t => t.amount < 0).length} transaction(s)
+                    </p>
+                    {totalOut > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                        <TrendingDown className="h-3 w-3 mr-1" />
+                        Actif
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
