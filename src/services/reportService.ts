@@ -109,11 +109,15 @@ export interface AGSynthesisReport {
   dashboard: {
     total_contributions: number;
     total_penalties: number;
+    total_penalties_collected: number;
     cash_in_hand: number;
     total_credits_disbursed: number;
     total_credits_remaining: number;
+    total_credit_repayments: number;
     total_members: number;
     active_members: number;
+    inactive_members: number;
+    total_tours_distributed: number;
   };
   projects: {
     list: Array<{
@@ -146,7 +150,34 @@ export interface AGSynthesisReport {
     nom_tontine: string;
     nombre_membres: number;
     montant_cotisation: number;
+    type: string;
+    statut: string;
   }>;
+  credits_summary: {
+    total_active: number;
+    total_completed: number;
+    total_defaulted: number;
+    average_amount: number;
+    total_interest_earned: number;
+  };
+  member_participation: {
+    average_attendance: number;
+    top_contributors: Array<{
+      nom: string;
+      prenom: string;
+      total_contributed: number;
+    }>;
+  };
+  financial_ratios: {
+    collection_rate: number;
+    credit_recovery_rate: number;
+    penalty_collection_rate: number;
+  };
+  generated_date: string;
+  report_period: {
+    start_date: string;
+    end_date: string;
+  };
 }
 
 export const reportService = {
@@ -504,10 +535,18 @@ export const reportService = {
     const membersData = members as Pick<MembreRow, 'statut'>[] | null;
     const total_members = membersData?.length || 0;
     const active_members = membersData?.filter(m => m.statut === 'Actif').length || 0;
+    const inactive_members = membersData?.filter(m => m.statut === 'Inactif').length || 0;
+
+    // Fetch tours distributed
+    const { data: tours } = await supabase
+      .from('tour')
+      .select('montant_distribue');
+    const toursData = tours as Pick<TourRow, 'montant_distribue'>[] | null;
+    const total_tours_distributed = toursData?.reduce((sum, t) => sum + (t.montant_distribue || 0), 0) || 0;
 
     // Cash in hand calculation - same as Dashboard
     // Money IN: completed contributions + penalties collected + credit repayments
-    // Money OUT: credits disbursed
+    // Money OUT: credits disbursed + tours distributed + project expenses
     const total_money_in = total_contributions + total_penalties_collected + total_credit_repayments;
     const total_money_out = total_credits_disbursed;
     const cash_in_hand = total_money_in - total_money_out;
@@ -552,11 +591,11 @@ export const reportService = {
     const { data: tontines } = await supabase
       .from('tontine')
       .select(`
-        id, nom, montant_cotisation,
+        id, nom, montant_cotisation, type, statut,
         participe (id_membre)
       `);
 
-    type TontineWithParticipe = Pick<TontineRow, 'id' | 'nom' | 'montant_cotisation'> & { 
+    type TontineWithParticipe = Pick<TontineRow, 'id' | 'nom' | 'montant_cotisation' | 'type' | 'statut'> & { 
       participe: { id_membre: string }[] | null 
     };
     const tontinesData = tontines as TontineWithParticipe[] | null;
@@ -565,10 +604,95 @@ export const reportService = {
       nom_tontine: t.nom,
       nombre_membres: t.participe?.length || 0,
       montant_cotisation: t.montant_cotisation,
+      type: t.type,
+      statut: t.statut,
     })) || [];
 
+    // Credit statistics
+    const { data: allCreditsStats } = await supabase
+      .from('credit')
+      .select('statut, montant, taux_interet, montant_rembourse');
+    const allCreditsStatsData = allCreditsStats as Pick<CreditRow, 'statut' | 'montant' | 'taux_interet' | 'montant_rembourse'>[] | null;
+    
+    const total_active_credits = allCreditsStatsData?.filter(c => c.statut === 'en_cours').length || 0;
+    const total_completed_credits = allCreditsStatsData?.filter(c => c.statut === 'rembourse').length || 0;
+    const total_defaulted_credits = allCreditsStatsData?.filter(c => c.statut === 'defaut').length || 0;
+    const average_credit_amount = allCreditsStatsData && allCreditsStatsData.length > 0 
+      ? allCreditsStatsData.reduce((sum, c) => sum + (c.montant || 0), 0) / allCreditsStatsData.length 
+      : 0;
+    const total_interest_earned = allCreditsStatsData?.reduce((sum, c) => {
+      const interest = (c.montant || 0) * (c.taux_interet || 0) / 100;
+      const repaymentWithInterest = (c.montant || 0) + interest;
+      const repaid = c.montant_rembourse || 0;
+      // Calculate actual interest earned (proportional to amount repaid)
+      return sum + (repaid > 0 ? (repaid / repaymentWithInterest) * interest : 0);
+    }, 0) || 0;
+
+    // Member participation statistics
+    const { data: attendanceData } = await supabase
+      .from('presence')
+      .select('present');
+    const attendanceRecords = attendanceData as Pick<PresenceRow, 'present'>[] | null;
+    const average_attendance = attendanceRecords && attendanceRecords.length > 0
+      ? (attendanceRecords.filter(a => a.present).length / attendanceRecords.length) * 100
+      : 0;
+
+    // Top contributors
+    const { data: topContributors } = await supabase
+      .from('cotisation')
+      .select(`
+        id_membre,
+        montant,
+        membre:id_membre (nom, prenom)
+      `)
+      .eq('statut', 'complete');
+    
+    type ContributionWithMember = Pick<CotisationRow, 'id_membre' | 'montant'> & {
+      membre: Pick<MembreRow, 'nom' | 'prenom'> | null;
+    };
+    const contributorsData = topContributors as ContributionWithMember[] | null;
+    
+    const memberContributions = new Map<string, { nom: string; prenom: string; total: number }>();
+    contributorsData?.forEach(c => {
+      if (!c.membre) return;
+      const existing = memberContributions.get(c.id_membre) || { nom: c.membre.nom, prenom: c.membre.prenom, total: 0 };
+      memberContributions.set(c.id_membre, { 
+        ...existing, 
+        total: existing.total + (c.montant || 0) 
+      });
+    });
+    
+    const top_contributors = Array.from(memberContributions.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5)
+      .map(c => ({
+        nom: c.nom,
+        prenom: c.prenom,
+        total_contributed: c.total,
+      }));
+
+    // Financial ratios
+    const { data: expectedContributions } = await supabase
+      .from('cotisation')
+      .select('montant_attendu, montant');
+    const expectedData = expectedContributions as Pick<CotisationRow, 'montant_attendu' | 'montant'>[] | null;
+    const total_expected = expectedData?.reduce((sum, c) => sum + (c.montant_attendu || 0), 0) || 0;
+    const total_collected = expectedData?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const collection_rate = total_expected > 0 ? (total_collected / total_expected) * 100 : 0;
+
+    const credit_recovery_rate = total_credits_disbursed > 0 
+      ? ((total_credit_repayments / total_credits_disbursed) * 100)
+      : 0;
+
+    const penalty_collection_rate = total_penalties > 0
+      ? ((total_penalties_collected / total_penalties) * 100)
+      : 0;
+
+    // Report period
+    const firstSession = sessionsData && sessionsData.length > 0 ? sessionsData[sessionsData.length - 1].date : null;
+    const lastSession = sessionsData && sessionsData.length > 0 ? sessionsData[0].date : null;
+
     // Emergency fund (5% of total contributions as recommended reserve)
-    // This represents money set aside for emergencies, not from current cash
     const emergency_target = total_contributions * 0.05; // 5% target
     const emergency_amount = emergency_target; // For now, assume target is met
     const emergency_percentage = emergency_target > 0 ? (emergency_amount / (total_contributions * 0.05)) * 100 : 0;
@@ -577,11 +701,15 @@ export const reportService = {
       dashboard: {
         total_contributions,
         total_penalties,
+        total_penalties_collected,
         cash_in_hand,
         total_credits_disbursed,
         total_credits_remaining,
+        total_credit_repayments,
         total_members,
         active_members,
+        inactive_members,
+        total_tours_distributed,
       },
       projects: {
         list: projectList,
@@ -596,6 +724,27 @@ export const reportService = {
       },
       session_trends: sessionTrends,
       tontines: tontineList,
+      credits_summary: {
+        total_active: total_active_credits,
+        total_completed: total_completed_credits,
+        total_defaulted: total_defaulted_credits,
+        average_amount: average_credit_amount,
+        total_interest_earned: total_interest_earned,
+      },
+      member_participation: {
+        average_attendance,
+        top_contributors,
+      },
+      financial_ratios: {
+        collection_rate,
+        credit_recovery_rate,
+        penalty_collection_rate,
+      },
+      generated_date: new Date().toISOString(),
+      report_period: {
+        start_date: firstSession || '',
+        end_date: lastSession || '',
+      },
     };
   },
 };
