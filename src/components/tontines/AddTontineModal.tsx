@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -225,7 +226,11 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                   <FormItem>
                     <FormLabel>{t('tontines.startDate')}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePicker
+                        date={field.value ? new Date(field.value) : undefined}
+                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        placeholder="Sélectionner la date de début"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -242,7 +247,11 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
                       <span className="text-muted-foreground text-xs ml-1">({t('common.optional')})</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePicker
+                        date={field.value ? new Date(field.value) : undefined}
+                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        placeholder="Sélectionner la date de fin"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

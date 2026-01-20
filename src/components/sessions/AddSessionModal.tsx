@@ -146,7 +146,11 @@ export function AddSessionModal({ open, onOpenChange }: AddSessionModalProps) {
                 <FormItem>
                   <FormLabel>{t('sessions.date')}</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date de la séance"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

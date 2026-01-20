@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 
 interface AddProjectModalProps {
@@ -225,7 +226,11 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                   <FormItem>
                     <FormLabel>{t('projects.startDate')}</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePicker
+                        date={field.value ? new Date(field.value) : undefined}
+                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        placeholder="Sélectionner la date de début"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -239,7 +244,11 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
                   <FormItem>
                     <FormLabel>{t('projects.targetDate')} (optionnel)</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePicker
+                        date={field.value ? new Date(field.value) : undefined}
+                        onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        placeholder="Sélectionner la date cible"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

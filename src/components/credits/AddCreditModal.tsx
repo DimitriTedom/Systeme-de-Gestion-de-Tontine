@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface AddCreditModalProps {
   open: boolean;
@@ -214,7 +215,11 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
                 <FormItem>
                   <FormLabel>{t('credits.dueDate')}</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      placeholder="Sélectionner la date d'échéance"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
