@@ -103,7 +103,7 @@ export default function Dashboard() {
   
   // Money OUT
   const totalCreditsGranted = credits
-    .filter(c => c.statut === 'decaisse' || c.statut === 'en_cours')
+    .filter(c => c.statut === 'decaisse' || c.statut === 'en_cours' || c.statut === 'en_retard' || c.statut === 'defaut' || c.statut === 'rembourse')
     .reduce((sum, c) => sum + c.montant, 0);
   
   const totalProjectExpenses = projects
