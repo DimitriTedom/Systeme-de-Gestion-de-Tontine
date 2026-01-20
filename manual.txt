@@ -349,8 +349,44 @@ Accès : Menu latéral → "Tours & Gains" (ou via "Plus" sur mobile)
 Un "tour" représente l'attribution du gain collecté à un membre bénéficiaire.
 
 ATTRIBUER UN GAIN :
--------------------
-1. Cliquez sur "+ Nouveau tour"
+-------------------1. Cliquez sur "+ Ajouter un tour"
+2. Sélectionnez la tontine concernée
+3. Sélectionnez la session associée
+4. Choisissez le bénéficiaire (liste des membres éligibles)
+5. Entrez le montant à distribuer
+6. Cliquez sur "Enregistrer"
+
+⚠️ CONTRAINTE IMPORTANTE : MONTANT MAXIMUM (TONTINES OPTIONNELLES)
+Le système vérifie automatiquement que le montant cumulé perçu par un membre
+ne dépasse JAMAIS le montant total qu'il est censé cotiser sur tous les tours.
+
+Formule : Montant Maximum = nb_parts × cotisation × nombre_total_de_membres
+
+Exemple :
+• Tontine optionnelle avec 4 membres
+• Cotisation : 5 000 XAF par tour
+• Membre A : 2 parts
+• Montant maximum pour A = 2 × 5 000 × 4 = 40 000 XAF
+
+Si le membre A a déjà reçu 25 000 XAF :
+• ✅ Peut recevoir encore : 15 000 XAF maximum
+• ❌ Ne peut PAS recevoir : 20 000 XAF (dépasse le maximum)
+
+Le système affichera un message d'erreur détaillé avec les calculs si vous
+tentez de distribuer un montant qui violerait cette contrainte.
+
+Note : Cette contrainte s'applique uniquement aux tontines optionnelles,
+car seules celles-ci autorisent différents nombres de parts par membre.
+
+VALIDATION DES FONDS :
+----------------------
+Le système vérifie également que la tontine dispose de fonds suffisants
+avant de distribuer un tour.
+
+[📸 CAPTURE D'ÉCRAN : Formulaire d'attribution de tour]
+
+MEMBRES ÉLIGIBLES :
+-------------------1. Cliquez sur "+ Nouveau tour"
 2. Sélectionnez la session concernée
 3. Sélectionnez le membre bénéficiaire
 4. Le montant est calculé automatiquement
@@ -560,6 +596,55 @@ Message de confirmation :
 "Êtes-vous sûr de vouloir retirer ce membre de [Nom Tontine] ?
 Le membre ne recevra AUCUN gain et sera immédiatement retiré."
 
+RÈGLE 3 : MONTANT MAXIMUM PERÇU (TONTINES OPTIONNELLES)
+--------------------------------------------------------
+📋 DESCRIPTION :
+Le montant cumulé perçu par un membre dans une tontine optionnelle ne doit
+JAMAIS excéder le montant total qu'il est censé cotiser sur l'ensemble des 
+tours.
+
+🎯 OBJECTIF :
+• Garantir l'équité entre membres ayant différent nombre de parts
+• Empêcher un membre de recevoir plus qu'il ne contribue
+• Protéger la tontine contre les abus dans les tontines optionnelles
+
+🔍 COMMENT ÇA MARCHE :
+Le système calcule automatiquement :
+1. Montant maximum = nb_parts × montant_cotisation × nombre_total_membres
+2. Montant déjà perçu par le membre
+3. Vérifie que : nouveau_total ≤ montant_maximum
+4. Rejette la distribution si la contrainte est violée
+
+📊 EXEMPLES PRATIQUES :
+
+Exemple 1 - DISTRIBUTION AUTORISÉE ✅
+• Tontine optionnelle : 4 membres (Alice, Bob, Charles, Diana)
+• Cotisation : 10 000 XAF par tour
+• Parts : Alice (2), Bob (1), Charles (1), Diana (1)
+• Maximum pour Alice : 2 × 10 000 × 4 = 80 000 XAF
+• Maximum pour Bob : 1 × 10 000 × 4 = 40 000 XAF
+• Tours distribués :
+  - Tour 1 → Alice : 50 000 XAF ✅ (< 80 000)
+  - Tour 2 → Bob : 20 000 XAF ✅ (< 40 000)
+  - Tour 3 → Charles : 20 000 XAF ✅ (< 40 000)
+
+Exemple 2 - DISTRIBUTION REFUSÉE ❌
+• Même tontine, Tour 4 proposé → Alice : 35 000 XAF
+• Calcul : 50 000 (déjà perçu) + 35 000 = 85 000 XAF
+• ❌ REFUSÉ car 85 000 > 80 000 (maximum autorisé)
+• Alice peut recevoir maximum : 80 000 - 50 000 = 30 000 XAF
+
+⚠️ MESSAGE D'ERREUR AFFICHÉ :
+"Contrainte violée : Le membre ne peut pas recevoir 35 000 XAF.
+Total déjà perçu: 50 000 XAF.
+Nouveau total: 85 000 XAF dépasse le montant maximum autorisé de 80 000 XAF
+(2 part(s) × 10 000 XAF × 4 tours)."
+
+📌 NOTE IMPORTANTE :
+Cette règle s'applique UNIQUEMENT aux tontines optionnelles car seules 
+celles-ci permettent des nombres de parts différents par membre. Les 
+tontines de présence ont tous les membres avec 1 part obligatoire.
+
 AUTRES VALIDATIONS AUTOMATIQUES :
 ----------------------------------
 ✅ Validation des fonds avant attribution de crédit
@@ -618,6 +703,12 @@ RÈGLES MÉTIER IMPLÉMENTÉES :
    • Un membre ne peut être retiré que lorsque c'est son tour de gagner
    • Le membre retiré ne reçoit AUCUN gain
    • Empêche les retraits opportunistes et protège les autres membres
+
+🔒 RÈGLE 3 : Montant maximum perçu (tontines optionnelles)
+   • Un membre ne peut jamais recevoir plus qu'il ne devrait cotiser
+   • Formule : Maximum = nb_parts × cotisation × total_membres
+   • Protection contre les abus dans les tontines avec parts multiples
+   • Validation automatique à chaque distribution de tour
 
 AMÉLIORATIONS RÉCENTES :
 ------------------------

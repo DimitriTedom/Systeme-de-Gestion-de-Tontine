@@ -109,6 +109,66 @@ export const useTourStore = create<TourStore>((set, get) => ({
         );
       }
 
+      // CONTRAINTE MAJEURE : Vérifier que le montant cumulé perçu ne dépasse pas le montant total à cotiser
+      // (Pour tontines optionnelles uniquement)
+      const { data: tontineData, error: tontineError } = await supabase
+        .from('tontine')
+        .select('type, montant_cotisation')
+        .eq('id', tourData.tontineId)
+        .single();
+
+      if (tontineError) throw tontineError;
+
+      if (tontineData && tontineData.type.toLowerCase() === 'optionnelle') {
+        // Récupérer le nombre de parts du membre
+        const { data: participeData, error: participeError } = await supabase
+          .from('participe')
+          .select('nb_parts')
+          .eq('id_membre', tourData.beneficiaryId)
+          .eq('id_tontine', tourData.tontineId)
+          .single();
+
+        if (participeError) throw participeError;
+
+        // Récupérer le total déjà perçu par ce membre dans cette tontine
+        const { data: toursRecus, error: toursError } = await supabase
+          .from('tour')
+          .select('montant_distribue')
+          .eq('id_beneficiaire', tourData.beneficiaryId)
+          .eq('id_tontine', tourData.tontineId);
+
+        if (toursError) throw toursError;
+
+        const totalDejaPercu = toursRecus?.reduce((sum, t) => sum + (t.montant_distribue || 0), 0) || 0;
+        
+        // Calculer le montant total que le membre est censé cotiser
+        // Formule: nb_parts * montant_cotisation * nombre_total_de_tours
+        const nbParts = participeData?.nb_parts || 1;
+        const montantCotisation = tontineData.montant_cotisation;
+        
+        // Récupérer le nombre total de membres pour calculer le nombre de tours
+        const { data: membresData, error: membresError } = await supabase
+          .from('participe')
+          .select('id_membre')
+          .eq('id_tontine', tourData.tontineId);
+
+        if (membresError) throw membresError;
+
+        const nombreTotalMembres = membresData?.length || 1;
+        const montantTotalACotiser = nbParts * montantCotisation * nombreTotalMembres;
+
+        // Vérifier la contrainte
+        const nouveauTotalPercu = totalDejaPercu + tourData.amount;
+        if (nouveauTotalPercu > montantTotalACotiser) {
+          throw new Error(
+            `Contrainte violée : Le membre ne peut pas recevoir ${tourData.amount.toLocaleString()} XAF. ` +
+            `Total déjà perçu: ${totalDejaPercu.toLocaleString()} XAF. ` +
+            `Nouveau total: ${nouveauTotalPercu.toLocaleString()} XAF dépasse le montant maximum autorisé de ${montantTotalACotiser.toLocaleString()} XAF ` +
+            `(${nbParts} part(s) × ${montantCotisation.toLocaleString()} XAF × ${nombreTotalMembres} tours).`
+          );
+        }
+      }
+
       const insertData = {
         id_seance: tourData.sessionId,
         id_tontine: tourData.tontineId,
