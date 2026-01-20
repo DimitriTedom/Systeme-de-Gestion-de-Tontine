@@ -29,6 +29,7 @@ import { useCreditStore } from '@/stores/creditStore';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useProjectStore } from '@/stores/projectStore';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { AGReportViewer } from '@/components/reports/ReportViewers';
 import { reportService, AGSynthesisReport } from '@/services/reportService';
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const { penalties, fetchPenalties } = usePenaltyStore();
   const { members, fetchMembers } = useMemberStore();
   const { tontines, fetchTontinesWithStats } = useTontineStore();
+  const { projects, fetchProjects } = useProjectStore();
   const { toast } = useToast();
   const [showAGReport, setShowAGReport] = useState(false);
   const [agReportData, setAgReportData] = useState<AGSynthesisReport | null>(null);
@@ -61,6 +63,7 @@ export default function Dashboard() {
           fetchPenalties(),
           fetchMembers(),
           fetchTontinesWithStats(),
+          fetchProjects(),
         ]);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -68,7 +71,7 @@ export default function Dashboard() {
     };
     
     loadData();
-  }, [fetchSessions, fetchContributions, fetchCredits, fetchPenalties, fetchMembers, fetchTontinesWithStats]);
+  }, [fetchSessions, fetchContributions, fetchCredits, fetchPenalties, fetchMembers, fetchTontinesWithStats, fetchProjects]);
 
   const handleGenerateAGReport = async () => {
     setIsLoadingAGReport(true);
@@ -103,9 +106,12 @@ export default function Dashboard() {
     .filter(c => c.statut === 'decaisse' || c.statut === 'en_cours')
     .reduce((sum, c) => sum + c.montant, 0);
   
+  const totalProjectExpenses = projects
+    .reduce((sum, p) => sum + (p.montant_alloue || 0), 0);
+  
   // Calculate cash in hand
   const totalMoneyIn = totalContributions + totalPenaltiesPaid + totalCreditRepayments;
-  const totalMoneyOut = totalCreditsGranted;
+  const totalMoneyOut = totalCreditsGranted + totalProjectExpenses;
   const totalCashInHand = totalMoneyIn - totalMoneyOut;
 
   // Calculate contribution trends (last 6 sessions)
