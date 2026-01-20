@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/toast-provider';
 import { useState, useEffect } from 'react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -73,6 +74,40 @@ export function RegisterToTontineModal({
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Rule 1: Vérifier que le prochain tour est celui du premier membre
+      // (On ne peut rejoindre qu'au début d'un cycle)
+      const { data: toursData, error: toursError } = await supabase
+        .from('tour')
+        .select('id, numero, id_beneficiaire')
+        .eq('id_tontine', data.tontineId)
+        .order('numero', { ascending: true });
+
+      if (toursError) throw toursError;
+
+      // Récupérer les membres de la tontine par ordre d'inscription
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('participe')
+        .select('id_membre, created_at')
+        .eq('id_tontine', data.tontineId)
+        .order('created_at', { ascending: true });
+
+      if (participantsError) throw participantsError;
+
+      // Si des tours ont déjà été distribués, vérifier qu'on est au début du cycle
+      if (toursData && toursData.length > 0 && participantsData && participantsData.length > 0) {
+        const firstMemberId = participantsData[0].id_membre;
+        const toursCount = toursData.length;
+        const membersCount = participantsData.length;
+        
+        // Le prochain tour devrait être: (toursCount % membersCount) + 1
+        const nextTourIndex = toursCount % membersCount;
+        
+        // Si nextTourIndex !== 0, on n'est pas au début du cycle
+        if (nextTourIndex !== 0) {
+          throw new Error('Vous ne pouvez rejoindre cette tontine qu\'au début d\'un nouveau cycle. Le prochain tour n\'est pas celui du premier membre.');
+        }
+      }
+
       await registerToTontine(memberId, data.tontineId, data.nbParts);
       
       toast.success(t('members.registerSuccess'), {

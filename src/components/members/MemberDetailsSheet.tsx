@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users, Trash2 } from 'lucide-react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useToast } from '@/components/ui/toast-provider';
 import { supabase } from '@/lib/supabase';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,8 @@ export function MemberDetailsSheet({
   onOpenChange,
 }: MemberDetailsSheetProps) {
   const { t } = useTranslation();
-  const { members } = useMemberStore();
+  const { members, unregisterFromTontine } = useMemberStore();
+  const { toast } = useToast();
   const [isLoadingFinancial, setIsLoadingFinancial] = useState(false);
   const [financialData, setFinancialData] = useState<MemberFinancialReport | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -95,6 +97,65 @@ export function MemberDetailsSheet({
       setMemberTontines([]);
     } finally {
       setIsLoadingTontines(false);
+    }
+  };
+
+  // Rule 2: Remove member from tontine only when it's their turn to win
+  const handleRemoveFromTontine = async (tontineId: string, tontineName: string) => {
+    if (!memberId) return;
+
+    try {
+      // Récupérer les tours de la tontine
+      const { data: toursData, error: toursError } = await supabase
+        .from('tour')
+        .select('id, numero, id_beneficiaire')
+        .eq('id_tontine', tontineId)
+        .order('numero', { ascending: true });
+
+      if (toursError) throw toursError;
+
+      // Récupérer les participants par ordre d'inscription
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('participe')
+        .select('id_membre, created_at')
+        .eq('id_tontine', tontineId)
+        .order('created_at', { ascending: true });
+
+      if (participantsError) throw participantsError;
+
+      if (!participantsData || participantsData.length === 0) {
+        throw new Error('Aucun participant trouvé dans cette tontine');
+      }
+
+      // Déterminer qui devrait recevoir le prochain tour
+      const toursCount = toursData?.length || 0;
+      const membersCount = participantsData.length;
+      const nextTourIndex = toursCount % membersCount;
+      const nextBeneficiaryId = participantsData[nextTourIndex].id_membre;
+
+      // Vérifier si c'est le tour de ce membre
+      if (nextBeneficiaryId !== memberId) {
+        throw new Error('Ce membre ne peut être retiré que lorsque c\'est son tour de gagner. Actuellement, le prochain tour appartient à un autre membre.');
+      }
+
+      // Confirmer la suppression
+      if (!confirm(`Êtes-vous sûr de vouloir retirer ce membre de "${tontineName}"? Le membre ne recevra AUCUN gain et sera immédiatement retiré.`)) {
+        return;
+      }
+
+      // Retirer le membre
+      await unregisterFromTontine(memberId, tontineId);
+
+      toast.success('Membre retiré', {
+        description: `Le membre a été retiré de "${tontineName}" sans gain.`,
+      });
+
+      // Rafraîchir la liste des tontines
+      fetchMemberTontines();
+    } catch (error) {
+      toast.error('Erreur', {
+        description: error instanceof Error ? error.message : 'Impossible de retirer le membre',
+      });
     }
   };
 
@@ -288,6 +349,15 @@ export function MemberDetailsSheet({
                             </Badge>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 ml-2"
+                          onClick={() => handleRemoveFromTontine(tontine.id_tontine, tontine.nom)}
+                          title="Retirer de cette tontine (uniquement si c'est votre tour)"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     );
                   })}
