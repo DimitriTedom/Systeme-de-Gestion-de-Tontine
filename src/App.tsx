@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { ProtectedRoute, PublicRoute } from '@/components/auth/ProtectedRoute';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -40,6 +41,9 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
                 <img src="/logo.jpeg" alt="Logo" className="w-6 h-6 object-contain rounded" />
               </div>
               <span className="font-bold text-lg text-emerald-700 dark:text-emerald-400 truncate">NjangiTech</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
             </div>
           </header>
           <main className="flex-1 pb-20 md:pb-0 overflow-x-hidden">
