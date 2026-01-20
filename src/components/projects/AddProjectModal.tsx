@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatErrorForToast } from '@/lib/errorHandler';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -123,8 +124,9 @@ export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
       form.reset();
       onOpenChange(false);
     } catch (error) {
-      toast.error('Erreur lors de la création', {
-        description: error instanceof Error ? error.message : 'Impossible de créer le projet.',
+      const errorMessage = formatErrorForToast(error);
+      toast.error(errorMessage.title, {
+        description: errorMessage.description,
       });
     }
   };

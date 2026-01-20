@@ -52,8 +52,10 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       set({ credits: data || [], isLoading: false });
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('fetchCredits', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors du chargement des crédits',
+        error: errorDetails.message,
         isLoading: false 
       });
     }

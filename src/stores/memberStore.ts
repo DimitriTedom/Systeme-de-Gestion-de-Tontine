@@ -45,8 +45,10 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
 
       set({ members: data || [], isLoading: false });
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('fetchMembers', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors du chargement des membres',
+        error: errorDetails.message,
         isLoading: false 
       });
     }
@@ -87,13 +89,13 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
       return data;
     } catch (error) {
       // Rollback optimistic update on error
+      const errorDetails = handleSupabaseError(error);
+      logError('addMember', error);
       set((state) => ({
         members: state.members.filter(m => m.id !== optimisticMember.id),
-        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout du membre',
+        error: errorDetails.message,
         isLoading: false,
       }));
-      logError('addMember', error);
-      const errorDetails = handleSupabaseError(error);
       throw error;
     }
   },
@@ -129,15 +131,15 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
       }));
     } catch (error) {
       // Rollback to previous state on error
+      const errorDetails = handleSupabaseError(error);
+      logError('updateMember', error);
       if (previousMember) {
         set((state) => ({
           members: state.members.map((m) => m.id === id ? previousMember : m),
-          error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+          error: errorDetails.message,
           isLoading: false,
         }));
       }
-      logError('updateMember', error);
-      const errorDetails = handleSupabaseError(error);
       throw error;
     }
   },
@@ -165,15 +167,15 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
       set({ isLoading: false });
     } catch (error) {
       // Rollback - restore deleted member on error
+      const errorDetails = handleSupabaseError(error);
+      logError('deleteMember', error);
       if (previousMember) {
         set((state) => ({
           members: [...state.members, previousMember],
-          error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+          error: errorDetails.message,
           isLoading: false,
         }));
       }
-      logError('deleteMember', error);
-      const errorDetails = handleSupabaseError(error);
       throw error;
     }
   },

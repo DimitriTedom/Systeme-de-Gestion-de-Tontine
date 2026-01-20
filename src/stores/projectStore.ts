@@ -50,8 +50,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       set({ projects: data || [], isLoading: false });
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('fetchProjects', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors du chargement des projets',
+        error: errorDetails.message,
         isLoading: false 
       });
     }
@@ -72,8 +74,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       set({ projects: data || [], isLoading: false });
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('fetchProjectsByTontine', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        error: errorDetails.message,
         isLoading: false 
       });
     }
@@ -99,8 +103,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       return data;
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('addProject', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -126,8 +132,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('updateProject', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;
@@ -151,8 +159,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
+      const errorDetails = handleSupabaseError(error);
+      logError('deleteProject', error);
       set({ 
-        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        error: errorDetails.message,
         isLoading: false 
       });
       throw error;

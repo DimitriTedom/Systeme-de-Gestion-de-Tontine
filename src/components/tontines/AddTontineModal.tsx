@@ -4,6 +4,7 @@ import * as z from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatErrorForToast } from '@/lib/errorHandler';
 import { useTontineStore } from '@/stores/tontineStore';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -104,8 +105,9 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
       form.reset();
       onOpenChange(false);
     } catch (error) {
-      toast.error(t('common.error'), {
-        description: error instanceof Error ? error.message : t('common.unknownError'),
+      const errorMessage = formatErrorForToast(error);
+      toast.error(errorMessage.title, {
+        description: errorMessage.description,
       });
     } finally {
       setIsSubmitting(false);

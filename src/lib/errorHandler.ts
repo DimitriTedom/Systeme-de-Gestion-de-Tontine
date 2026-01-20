@@ -201,15 +201,46 @@ export function handleSupabaseError(error: unknown): ErrorDetails {
 
   // Handle standard Error objects
   if (error instanceof Error) {
+    // Network errors
+    if (error.message.includes('fetch')) {
+      return {
+        message: 'Erreur de connexion',
+        details: 'Vérifiez votre connexion internet et réessayez'
+      };
+    }
+    
+    // Timeout errors
+    if (error.message.includes('timeout') || error.message.includes('timed out')) {
+      return {
+        message: 'Délai d\'attente dépassé',
+        details: 'Le serveur met trop de temps à répondre. Réessayez dans quelques instants'
+      };
+    }
+    
+    // Network connection errors
+    if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+      return {
+        message: 'Impossible de contacter le serveur',
+        details: 'Vérifiez votre connexion internet et réessayez'
+      };
+    }
+    
     return {
-      message: error.message || 'Une erreur inconnue est survenue'
+      message: error.message || 'Une erreur est survenue lors de l\'opération'
+    };
+  }
+
+  // Handle string errors
+  if (typeof error === 'string') {
+    return {
+      message: error
     };
   }
 
   // Fallback for unknown error types
   return {
-    message: 'Une erreur inconnue est survenue',
-    details: String(error)
+    message: 'Une erreur inattendue est survenue',
+    details: 'Veuillez réessayer ou contacter le support si le problème persiste'
   };
 }
 
@@ -232,4 +263,71 @@ export function logError(context: string, error: unknown) {
   if (import.meta.env.DEV) {
     console.error(`[${context}]`, error);
   }
+}
+
+/**
+ * Get operation-specific error messages
+ */
+export function getOperationError(operation: string, error: unknown): { title: string; description?: string } {
+  const errorDetails = handleSupabaseError(error);
+  
+  // Map generic operations to user-friendly French messages
+  const operationMessages: Record<string, string> = {
+    'fetch': 'Erreur lors du chargement des données',
+    'add': 'Erreur lors de l\'ajout',
+    'create': 'Erreur lors de la création',
+    'update': 'Erreur lors de la modification',
+    'delete': 'Erreur lors de la suppression',
+    'save': 'Erreur lors de l\'enregistrement',
+    'load': 'Erreur lors du chargement',
+    'upload': 'Erreur lors de l\'envoi',
+    'download': 'Erreur lors du téléchargement',
+    'payment': 'Erreur lors du paiement',
+    'registration': 'Erreur lors de l\'inscription',
+  };
+  
+  return {
+    title: operationMessages[operation] || errorDetails.message,
+    description: errorDetails.details || errorDetails.message
+  };
+}
+
+/**
+ * Create a descriptive error message based on context
+ */
+export function createContextualError(
+  action: string,
+  entity: string,
+  error: unknown
+): { message: string; details?: string } {
+  const errorDetails = handleSupabaseError(error);
+  
+  const actionMap: Record<string, string> = {
+    'creating': 'la création',
+    'updating': 'la modification',
+    'deleting': 'la suppression',
+    'fetching': 'le chargement',
+    'loading': 'le chargement',
+    'saving': 'l\'enregistrement',
+  };
+  
+  const entityMap: Record<string, string> = {
+    'project': 'du projet',
+    'member': 'du membre',
+    'tontine': 'de la tontine',
+    'credit': 'du crédit',
+    'session': 'de la séance',
+    'contribution': 'de la cotisation',
+    'penalty': 'de la pénalité',
+    'tour': 'du tour',
+    'transaction': 'de la transaction',
+  };
+  
+  const actionText = actionMap[action] || action;
+  const entityText = entityMap[entity] || entity;
+  
+  return {
+    message: `Erreur lors de ${actionText} ${entityText}`,
+    details: errorDetails.details || errorDetails.message
+  };
 }

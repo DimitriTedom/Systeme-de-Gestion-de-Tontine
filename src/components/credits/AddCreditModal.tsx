@@ -6,6 +6,7 @@ import { useCreditStore } from '@/stores/creditStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useToast } from '@/components/ui/toast-provider';
+import { formatErrorForToast } from '@/lib/errorHandler';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -102,11 +103,11 @@ export function AddCreditModal({ open, onOpenChange }: AddCreditModalProps) {
       form.reset();
       onOpenChange(false);
     } catch (error) {
-      // Afficher une notification d'erreur
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du crédit';
+      // Afficher une notification d'erreur détaillée
+      const errorMessage = formatErrorForToast(error);
       
-      toast.error('Impossible de créer le crédit', {
-        description: errorMessage,
+      toast.error(errorMessage.title, {
+        description: errorMessage.description,
         duration: 5000,
       });
     }
