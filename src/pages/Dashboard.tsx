@@ -33,7 +33,6 @@ import { useTransactionStore } from '@/stores/transactionStore';
 import { AGReportViewer } from '@/components/reports/ReportViewers';
 import { reportService, AGSynthesisReport } from '@/services/reportService';
 import { useToast } from '@/components/ui/toast-provider';
-import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
 import { TontineBalance } from '@/components/dashboard/TontineBalance';
 import { getGreeting, getTimeEmoji } from '@/lib/greetings';
 
@@ -677,8 +676,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity Feed */}
-        <RecentActivityFeed />
+        {/* Notifications moved to header bell */}
       </div>
 
       <AGReportViewer

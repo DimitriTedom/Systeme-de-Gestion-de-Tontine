@@ -2,6 +2,7 @@ import { Moon, Sun, Globe } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,7 @@ export function Navbar() {
         </div>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center gap-2">
+            <NotificationBell />
             {/* Language Toggle */}
             <Button
               variant="ghost"
