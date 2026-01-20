@@ -8,60 +8,68 @@ const styles = StyleSheet.create({
     padding: 40,
     fontSize: 10,
     fontFamily: 'Helvetica',
+    backgroundColor: '#ffffff',
   },
   header: {
     marginBottom: 20,
     padding: 15,
-    backgroundColor: '#1e40af',
+    backgroundColor: '#047857', // Emerald-700
     color: 'white',
     borderRadius: 5,
   },
   logo: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#fff',
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
+    color: '#fff',
   },
   subtitle: {
     fontSize: 12,
-    marginBottom: 5,
-    color: '#e0e0e0',
+    marginBottom: 3,
+    color: '#d1fae5', // Light emerald
   },
   section: {
     marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#1e40af',
-    borderBottom: '2px solid #1e40af',
-    paddingBottom: 3,
+    marginBottom: 10,
+    color: '#047857', // Emerald-700
+    borderBottom: '2px solid #047857',
+    paddingBottom: 4,
   },
   table: {
     display: 'flex',
     width: 'auto',
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 5,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    borderBottomColor: '#e5e7eb',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    backgroundColor: '#ffffff',
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#d1fae5', // Emerald-100
     borderBottomWidth: 2,
-    borderBottomColor: '#1e40af',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    borderBottomColor: '#047857',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
+    fontSize: 10,
   },
   tableCell: {
     flex: 1,
@@ -72,21 +80,22 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
   beneficiaryBox: {
-    padding: 12,
-    backgroundColor: '#dbeafe',
-    borderRadius: 5,
-    borderLeft: '4px solid #1e40af',
-    marginBottom: 10,
+    padding: 15,
+    backgroundColor: '#ecfdf5', // Emerald-50
+    borderRadius: 8,
+    borderLeft: '5px solid #047857', // Emerald-700
+    marginBottom: 15,
   },
   beneficiaryTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#1e40af',
+    marginBottom: 8,
+    color: '#047857',
   },
   beneficiaryText: {
     fontSize: 10,
-    marginBottom: 3,
+    marginBottom: 4,
+    color: '#064e3b', // Emerald-900
   },
   infoRow: {
     flexDirection: 'row',
@@ -119,13 +128,14 @@ const styles = StyleSheet.create({
   },
   totalRow: {
     flexDirection: 'row',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#d1fae5', // Emerald-100
     borderTopWidth: 2,
-    borderTopColor: '#1e40af',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    borderTopColor: '#047857',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
     marginTop: 5,
+    fontSize: 10,
   },
 });
 

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Loader2, DollarSign, Plus, Users } from 'lucide-react';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { supabase } from '@/lib/supabase';
@@ -154,16 +154,7 @@ export function MemberDetailsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t('members.memberDetails')}</SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle>{t('members.memberDetails')}</SheetTitle>
           <SheetDescription>
             Informations complètes du membre
           </SheetDescription>

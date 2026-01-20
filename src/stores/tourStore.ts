@@ -59,6 +59,7 @@ interface TourStore {
   getNextTourNumber: (tontineId: string) => Promise<number>;
   getSessionTotalContributions: (sessionId: string) => Promise<number>;
   assignGain: (sessionId: number, beneficiaryId: number) => Promise<Tour | null>;
+  calculateTontineBalance: (tontineId: string) => Promise<number>;
   
   // Local state getters
   getTourById: (id: string) => Tour | undefined;
@@ -99,6 +100,15 @@ export const useTourStore = create<TourStore>((set, get) => ({
   addTour: async (tourData) => {
     set({ isLoading: true, error: null });
     try {
+      // Vérifier la disponibilité des fonds dans la tontine avant distribution
+      const tontineBalance = await get().calculateTontineBalance(tourData.tontineId);
+      
+      if (tontineBalance < tourData.amount) {
+        throw new Error(
+          `Fonds insuffisants pour ce tour/gain. Disponible: ${tontineBalance.toLocaleString()} XAF, Demandé: ${tourData.amount.toLocaleString()} XAF`
+        );
+      }
+
       const insertData = {
         id_seance: tourData.sessionId,
         id_tontine: tourData.tontineId,
@@ -119,6 +129,20 @@ export const useTourStore = create<TourStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Enregistrer la transaction de distribution du tour (argent sortant)
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      transactionStore.addTransaction({
+        tontineId: tourData.tontineId,
+        type: 'tour_distribution',
+        amount: -tourData.amount, // Négatif car c'est une sortie d'argent
+        description: `Tour #${tourData.tourNumber} distribué`,
+        relatedEntityId: data.id,
+        relatedEntityType: 'tour',
+        memberId: tourData.beneficiaryId,
+        sessionId: tourData.sessionId,
+      });
+
       const newTour = transformTour(data);
       set((state) => ({ 
         tours: [newTour, ...state.tours],
@@ -131,6 +155,37 @@ export const useTourStore = create<TourStore>((set, get) => ({
       });
       throw error;
     }
+  },
+
+  // Calculate tontine balance from real data
+  calculateTontineBalance: async (tontineId: string): Promise<number> => {
+    // Fetch all data for this tontine
+    const [contributionsRes, creditsRes, penaltiesRes, toursRes, projectsRes] = await Promise.all([
+      supabase.from('cotisation').select('montant').eq('id_tontine', tontineId),
+      supabase.from('credit').select('montant, montant_rembourse, statut').eq('id_tontine', tontineId),
+      supabase.from('penalite').select('montant, montant_paye, statut').eq('id_tontine', tontineId),
+      supabase.from('tour').select('montant_distribue').eq('id_tontine', tontineId),
+      supabase.from('projet').select('montant_alloue').eq('id_tontine', tontineId),
+    ]);
+
+    // Money IN
+    const totalContributions = contributionsRes.data?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalPenalties = penaltiesRes.data
+      ?.filter(p => p.statut === 'paye' || p.statut === 'partiellement_paye')
+      .reduce((sum, p) => sum + (p.montant_paye || p.montant || 0), 0) || 0;
+    const totalCreditRepayments = creditsRes.data?.reduce((sum, c) => sum + (c.montant_rembourse || 0), 0) || 0;
+
+    // Money OUT
+    const totalCreditsGranted = creditsRes.data
+      ?.filter(c => c.statut !== 'refuse' && c.statut !== 'en_attente')
+      .reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalToursDistributed = toursRes.data?.reduce((sum, t) => sum + (t.montant_distribue || 0), 0) || 0;
+    const totalProjectExpenses = projectsRes.data?.reduce((sum, p) => sum + (p.montant_alloue || 0), 0) || 0;
+
+    const moneyIn = totalContributions + totalPenalties + totalCreditRepayments;
+    const moneyOut = totalCreditsGranted + totalToursDistributed + totalProjectExpenses;
+
+    return moneyIn - moneyOut;
   },
 
   deleteTour: async (id) => {

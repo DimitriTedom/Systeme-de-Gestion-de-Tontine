@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Wallet, Search, Eye, Coins, PiggyBank } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet, Search, Eye, Coins, PiggyBank, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/toast-provider';
 import { useTontineStore } from '@/stores/tontineStore';
@@ -19,23 +19,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddTontineModal } from '@/components/tontines/AddTontineModal';
 import { EditTontineModal } from '@/components/tontines/EditTontineModal';
 import { TontineDetailsSheet } from '@/components/tontines/TontineDetailsSheet';
+import { TontinesExcelExport } from '@/components/tontines/TontinesExcelExport';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 
 export default function Tontines() {
   const { t } = useTranslation();
-  const { tontines, isLoading, error, fetchTontines, deleteTontine } = useTontineStore();
+  const { tontines, isLoading, error, fetchTontinesWithStats, deleteTontine } = useTontineStore();
   const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editTontineId, setEditTontineId] = useState<string | null>(null);
   const [selectedTontineId, setSelectedTontineId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   // Fetch tontines when component mounts
   useEffect(() => {
-    fetchTontines();
-  }, [fetchTontines]);
+    fetchTontinesWithStats();
+  }, [fetchTontinesWithStats]);
 
   // Filter tontines based on search query
   const filteredTontines = useMemo(() => {
@@ -112,10 +114,20 @@ export default function Tontines() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
+          className='flex gap-3'
         >
           <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg shadow-emerald-500/30">
             <Plus className="mr-2 h-4 w-4" />
             {t('tontines.addTontine')}
+          </Button>
+          <Button 
+            onClick={() => setIsExportModalOpen(true)} 
+            variant="outline" 
+            className="w-full sm:w-auto"
+            disabled={tontines.length === 0}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exporter Excel
           </Button>
         </motion.div>
       </div>
@@ -148,7 +160,7 @@ export default function Tontines() {
           ) : error ? (
             <div className="text-center py-8 text-destructive">
               <p>{t('common.error')}: {error}</p>
-              <Button onClick={fetchTontines} variant="outline" className="mt-4">
+              <Button onClick={fetchTontinesWithStats} variant="outline" className="mt-4">
                 {t('common.retry')}
               </Button>
             </div>
@@ -261,6 +273,77 @@ export default function Tontines() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                  {/* Results info */}
+                  <div className="text-sm text-muted-foreground">
+                    {t('common.showing')} {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredTontines.length)} {t('common.of')} {filteredTontines.length} {t('tontines.tontines')}
+                  </div>
+
+                  {/* Pagination controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Previous button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-1">{t('common.previous')}</span>
+                    </Button>
+
+                    {/* Page numbers */}
+                    <div className="hidden sm:flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          // Show first page, last page, current page, and pages around current
+                          if (page === 1 || page === totalPages) return true;
+                          if (Math.abs(page - currentPage) <= 1) return true;
+                          return false;
+                        })
+                        .map((page, index, array) => {
+                          // Add ellipsis if there's a gap
+                          const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                          
+                          return (
+                            <div key={page} className="flex items-center gap-1">
+                              {showEllipsisBefore && (
+                                <span className="px-2 text-muted-foreground">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? 'default' : 'outline'}
+                                size="sm"
+                                className="min-w-[2.5rem]"
+                                onClick={() => setCurrentPage(page)}
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    {/* Mobile: Current page indicator */}
+                    <div className="sm:hidden text-sm">
+                      {currentPage} / {totalPages}
+                    </div>
+
+                    {/* Next button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <span className="hidden sm:inline mr-1">{t('common.next')}</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             </>
           )}
@@ -282,6 +365,11 @@ export default function Tontines() {
         tontineId={selectedTontineId}
         open={!!selectedTontineId}
         onOpenChange={(open) => !open && setSelectedTontineId(null)}
+      />
+
+      <TontinesExcelExport
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
     </motion.div>
   );

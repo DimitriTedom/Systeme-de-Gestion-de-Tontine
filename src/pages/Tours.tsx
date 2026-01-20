@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Trophy, Users, HandCoins, Award, Medal } from 'lucide-react';
+import { Plus, Trash2, Trophy, Users, HandCoins, Award, Medal, FileSpreadsheet } from 'lucide-react';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
+import { motion } from 'framer-motion';
 import { useTourStore, Tour } from '@/stores/tourStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AddTourModal } from '@/components/tours/AddTourModal';
+import { ToursExcelExport } from '@/components/tours/ToursExcelExport';
 
 export default function Tours() {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ export default function Tours() {
   const { getSessionById } = useSessionStore();
   const { getTontineById } = useTontineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     fetchTours();
@@ -71,50 +74,88 @@ export default function Tours() {
             {t('tours.description')}
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          {t('tours.assignTour')}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('tours.assignTour')}
+          </Button>
+          <Button 
+            onClick={() => setIsExportModalOpen(true)} 
+            variant="outline" 
+            className="w-full sm:w-auto"
+            disabled={tours.length === 0}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exporter Excel
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('tours.totalTours')}</CardTitle>
-            <Trophy className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTours}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('tours.toursCompleted')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('tours.totalDistributed')}</CardTitle>
-            <HandCoins className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalDistributed)}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('tours.distributedToMembers')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('tours.beneficiaries')}</CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{uniqueBeneficiaries}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('tours.uniqueBeneficiaries')}
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-yellow-400/50 dark:hover:shadow-yellow-600/50 transition-all duration-300 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('tours.totalTours')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-200 to-yellow-300 dark:from-yellow-800 dark:to-yellow-700">
+                <Trophy className="h-4 w-4 text-yellow-700 dark:text-yellow-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{totalTours}</div>
+              <p className="text-xs text-muted-foreground">
+                {t('tours.toursCompleted')}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-green-400/50 dark:hover:shadow-green-600/50 transition-all duration-300 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('tours.totalDistributed')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-green-200 to-green-300 dark:from-green-800 dark:to-green-700">
+                <HandCoins className="h-4 w-4 text-green-700 dark:text-green-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{formatCurrency(totalDistributed)}</div>
+              <p className="text-xs text-muted-foreground">
+                {t('tours.distributedToMembers')}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-blue-400/50 dark:hover:shadow-blue-600/50 transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('tours.beneficiaries')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-200 to-blue-300 dark:from-blue-800 dark:to-blue-700">
+                <Users className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{uniqueBeneficiaries}</div>
+              <p className="text-xs text-muted-foreground">
+                {t('tours.uniqueBeneficiaries')}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {isLoading ? (
@@ -271,6 +312,11 @@ export default function Tours() {
       <AddTourModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
+      />
+
+      <ToursExcelExport
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
     </div>
   );

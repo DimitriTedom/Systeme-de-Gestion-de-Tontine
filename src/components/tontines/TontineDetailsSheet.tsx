@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { X, Wallet, Users, Calendar, DollarSign, Clock, TrendingUp, Loader2, Mail } from 'lucide-react';
+import { Wallet, Users, Calendar, DollarSign, Clock, TrendingUp, Loader2, Mail } from 'lucide-react';
 import { useTontineStore } from '@/stores/tontineStore';
 import { getTontineMembers, type TontineMemberParticipation } from '@/services/tontineService';
 import { Button } from '@/components/ui/button';
@@ -86,16 +86,7 @@ export function TontineDetailsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t('tontines.tontineDetails')}</SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle>{t('tontines.tontineDetails')}</SheetTitle>
           <SheetDescription>
             Informations complètes de la tontine
           </SheetDescription>

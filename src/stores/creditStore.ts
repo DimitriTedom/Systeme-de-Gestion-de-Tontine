@@ -21,6 +21,7 @@ interface CreditStore {
   disburseCredit: (id: string) => Promise<void>;
   updateOverdueCredits: () => Promise<{ count: number; credits: any[] }>;
   checkMemberHasActiveCredit: (memberId: string) => Promise<boolean>;
+  calculateTontineBalance: (tontineId: string) => Promise<number>;
   
   // Getters
   getCreditById: (id: string) => Credit | undefined;
@@ -92,6 +93,20 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
         throw new Error('Ce membre a déjà un crédit actif. Il doit d\'abord rembourser son crédit en cours.');
       }
 
+      // Vérifier la disponibilité des fonds dans la tontine
+      if (!creditData.id_tontine) {
+        throw new Error('Tontine non spécifiée');
+      }
+      
+      // Calculate real balance from database data
+      const tontineBalance = await get().calculateTontineBalance(creditData.id_tontine);
+      
+      if (tontineBalance < creditData.montant) {
+        throw new Error(
+          `Fonds insuffisants dans la tontine. Disponible: ${tontineBalance.toLocaleString()} XAF, Demandé: ${creditData.montant.toLocaleString()} XAF`
+        );
+      }
+
       const { data, error } = await supabase
         .from('credit')
         .insert({
@@ -102,6 +117,21 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
         .single();
 
       if (error) throw error;
+
+      // Enregistrer la transaction de crédit accordé (argent sortant)
+      if (creditData.id_tontine) {
+        const { useTransactionStore } = await import('./transactionStore');
+        const transactionStore = useTransactionStore.getState();
+        transactionStore.addTransaction({
+          tontineId: creditData.id_tontine,
+          type: 'credit_granted',
+          amount: -creditData.montant, // Négatif car c'est une sortie d'argent
+          description: `Crédit accordé à ${data.id}`,
+          relatedEntityId: data.id,
+          relatedEntityType: 'credit',
+          memberId: creditData.id_membre || undefined,
+        });
+      }
 
       set((state) => ({ 
         credits: [data, ...state.credits],
@@ -116,6 +146,37 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
       });
       throw error;
     }
+  },
+
+  // Calculate tontine balance from real data
+  calculateTontineBalance: async (tontineId: string): Promise<number> => {
+    // Fetch all data for this tontine
+    const [contributionsRes, creditsRes, penaltiesRes, toursRes, projectsRes] = await Promise.all([
+      supabase.from('cotisation').select('montant').eq('id_tontine', tontineId),
+      supabase.from('credit').select('montant, montant_rembourse, statut').eq('id_tontine', tontineId),
+      supabase.from('penalite').select('montant, montant_paye, statut').eq('id_tontine', tontineId),
+      supabase.from('tour').select('montant_distribue').eq('id_tontine', tontineId),
+      supabase.from('projet').select('montant_alloue').eq('id_tontine', tontineId),
+    ]);
+
+    // Money IN
+    const totalContributions = contributionsRes.data?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalPenalties = penaltiesRes.data
+      ?.filter(p => p.statut === 'paye' || p.statut === 'partiellement_paye')
+      .reduce((sum, p) => sum + (p.montant_paye || p.montant || 0), 0) || 0;
+    const totalCreditRepayments = creditsRes.data?.reduce((sum, c) => sum + (c.montant_rembourse || 0), 0) || 0;
+
+    // Money OUT
+    const totalCreditsGranted = creditsRes.data
+      ?.filter(c => c.statut !== 'refuse' && c.statut !== 'en_attente')
+      .reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalToursDistributed = toursRes.data?.reduce((sum, t) => sum + (t.montant_distribue || 0), 0) || 0;
+    const totalProjectExpenses = projectsRes.data?.reduce((sum, p) => sum + (p.montant_alloue || 0), 0) || 0;
+
+    const moneyIn = totalContributions + totalPenalties + totalCreditRepayments;
+    const moneyOut = totalCreditsGranted + totalToursDistributed + totalProjectExpenses;
+
+    return moneyIn - moneyOut;
   },
 
   // Mettre à jour un crédit
@@ -175,6 +236,12 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Get credit info before repayment for transaction recording
+      const credit = get().getCreditById(id);
+      if (!credit) {
+        throw new Error('Crédit introuvable');
+      }
+
       const { data, error } = await supabase
         .rpc('rembourser_credit', {
           id_credit_param: id,
@@ -182,6 +249,21 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
         });
 
       if (error) throw error;
+
+      // Enregistrer la transaction de remboursement (argent entrant)
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      if (credit.id_tontine) {
+        transactionStore.addTransaction({
+          tontineId: credit.id_tontine,
+          type: 'credit_repayment',
+          amount: amount, // Positif car c'est une entrée d'argent
+          description: `Remboursement crédit ${credit.id}`,
+          relatedEntityId: credit.id,
+          relatedEntityType: 'credit',
+          memberId: credit.id_membre || undefined,
+        });
+      }
 
       // Rafraîchir la liste des crédits
       await get().fetchCredits();

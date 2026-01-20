@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { reportService, type MemberFinancialReport } from '@/services/reportService';
 import { useToast } from '@/components/ui/toast-provider';
 import { Button } from '@/components/ui/button';
@@ -61,16 +61,7 @@ export function MemberFinancialSummary({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
         <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t('members.financialSummary')}</SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle>{t('members.financialSummary')}</SheetTitle>
           <SheetDescription>
             Vue complète de la situation financière du membre
           </SheetDescription>

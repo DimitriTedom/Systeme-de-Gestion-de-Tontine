@@ -118,6 +118,20 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Enregistrer la transaction de cotisation (argent entrant)
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      transactionStore.addTransaction({
+        tontineId: contributionData.id_tontine,
+        type: 'contribution',
+        amount: contributionData.montant, // Positif car c'est une entrée d'argent
+        description: 'Cotisation membre',
+        relatedEntityId: data.id,
+        relatedEntityType: 'session',
+        memberId: contributionData.id_membre,
+        sessionId: contributionData.id_seance,
+      });
+
       set((state) => ({ 
         contributions: [data, ...state.contributions],
         isLoading: false 
@@ -216,6 +230,24 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
         });
 
       if (error) throw error;
+
+      // Enregistrer les transactions pour chaque cotisation
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      
+      contributions.forEach((contrib) => {
+        if (contrib.amount > 0) {
+          transactionStore.addTransaction({
+            tontineId: session.id_tontine,
+            type: 'contribution',
+            amount: contrib.amount,
+            description: 'Cotisation séance',
+            relatedEntityType: 'session',
+            memberId: contrib.memberId,
+            sessionId: sessionId,
+          });
+        }
+      });
 
       // Recharger les cotisations de la séance
       await get().fetchContributionsBySession(sessionId);

@@ -116,6 +116,21 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Enregistrer la transaction de pénalité (argent entrant)
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      if (penaltyData.id_tontine) {
+        transactionStore.addTransaction({
+          tontineId: penaltyData.id_tontine,
+          type: 'penalty',
+          amount: penaltyData.montant, // Positif car c'est une entrée d'argent
+          description: `Pénalité: ${penaltyData.raison}`,
+          relatedEntityId: data.id,
+          relatedEntityType: 'penalty',
+          memberId: penaltyData.id_membre || undefined,
+        });
+      }
+
       set((state) => ({ 
         penalties: [data, ...state.penalties],
         isLoading: false 

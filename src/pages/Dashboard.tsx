@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DollarSign, Users, CreditCard, AlertTriangle, FileText } from 'lucide-react';
+import { DollarSign, Users, CreditCard, AlertTriangle, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,10 +29,12 @@ import { useCreditStore } from '@/stores/creditStore';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
 import { useTontineStore } from '@/stores/tontineStore';
+import { useTransactionStore } from '@/stores/transactionStore';
 import { AGReportViewer } from '@/components/reports/ReportViewers';
 import { reportService, AGSynthesisReport } from '@/services/reportService';
 import { useToast } from '@/components/ui/toast-provider';
 import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
+import { TontineBalance } from '@/components/dashboard/TontineBalance';
 import { getGreeting, getTimeEmoji } from '@/lib/greetings';
 
 export default function Dashboard() {
@@ -42,11 +44,12 @@ export default function Dashboard() {
   const { credits, fetchCredits } = useCreditStore();
   const { penalties, fetchPenalties } = usePenaltyStore();
   const { members, fetchMembers } = useMemberStore();
-  const { tontines, fetchTontines } = useTontineStore();
+  const { tontines, fetchTontinesWithStats } = useTontineStore();
   const { toast } = useToast();
   const [showAGReport, setShowAGReport] = useState(false);
   const [agReportData, setAgReportData] = useState<AGSynthesisReport | null>(null);
   const [isLoadingAGReport, setIsLoadingAGReport] = useState(false);
+  const [showAllBalances, setShowAllBalances] = useState(false);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function Dashboard() {
           fetchCredits(),
           fetchPenalties(),
           fetchMembers(),
-          fetchTontines(),
+          fetchTontinesWithStats(),
         ]);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -66,7 +69,7 @@ export default function Dashboard() {
     };
     
     loadData();
-  }, [fetchSessions, fetchContributions, fetchCredits, fetchPenalties, fetchMembers, fetchTontines]);
+  }, [fetchSessions, fetchContributions, fetchCredits, fetchPenalties, fetchMembers, fetchTontinesWithStats]);
 
   const handleGenerateAGReport = async () => {
     setIsLoadingAGReport(true);
@@ -207,8 +210,9 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 hover:scale-[1.02]">
+          <Card className="glass-card border-emerald-200 dark:border-emerald-900 overflow-hidden group hover:shadow-2xl hover:shadow-emerald-400/50 dark:hover:shadow-emerald-600/50 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.cashInHand')}</CardTitle>
@@ -253,8 +257,9 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="glass-card overflow-hidden group hover:shadow-lg hover:shadow-slate-500/10 transition-all duration-300 hover:scale-[1.02]">
+          <Card className="glass-card overflow-hidden group hover:shadow-2xl hover:shadow-slate-400/50 dark:hover:shadow-slate-600/50 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeMembers')}</CardTitle>
@@ -291,8 +296,9 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:scale-[1.02]">
+          <Card className="glass-card border-amber-200 dark:border-amber-900 overflow-hidden group hover:shadow-2xl hover:shadow-amber-400/50 dark:hover:shadow-amber-600/50 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.activeCredits')}</CardTitle>
@@ -315,8 +321,9 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
-          <Card className="glass-card border-red-200 dark:border-red-900 overflow-hidden group hover:shadow-lg hover:shadow-red-500/10 transition-all duration-300">
+          <Card className="glass-card border-red-200 dark:border-red-900 overflow-hidden group hover:shadow-2xl hover:shadow-red-400/50 dark:hover:shadow-red-600/50 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
               <CardTitle className="text-sm font-medium">{t('dashboard.penalties')}</CardTitle>
@@ -332,6 +339,46 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </motion.div>
+      </div>
+
+      {/* Tontine Balances - NEW */}
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <TontineBalance showDetails={true} />
+          {(showAllBalances ? tontines : tontines.slice(0, 2)).map((tontine, index) => (
+            <motion.div
+              key={tontine.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * (index + 1) }}
+            >
+              <TontineBalance tontineId={tontine.id} showDetails={true} />
+            </motion.div>
+          ))}
+        </div>
+        
+        {/* View More Button */}
+        {tontines.length > 2 && (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowAllBalances(!showAllBalances)}
+              className="gap-2"
+            >
+              {showAllBalances ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Voir moins
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Voir plus ({tontines.length - 2} tontine{tontines.length - 2 > 1 ? 's' : ''})
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Charts */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Eye, Users as UsersIcon, Search, FileSpreadsheet, UserPlus, UsersRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Users as UsersIcon, Search, FileSpreadsheet, UserPlus, UsersRound, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMemberStore } from '@/stores/memberStore';
 import { useToast } from '@/components/ui/toast-provider';
@@ -20,7 +20,7 @@ import { AddMemberModal } from '@/components/members/AddMemberModal';
 import { EditMemberModal } from '@/components/members/EditMemberModal';
 import { MemberDetailsSheet } from '@/components/members/MemberDetailsSheet';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
-import { MemberFinancialExport } from '@/components/reports/MemberFinancialExport';
+import { MembersExcelExport } from '@/components/members/MembersExcelExport';
 
 export default function Members() {
   const { t } = useTranslation();
@@ -29,8 +29,7 @@ export default function Members() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editMemberId, setEditMemberId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [exportMemberId, setExportMemberId] = useState<number | null>(null);
-  const [exportMemberName, setExportMemberName] = useState<string>('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -108,8 +107,18 @@ export default function Members() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
+          className="flex gap-2 w-full sm:w-auto"
         >
-          <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800">
+          <Button 
+            onClick={() => setIsExportModalOpen(true)} 
+            variant="outline"
+            className="flex-1 sm:flex-initial"
+            disabled={members.length === 0}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exporter Excel
+          </Button>
+          <Button onClick={() => setIsAddModalOpen(true)} className="flex-1 sm:flex-initial bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800">
             <Plus className="mr-2 h-4 w-4" />
             {t('members.addMember')}
           </Button>
@@ -204,18 +213,6 @@ export default function Members() {
                           variant="ghost" 
                           size="icon"
                           className="h-8 w-8 sm:h-9 sm:w-9"
-                          onClick={() => {
-                            setExportMemberId(parseInt(member.id));
-                            setExportMemberName(`${member.prenom} ${member.nom}`);
-                          }}
-                          title="Export Excel"
-                        >
-                          <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="h-8 w-8 sm:h-9 sm:w-9"
                           onClick={() => setSelectedMemberId(member.id)}
                           title={t('members.memberDetails')}
                         >
@@ -249,6 +246,75 @@ export default function Members() {
               </div>
             </>
           )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+              {/* Results info */}
+              <div className="text-sm text-muted-foreground">
+                {t('common.showing')} {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredMembers.length)} {t('common.of')} {filteredMembers.length} {t('members.members')}
+              </div>
+
+              {/* Pagination controls */}
+              <div className="flex items-center gap-2">
+                {/* Previous button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">{t('common.previous')}</span>
+                </Button>
+
+                {/* Page numbers */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, index, array) => {
+                      const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                      
+                      return (
+                        <div key={page} className="flex items-center gap-1">
+                          {showEllipsisBefore && (
+                            <span className="px-2 text-muted-foreground">...</span>
+                          )}
+                          <Button
+                            variant={currentPage === page ? 'default' : 'outline'}
+                            size="sm"
+                            className="min-w-[2.5rem]"
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* Mobile: Current page indicator */}
+                <div className="sm:hidden text-sm">
+                  {currentPage} / {totalPages}
+                </div>
+
+                {/* Next button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <span className="hidden sm:inline mr-1">{t('common.next')}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -269,14 +335,9 @@ export default function Members() {
         onOpenChange={(open) => !open && setSelectedMemberId(null)}
       />
 
-      <MemberFinancialExport
-        open={!!exportMemberId}
-        onClose={() => {
-          setExportMemberId(null);
-          setExportMemberName('');
-        }}
-        memberId={exportMemberId || 0}
-        memberName={exportMemberName}
+      <MembersExcelExport
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
     </motion.div>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, Ban, DollarSign, X } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, Ban, DollarSign, X, FileSpreadsheet } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { EmptyState as InteractiveEmptyState } from '@/components/ui/interactive-empty-state';
 import { usePenaltyStore } from '@/stores/penaltyStore';
 import { useMemberStore } from '@/stores/memberStore';
@@ -21,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AddPenaltyModal } from '@/components/penalties/AddPenaltyModal';
 import { PayPenaltyModal } from '@/components/penalties/PayPenaltyModal';
+import { PenaltiesExcelExport } from '@/components/penalties/PenaltiesExcelExport';
 
 export default function Penalties() {
   const { t } = useTranslation();
@@ -31,6 +33,7 @@ export default function Penalties() {
   const { toast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPenaltyForPayment, setSelectedPenaltyForPayment] = useState<Penalite | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     fetchPenalties();
@@ -101,50 +104,88 @@ export default function Penalties() {
             {t('penalties.description')}
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          {t('penalties.addPenalty')}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('penalties.addPenalty')}
+          </Button>
+          <Button 
+            onClick={() => setIsExportModalOpen(true)} 
+            variant="outline" 
+            className="w-full sm:w-auto"
+            disabled={penalties.length === 0}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Exporter Excel
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('penalties.totalPenalties')}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{penalties.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(totalPending + totalPaid)} au total
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('penalties.pending')}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{pendingPenalties.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(totalPending)} à recouvrer
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('penalties.paid')}</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{paidPenalties.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(totalPaid)} recouvrées
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-slate-400/50 dark:hover:shadow-slate-600/50 transition-all duration-300 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('penalties.totalPenalties')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600">
+                <AlertTriangle className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{penalties.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatCurrency(totalPending + totalPaid)} au total
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-orange-400/50 dark:hover:shadow-orange-600/50 transition-all duration-300 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('penalties.pending')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-200 to-orange-300 dark:from-orange-800 dark:to-orange-700">
+                <AlertTriangle className="h-4 w-4 text-orange-700 dark:text-orange-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{pendingPenalties.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatCurrency(totalPending)} à recouvrer
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+        >
+          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:shadow-green-400/50 dark:hover:shadow-green-600/50 transition-all duration-300 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t('penalties.paid')}</CardTitle>
+              <div className="p-2 rounded-lg bg-gradient-to-br from-green-200 to-green-300 dark:from-green-800 dark:to-green-700">
+                <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-300" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{paidPenalties.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatCurrency(totalPaid)} recouvrées
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {isLoading ? (
@@ -329,6 +370,11 @@ export default function Penalties() {
         onOpenChange={(open) => {
           if (!open) setSelectedPenaltyForPayment(null);
         }}
+      />
+
+      <PenaltiesExcelExport
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import {
   FolderKanban,
   AlertTriangle,
   Trophy,
+  Receipt,
   LogOut,
   User,
 } from 'lucide-react';
@@ -65,6 +66,11 @@ export function AppSidebar() {
       label: t('nav.projects'),
       href: '/projects',
       icon: <FolderKanban className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: 'Transactions',
+      href: '/transactions',
+      icon: <Receipt className="h-5 w-5 flex-shrink-0" />,
     },
   ];
 

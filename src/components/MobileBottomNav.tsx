@@ -42,7 +42,7 @@ export function MobileBottomNav() {
   ];
 
   // Check if current path is in "more" menu
-  const moreRoutes = ['/credits', '/penalties', '/tours', '/projects'];
+  const moreRoutes = ['/credits', '/penalties', '/tours', '/projects', '/transactions'];
   const isMoreActive = moreRoutes.includes(location.pathname);
 
   return (

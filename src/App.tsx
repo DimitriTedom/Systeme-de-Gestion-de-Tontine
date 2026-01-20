@@ -18,6 +18,7 @@ import Credits from '@/pages/Credits';
 import Penalties from '@/pages/Penalties';
 import Tours from '@/pages/Tours';
 import Projects from '@/pages/Projects';
+import Transactions from '@/pages/Transactions';
 import LoginPage from '@/pages/Login';
 
 // Layout protégé avec sidebar
@@ -156,6 +157,16 @@ export default function App() {
             <ProtectedRoute>
               <ProtectedLayout>
                 <Projects />
+              </ProtectedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/transactions"
+          element={
+            <ProtectedRoute>
+              <ProtectedLayout>
+                <Transactions />
               </ProtectedLayout>
             </ProtectedRoute>
           }

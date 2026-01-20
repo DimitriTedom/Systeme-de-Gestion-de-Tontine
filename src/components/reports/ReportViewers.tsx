@@ -14,7 +14,7 @@ interface SessionReportViewerProps {
 }
 
 export function SessionReportViewer({ open, onClose, data, isLoading }: SessionReportViewerProps) {
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true); // Show preview by default
 
   if (!data) return null;
 
@@ -34,29 +34,30 @@ export function SessionReportViewer({ open, onClose, data, isLoading }: SessionR
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Rapport de Séance N° {data.session.numero_seance}</DialogTitle>
+          <DialogTitle className="text-2xl">Rapport de Séance N° {data.session.numero_seance}</DialogTitle>
           <DialogDescription>
             {data.tontine.nom_tontine} - {data.session.date_seance ? new Date(data.session.date_seance).toLocaleDateString('fr-FR') : 'Date non spécifiée'}
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-16 space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
+            <p className="text-sm text-muted-foreground">Génération du rapport en cours...</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             {/* Action Buttons */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap border-b pb-4">
               <Button
                 variant={showPreview ? "default" : "outline"}
                 onClick={() => setShowPreview(!showPreview)}
-                className="gap-2"
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
               >
                 <Eye className="h-4 w-4" />
-                {showPreview ? 'Masquer Aperçu' : 'Aperçu'}
+                {showPreview ? 'Masquer Aperçu' : 'Afficher Aperçu'}
               </Button>
 
               <PDFDownloadLink
@@ -65,7 +66,7 @@ export function SessionReportViewer({ open, onClose, data, isLoading }: SessionR
                 className="inline-flex"
               >
                 {({ loading }) => (
-                  <Button variant="outline" disabled={loading} className="gap-2">
+                  <Button variant="outline" disabled={loading} className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -85,11 +86,15 @@ export function SessionReportViewer({ open, onClose, data, isLoading }: SessionR
                 <Printer className="h-4 w-4" />
                 Imprimer
               </Button>
+
+              <Button variant="ghost" onClick={onClose} className="ml-auto">
+                Fermer
+              </Button>
             </div>
 
             {/* PDF Preview */}
             {showPreview && (
-              <div className="border rounded-lg overflow-hidden" style={{ height: '600px' }}>
+              <div className="border rounded-lg overflow-hidden flex-1 bg-gray-100" style={{ minHeight: '600px' }}>
                 <PDFViewer width="100%" height="100%" showToolbar={true}>
                   <SessionReportDocument data={data} />
                 </PDFViewer>
@@ -98,33 +103,60 @@ export function SessionReportViewer({ open, onClose, data, isLoading }: SessionR
 
             {/* Summary Info */}
             {!showPreview && (
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Lieu</p>
-                  <p className="text-sm">{data.session.lieu || 'Non spécifié'}</p>
+              <div className="space-y-4 overflow-auto">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Lieu</p>
+                    <p className="text-sm font-semibold">{data.session.lieu || 'Non spécifié'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Présents</p>
+                    <p className="text-sm font-semibold">{data.session.nombre_presents} membres</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Cotisations</p>
+                    <p className="text-lg font-bold text-emerald-700">{data.session.total_cotisations.toLocaleString()} XAF</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Pénalités</p>
+                    <p className="text-lg font-bold text-orange-600">{data.session.total_penalites.toLocaleString()} XAF</p>
+                  </div>
+                  {data.beneficiary && (
+                    <>
+                      <div className="col-span-2 space-y-1">
+                        <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Bénéficiaire du Tour</p>
+                        <p className="text-sm font-semibold">
+                          {data.beneficiary.prenom} {data.beneficiary.nom}
+                        </p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {data.beneficiary.montant_recu.toLocaleString()} XAF
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Présents</p>
-                  <p className="text-sm">{data.session.nombre_presents}</p>
+
+                {/* Quick stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-white border rounded-lg shadow-sm">
+                    <p className="text-xs text-muted-foreground">Contributions</p>
+                    <p className="text-2xl font-bold text-emerald-600">{data.contributions.length}</p>
+                  </div>
+                  <div className="p-4 bg-white border rounded-lg shadow-sm">
+                    <p className="text-xs text-muted-foreground">Pénalités</p>
+                    <p className="text-2xl font-bold text-orange-600">{data.penalties.length}</p>
+                  </div>
+                  <div className="p-4 bg-white border rounded-lg shadow-sm">
+                    <p className="text-xs text-muted-foreground">Absences</p>
+                    <p className="text-2xl font-bold text-red-600">{data.absences.length}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Cotisations</p>
-                  <p className="text-sm font-semibold">{data.session.total_cotisations.toLocaleString()} XAF</p>
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Astuce :</strong> Cliquez sur "Afficher Aperçu" pour voir le rapport PDF complet avant de le télécharger ou l'imprimer.
+                  </p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Pénalités</p>
-                  <p className="text-sm font-semibold">{data.session.total_penalites.toLocaleString()} XAF</p>
-                </div>
-                {data.beneficiary && (
-                  <>
-                    <div className="col-span-2">
-                      <p className="text-sm font-medium text-muted-foreground">Bénéficiaire du Tour</p>
-                      <p className="text-sm font-semibold">
-                        {data.beneficiary.prenom} {data.beneficiary.nom} - {data.beneficiary.montant_recu.toLocaleString()} XAF
-                      </p>
-                    </div>
-                  </>
-                )}
               </div>
             )}
           </div>

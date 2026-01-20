@@ -63,10 +63,23 @@ Le tableau de bord offre une vue d'ensemble de l'état financier de la tontine.
 
 INDICATEURS CLÉS :
 ------------------
-• Cash en Caisse : Montant total disponible (entrées - sorties)
+• Cash en Caisse : Montant total disponible calculé en temps réel 
+  (cotisations + pénalités + remboursements de crédits - crédits accordés 
+  - tours distribués - dépenses de projets)
 • Membres Actifs : Nombre de membres actifs sur le total
 • Crédits Actifs : Nombre de crédits en cours
 • Pénalités : Nombre de pénalités non payées
+
+SOLDES PAR TONTINE :
+--------------------
+Le tableau de bord affiche le solde de chaque tontine calculé directement 
+depuis la base de données. Chaque carte montre :
+- Le montant total disponible
+- Les entrées d'argent (cotisations, pénalités payées, remboursements)
+- Les sorties d'argent (crédits, tours, projets)
+
+Pour voir toutes les tontines, cliquez sur "Voir plus" au bas de la section.
+Pour masquer certaines tontines, cliquez sur "Voir moins".
 
 [📸 CAPTURE D'ÉCRAN : Vue d'ensemble du tableau de bord avec les 4 cartes]
 
@@ -192,6 +205,19 @@ CLÔTURER UNE SESSION :
 2. Cliquez sur "Clôturer la session"
 3. Le système génère automatiquement les pénalités pour les absents
 
+RAPPORT DE SESSION :
+--------------------
+Chaque session dispose d'un bouton "Générer Rapport" qui permet de créer 
+un PDF détaillé contenant :
+- Informations de la session (date, lieu, numéro)
+- Statistiques de présence
+- Liste des cotisations collectées
+- Liste des pénalités appliquées
+- Résumé financier
+
+Le rapport s'affiche automatiquement en mode prévisualisation avant de 
+pouvoir être téléchargé ou imprimé.
+
 [📸 CAPTURE D'ÉCRAN : Session clôturée avec résumé]
 
 ================================================================================
@@ -209,6 +235,12 @@ DEMANDER UN CRÉDIT :
 5. Définissez le taux d'intérêt (%)
 6. Définissez la date de remboursement prévue
 7. Cliquez sur "Soumettre"
+
+VALIDATION DES FONDS :
+----------------------
+Le système vérifie automatiquement que la tontine dispose de fonds suffisants
+avant d'approuver un crédit. Le solde est calculé en temps réel depuis la 
+base de données pour garantir l'exactitude.
 
 [📸 CAPTURE D'ÉCRAN : Formulaire de demande de crédit]
 
@@ -383,6 +415,37 @@ Application développée par l'équipe INF2212 - Janvier 2026
 Pour toute question technique, veuillez contacter :
 - Email : dimitritedom@example.com
 - GitHub : https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine
+
+Le lien GitHub est également accessible directement depuis le pied de page 
+de l'application en cliquant sur l'icône GitHub.
+
+================================================================================
+                      NOTES DE VERSION 1.0.0
+================================================================================
+
+FONCTIONNALITÉS PRINCIPALES :
+------------------------------
+✅ Gestion complète des membres et tontines
+✅ Suivi des sessions avec feuilles de présence
+✅ Système de cotisations avec validation
+✅ Gestion des crédits avec calcul automatique d'intérêts
+✅ Application automatique de pénalités
+✅ Distribution des tours et gains
+✅ Gestion de projets collectifs (FIAC)
+✅ Génération de rapports PDF avec prévisualisation
+✅ Calcul en temps réel des soldes depuis la base de données
+✅ Interface responsive (desktop et mobile)
+✅ Mode sombre/clair
+✅ Support multilingue (Français/Anglais)
+✅ Validation des fonds pour toutes les opérations financières
+
+AMÉLIORATIONS RÉCENTES :
+------------------------
+• Correction du calcul des soldes pour utiliser les données réelles de la BD
+• Validation des fonds avant attribution de crédits, tours et projets
+• Prévisualisation automatique des rapports PDF
+• Interface utilisateur améliorée avec thème émeraude
+• Ajout du bouton "Voir plus/moins" pour les cartes de solde
 
 ================================================================================
                          FIN DU MANUEL

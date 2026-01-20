@@ -19,6 +19,7 @@ interface ProjectStore {
   allocateFunds: (id: string, amount: number) => Promise<void>;
   completeProject: (id: string) => Promise<void>;
   cancelProject: (id: string) => Promise<void>;
+  calculateTontineBalance: (tontineId: string) => Promise<number>;
   
   // Getters
   getProjectById: (id: string) => Projet | undefined;
@@ -163,6 +164,17 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const project = get().getProjectById(id);
     if (!project) throw new Error('Projet non trouvé');
 
+    // Vérifier la disponibilité des fonds dans la tontine pour les dépenses
+    if (amount > 0) { // Seulement pour les allocations (dépenses), pas les remboursements
+      const tontineBalance = await get().calculateTontineBalance(project.id_tontine);
+      
+      if (tontineBalance < amount) {
+        throw new Error(
+          `Fonds insuffisants pour cette dépense de projet. Disponible: ${tontineBalance.toLocaleString()} XAF, Demandé: ${amount.toLocaleString()} XAF`
+        );
+      }
+    }
+
     const newAmount = project.montant_alloue + amount;
     
     // Déterminer le nouveau statut en fonction du montant alloué
@@ -187,6 +199,51 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       montant_alloue: newAmount,
       statut: newStatut,
     });
+
+    // Enregistrer la transaction de dépense de projet (argent sortant)
+    if (amount > 0) {
+      const { useTransactionStore } = await import('./transactionStore');
+      const transactionStore = useTransactionStore.getState();
+      transactionStore.addTransaction({
+        tontineId: project.id_tontine,
+        type: 'project_expense',
+        amount: -amount, // Négatif car c'est une sortie d'argent
+        description: `Dépense projet: ${project.nom}`,
+        relatedEntityId: project.id,
+        relatedEntityType: 'project',
+      });
+    }
+  },
+
+  // Calculate tontine balance from real data
+  calculateTontineBalance: async (tontineId: string): Promise<number> => {
+    // Fetch all data for this tontine
+    const [contributionsRes, creditsRes, penaltiesRes, toursRes, projectsRes] = await Promise.all([
+      supabase.from('cotisation').select('montant').eq('id_tontine', tontineId),
+      supabase.from('credit').select('montant, montant_rembourse, statut').eq('id_tontine', tontineId),
+      supabase.from('penalite').select('montant, montant_paye, statut').eq('id_tontine', tontineId),
+      supabase.from('tour').select('montant_distribue').eq('id_tontine', tontineId),
+      supabase.from('projet').select('montant_alloue').eq('id_tontine', tontineId),
+    ]);
+
+    // Money IN
+    const totalContributions = contributionsRes.data?.reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalPenalties = penaltiesRes.data
+      ?.filter(p => p.statut === 'paye' || p.statut === 'partiellement_paye')
+      .reduce((sum, p) => sum + (p.montant_paye || p.montant || 0), 0) || 0;
+    const totalCreditRepayments = creditsRes.data?.reduce((sum, c) => sum + (c.montant_rembourse || 0), 0) || 0;
+
+    // Money OUT
+    const totalCreditsGranted = creditsRes.data
+      ?.filter(c => c.statut !== 'refuse' && c.statut !== 'en_attente')
+      .reduce((sum, c) => sum + (c.montant || 0), 0) || 0;
+    const totalToursDistributed = toursRes.data?.reduce((sum, t) => sum + (t.montant_distribue || 0), 0) || 0;
+    const totalProjectExpenses = projectsRes.data?.reduce((sum, p) => sum + (p.montant_alloue || 0), 0) || 0;
+
+    const moneyIn = totalContributions + totalPenalties + totalCreditRepayments;
+    const moneyOut = totalCreditsGranted + totalToursDistributed + totalProjectExpenses;
+
+    return moneyIn - moneyOut;
   },
 
   // Marquer un projet comme terminé

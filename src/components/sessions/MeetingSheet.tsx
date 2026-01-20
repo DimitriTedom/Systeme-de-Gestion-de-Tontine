@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Save, Lock, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, Lock, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTontineStore } from '@/stores/tontineStore';
 import { useContributionStore } from '@/stores/contributionStore';
@@ -337,16 +337,7 @@ export function MeetingSheet({ sessionId, open, onOpenChange }: MeetingSheetProp
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t('sessions.meetingSheet')}</SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <SheetTitle>{t('sessions.meetingSheet')}</SheetTitle>
           <SheetDescription>
             <div className="space-y-2">
               <div className="flex justify-between">
