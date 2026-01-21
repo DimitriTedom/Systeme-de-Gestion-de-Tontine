@@ -65,9 +65,14 @@ Le tableau de bord offre une vue d'ensemble de l'état financier de la tontine.
 
 INDICATEURS CLÉS :
 ------------------
-• Cash en Caisse : Montant total disponible calculé en temps réel 
-  (cotisations + pénalités + remboursements de crédits - crédits accordés 
-  - tours distribués - dépenses de projets)
+• Cash en Caisse : Montant total disponible calculé en temps réel depuis 
+  la base de données :
+  ENTRÉES (+) : Cotisations payées + Pénalités payées + Remboursements de crédits
+  SORTIES (-) : Crédits décaissés + Tours distribués + Dépenses de projets
+  
+  ⚠️ IMPORTANT : Seuls les crédits DÉCAISSÉS réduisent le cash (pas les crédits 
+  en attente ou approuvés). L'argent sort uniquement lors du décaissement effectif.
+  
 • Membres Actifs : Nombre de membres actifs sur le total
 • Crédits Actifs : Nombre de crédits en cours
 • Pénalités : Nombre de pénalités non payées
@@ -289,10 +294,14 @@ DEMANDER UN CRÉDIT :
 6. Définissez la date de remboursement prévue
 7. Cliquez sur "Soumettre"
 
+⚠️ IMPORTANT : Le crédit est créé avec le statut "En attente" et AUCUN argent 
+ne quitte la tontine à ce stade. Le crédit doit être approuvé puis décaissé
+pour que l'argent soit effectivement sorti de la caisse.
+
 VALIDATION DES FONDS :
 ----------------------
 Le système vérifie automatiquement que la tontine dispose de fonds suffisants
-avant d'approuver un crédit. Le solde est calculé en temps réel depuis la 
+avant de créer un crédit. Le solde est calculé en temps réel depuis la 
 base de données pour garantir l'exactitude.
 
 [📸 CAPTURE D'ÉCRAN : Formulaire de demande de crédit]
@@ -301,12 +310,43 @@ CYCLE DE VIE D'UN CRÉDIT :
 --------------------------
 1. En attente → 2. Approuvé → 3. Décaissé → 4. En cours → 5. Remboursé
 
+Étape 1 - EN ATTENTE :
+  • Crédit demandé mais pas encore validé
+  • L'argent reste dans la caisse de la tontine
+  • Nécessite une approbation
+
+Étape 2 - APPROUVÉ :
+  • Le crédit a été validé par un administrateur
+  • L'argent est toujours dans la caisse
+  • Prêt à être décaissé
+
+Étape 3 - DÉCAISSÉ :
+  • L'argent a été effectivement versé au membre
+  • L'argent sort de la caisse à ce moment ⚠️
+  • Le membre peut commencer à rembourser
+
+Étape 4 - EN COURS :
+  • Le membre effectue des remboursements
+  • L'argent entre progressivement dans la caisse
+
+Étape 5 - REMBOURSÉ :
+  • Le crédit est entièrement remboursé
+  • Remboursements + intérêts = Solde acquitté
+
 ACTIONS :
 ---------
-• ✅ Approuver : Valider la demande
-• 📤 Décaisser : Transférer les fonds
+• ✅ Approuver : Valider la demande (statut passe à "Approuvé")
+• 📤 Décaisser : Transférer les fonds au membre (argent sort de la caisse)
 • 💵 Rembourser : Enregistrer un remboursement partiel ou total
 • 🗑️ Supprimer : Annuler le crédit
+
+⚠️ RÈGLE IMPORTANTE : IMPACT SUR LA CAISSE
+-------------------------------------------
+L'argent ne quitte la caisse QUE lors du DÉCAISSEMENT, pas lors de la demande.
+Ce processus garantit :
+• Contrôle strict des sorties d'argent
+• Traçabilité complète des opérations
+• Protection contre les erreurs de saisie
 
 [📸 CAPTURE D'ÉCRAN : Liste des crédits avec différents statuts]
 
@@ -647,13 +687,15 @@ tontines de présence ont tous les membres avec 1 part obligatoire.
 
 AUTRES VALIDATIONS AUTOMATIQUES :
 ----------------------------------
-✅ Validation des fonds avant attribution de crédit
+✅ Validation des fonds avant attribution de crédit (vérification avant décaissement)
 ✅ Validation des fonds avant distribution de tour
 ✅ Validation des fonds avant allocation à un projet
 ✅ Vérification de l'unicité des emails et téléphones
 ✅ Calcul automatique des intérêts sur les crédits
 ✅ Application automatique des pénalités de retard
 ✅ Solde calculé en temps réel depuis la base de données
+✅ Workflow de crédit en 3 étapes : Demande → Approbation → Décaissement
+✅ Protection contre les sorties d'argent non autorisées
 
 📚 DOCUMENTATION TECHNIQUE :
 Pour plus de détails techniques sur l'implémentation de ces règles,
@@ -721,6 +763,13 @@ AMÉLIORATIONS RÉCENTES :
 • Interface utilisateur améliorée avec thème émeraude
 • Ajout du bouton "Voir plus/moins" pour les cartes de solde
 • Documentation complète des règles métier (BUSINESS_RULES.md)
+• CORRECTION CRITIQUE : Workflow de crédit avec décaissement
+  - Les crédits en "attente" ou "approuvés" ne sortent PAS d'argent
+  - L'argent quitte la caisse uniquement lors du DÉCAISSEMENT
+  - Garantit un contrôle précis des flux de trésorerie
+• Filtrage étendu des crédits dans le Dashboard
+  - Inclut tous les statuts post-décaissement (décaissé, en cours, en retard, défaut, remboursé)
+  - Calcul précis des sorties d'argent
 
 ================================================================================
                          FIN DU MANUEL
