@@ -150,97 +150,127 @@ L'application permet de gérer efficacement :
 ## 🚀 Démarrage Rapide
 
 ### Prérequis
-- Node.js 18+
+- Node.js 18+ 
 - npm, yarn ou pnpm
 - Git
-- Compte Supabase (gratuit)
-- **Docker & Docker Compose** (optionnel, pour déploiement conteneurisé)
+- Compte Supabase (gratuit sur [supabase.com](https://supabase.com))
 
-### Option 1: Installation avec Docker 🐳 (Recommandé)
+---
 
-La méthode la plus simple pour déployer l'application:
+### 📦 Installation en 5 Minutes
 
+#### **Étape 1 : Cloner le Projet**
 ```bash
-# 1. Cloner le projet
 git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
-cd Systeme-de-Gestion-de-Tontine
-
-# 2. Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos identifiants Supabase
-
-# 3. Lancer avec Docker Compose
-docker-compose up -d
-
-# L'application sera disponible sur http://localhost
-```
-
-**📖 Pour plus de détails sur Docker, voir [DOCKER.md](DOCKER.md)**
-
-### Option 2: Installation Manuelle
-
-#### 1. Cloner le Projet
-```bash
-# Cloner le dépôt
-git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
-
-# Naviguer vers le répertoire
 cd Systeme-de-Gestion-de-Tontine
 ```
 
-#### 2. Configuration de Supabase
-
-1. Créer un projet sur [supabase.com](https://supabase.com)
-2. Copier l'URL et la clé anonyme du projet
-3. Exécuter les scripts SQL dans l'éditeur SQL de Supabase (voir `/supabase/migrations/`)
-
-#### 3. Configuration Frontend
-- Node.js 18+
-- npm, yarn ou pnpm
-- Git
-- Compte Supabase (gratuit)
-
-### 1. Cloner le Projet
+#### **Étape 2 : Installer les Dépendances**
 ```bash
-# Cloner le dépôt
-git clone https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine.git
-
-# Naviguer vers le répertoire
-cd Systeme-de-Gestion-de-Tontine
-```
-
-### 2. Configuration de Supabase
-
-1. Créer un projet sur [supabase.com](https://supabase.com)
-2. Copier l'URL et la clé anonyme du projet
-3. Exécuter les scripts SQL dans l'éditeur SQL de Supabase (voir `/supabase/migrations/`)
-
-### 3. Configuration Frontend
-```bash
-# Installer les dépendances
 npm install
+```
 
+#### **Étape 3 : Configurer Supabase**
+
+1. **Créer un projet Supabase** :
+   - Allez sur [supabase.com](https://supabase.com) et créez un compte gratuit
+   - Créez un nouveau projet
+   - Notez l'URL et la clé anonyme (ANON KEY)
+
+2. **Exécuter le script SQL** :
+   - Dans votre tableau de bord Supabase, allez dans **SQL Editor**
+   - Cliquez sur **"+ New query"**
+   - Copiez-collez le contenu du fichier `supabase/migrations/001_init_schema.sql`
+   - Cliquez sur **"Run"** pour exécuter le script
+   - ✅ Vérifiez qu'il n'y a pas d'erreur (vous devriez voir "Success. No rows returned")
+
+3. **Configurer les variables d'environnement** :
+```bash
 # Créer le fichier .env
 cp .env.example .env
-
-# Éditer .env avec vos identifiants Supabase
-# VITE_SUPABASE_URL=votre_url_supabase
-# VITE_SUPABASE_ANON_KEY=votre_cle_anonyme
-
-# Lancer le serveur de développement
-npm run dev
-
-# L'application sera disponible sur http://localhost:5173
 ```
 
-### 4. Build pour Production
+Éditez le fichier `.env` et remplacez par vos valeurs :
+```env
+VITE_SUPABASE_URL=https://votre-projet.supabase.co
+VITE_SUPABASE_ANON_KEY=votre_cle_anonyme_ici
+```
+
+#### **Étape 4 : Lancer l'Application**
+```bash
+npm run dev
+```
+
+🎉 **L'application est maintenant disponible sur http://localhost:5173**
+
+---
+
+### 🔐 **Première Connexion**
+
+L'application utilise Supabase Auth. Pour créer votre premier compte :
+
+1. Sur la page de connexion, cliquez sur **"S'inscrire"**
+2. Entrez un email et mot de passe
+3. Vérifiez votre email (Supabase envoie un lien de confirmation)
+4. Connectez-vous avec vos identifiants
+
+**Ou créez un utilisateur directement dans Supabase** :
+1. Allez dans **Authentication > Users** dans votre tableau de bord Supabase
+2. Cliquez sur **"Add user"** → **"Create new user"**
+3. Entrez email et mot de passe
+4. Utilisez ces identifiants pour vous connecter
+
+---
+
+### 🚀 **Build pour Production**
 ```bash
 # Construire l'application
 npm run build
 
 # Prévisualiser le build
 npm run preview
+
+# Le build est dans le dossier dist/
 ```
+
+---
+
+### 🐳 **Déploiement Docker (Optionnel)**
+
+Si vous préférez utiliser Docker :
+
+```bash
+# Lancer avec Docker Compose
+docker-compose up -d
+
+# L'application sera sur http://localhost
+```
+
+**📖 Voir [DOCKER.md](DOCKER.md) pour plus de détails**
+
+---
+
+### 📚 **Documentation Complète**
+
+- 📖 **[manual.txt](manual.txt)** - Manuel d'utilisation complet (en français)
+- 🔒 **[BUSINESS_RULES.md](BUSINESS_RULES.md)** - Règles métier et validations
+- 🔧 **[MIGRATION_GUIDE.txt](MIGRATION_GUIDE.txt)** - Guide de migration de la base de données
+
+---
+
+### ⚠️ **Problèmes Courants**
+
+**1. Erreur "Invalid API key"**
+- Vérifiez que votre `.env` contient les bonnes valeurs
+- Assurez-vous d'avoir copié la clé **ANON** (pas la clé SERVICE)
+
+**2. Erreur "relation does not exist"**
+- Le script SQL n'a pas été exécuté correctement
+- Retournez dans SQL Editor et exécutez `001_init_schema.sql`
+
+**3. Page blanche après connexion**
+- Ouvrez la console (F12) pour voir les erreurs
+- Vérifiez que toutes les migrations SQL ont été exécutées
 
 ## 📁 Structure du Projet
 
