@@ -51,9 +51,7 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
               {children}
             </div>
           </main>
-          <div className="hidden md:block">
-            <Footer />
-          </div>
+          <Footer />
         </div>
         {/* Mobile bottom navigation */}
         <MobileBottomNav />
