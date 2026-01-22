@@ -1,4 +1,4 @@
-import { Moon, Sun, Globe } from 'lucide-react';
+import { Moon, Sun, Globe, BookOpen } from 'lucide-react';
 import { useTheme } from './theme-provider';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
@@ -37,6 +37,24 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center gap-2">
             <NotificationBell />
+            
+            {/* Download Manual */}
+            <Button
+              variant="ghost"
+              size="icon"
+              asChild
+              title="Télécharger le manuel d'utilisation"
+            >
+              <a 
+                href="https://drive.google.com/file/d/1MhpltFfbQSDFukUzGDc3yrHhDXfYTKX_/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <BookOpen className="h-5 w-5" />
+                <span className="sr-only">Manuel d'utilisation</span>
+              </a>
+            </Button>
+            
             {/* Language Toggle */}
             <Button
               variant="ghost"

@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   Globe,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
@@ -187,6 +188,21 @@ export function MobileMoreMenu({ open, onOpenChange }: MobileMoreMenuProps) {
 
             {/* Settings Row */}
             <div className="flex items-center justify-around px-5 py-4 border-t border-border/50">
+              {/* Download Manual */}
+              <a
+                href="https://drive.google.com/file/d/1MhpltFfbQSDFukUzGDc3yrHhDXfYTKX_/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 p-2"
+              >
+                <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-800">
+                  <BookOpen className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                  Manuel
+                </span>
+              </a>
+              
               {/* Language Toggle */}
               <button
                 onClick={toggleLanguage}
