@@ -161,6 +161,7 @@
     "tontineAdded": "Tontine créée avec succès",
     "tontineUpdated": "Tontine mise à jour avec succès",
     "tontineDeleted": "Tontine supprimée avec succès",
+    "allMembersAdded": "Tous les membres actifs ont été automatiquement ajoutés",
     "types": {
       "presence": "Présence",
       "optional": "Optionnel"

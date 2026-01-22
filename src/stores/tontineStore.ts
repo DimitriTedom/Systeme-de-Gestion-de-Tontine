@@ -115,8 +115,39 @@ export const useTontineStore = create<TontineStore>((set, get) => ({
 
       if (error) throw error;
 
+      // Si c'est une tontine de type "presence", ajouter automatiquement tous les membres actifs
+      let membresCount = 0;
+      if (data.type === 'presence') {
+        const { data: activeMembers, error: membersError } = await supabase
+          .from('membre')
+          .select('id')
+          .eq('statut', 'Actif');
+
+        if (membersError) {
+          console.error('Erreur lors de la récupération des membres:', membersError);
+        } else if (activeMembers && activeMembers.length > 0) {
+          // Créer les participations pour tous les membres actifs
+          const participations = activeMembers.map(member => ({
+            id_membre: member.id,
+            id_tontine: data.id,
+            nb_parts: 1,
+            statut: 'actif',
+          }));
+
+          const { error: participeError } = await supabase
+            .from('participe')
+            .insert(participations);
+
+          if (participeError) {
+            console.error('Erreur lors de l\'ajout des participations:', participeError);
+          } else {
+            membresCount = activeMembers.length;
+          }
+        }
+      }
+
       set((state) => ({ 
-        tontines: [{ ...data, membres_count: 0 }, ...state.tontines],
+        tontines: [{ ...data, membres_count: membresCount }, ...state.tontines],
         isLoading: false 
       }));
 

@@ -100,8 +100,13 @@ export function AddTontineModal({ open, onOpenChange }: AddTontineModalProps) {
         periode: frequencyMap[data.frequency],
         statut: 'Actif',
       });
+      
+      const successMessage = data.type === 'presence' 
+        ? `${data.name} ${t('members.hasBeenAdded')} - ${t('tontines.allMembersAdded')}`
+        : `${data.name} ${t('members.hasBeenAdded')}`;
+      
       toast.success(t('tontines.tontineAdded'), {
-        description: `${data.name} ${t('members.hasBeenAdded')}`,
+        description: successMessage,
       });
       form.reset();
       onOpenChange(false);
