@@ -240,18 +240,17 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Enregistrer la transaction de remboursement (argent entrant)
+      // Enregistrer la transaction de remboursement (argent entrant) dans la DB
       const { useTransactionStore } = await import('./transactionStore');
       const transactionStore = useTransactionStore.getState();
       if (credit.id_tontine) {
-        transactionStore.addTransaction({
-          tontineId: credit.id_tontine,
+        await transactionStore.addTransaction({
+          id_tontine: credit.id_tontine,
           type: 'credit_repayment',
-          amount: amount, // Positif car c'est une entrée d'argent
-          description: `Remboursement crédit ${credit.id}`,
-          relatedEntityId: credit.id,
-          relatedEntityType: 'credit',
-          memberId: credit.id_membre || undefined,
+          montant: amount, // Positif = argent qui ENTRE
+          description: `Remboursement crédit - ${credit.objet || 'Non spécifié'}`,
+          id_credit: credit.id,
+          id_membre: credit.id_membre || undefined,
         });
       }
 

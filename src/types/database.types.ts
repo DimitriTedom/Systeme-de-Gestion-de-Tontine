@@ -603,3 +603,71 @@ export interface AttributionGainResult {
   montant_distribue: number;
   date: string;
 }
+// ============================================================================
+// NOUVELLE TABLE: TRANSACTION (pour traçabilité financière)
+// ============================================================================
+
+export interface Transaction {
+  id: string;
+  id_tontine: string;
+  id_membre: string | null;
+  id_seance: string | null;
+  type: 'contribution' | 'credit_granted' | 'credit_repayment' | 'penalty' | 'tour_distribution' | 'project_expense' | 'initial_funding' | 'adjustment';
+  montant: number; // Positif = entrée, Négatif = sortie
+  description: string;
+  id_credit: string | null;
+  id_penalite: string | null;
+  id_tour: string | null;
+  id_projet: string | null;
+  metadata: Record<string, any> | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface InsertTransaction {
+  id?: string;
+  id_tontine: string;
+  id_membre?: string | null;
+  id_seance?: string | null;
+  type: 'contribution' | 'credit_granted' | 'credit_repayment' | 'penalty' | 'tour_distribution' | 'project_expense' | 'initial_funding' | 'adjustment';
+  montant: number;
+  description: string;
+  id_credit?: string | null;
+  id_penalite?: string | null;
+  id_tour?: string | null;
+  id_projet?: string | null;
+  metadata?: Record<string, any> | null;
+  created_by?: string | null;
+  created_at?: string;
+}
+
+export interface TransactionEnrichie {
+  id: string;
+  id_tontine: string;
+  tontine_nom: string | null;
+  type: string;
+  montant: number;
+  description: string;
+  created_at: string;
+  id_membre: string | null;
+  membre_nom: string | null;
+  id_seance: string | null;
+  numero_seance: number | null;
+  id_credit: string | null;
+  id_penalite: string | null;
+  id_tour: string | null;
+  id_projet: string | null;
+  projet_nom: string | null;
+  metadata: Record<string, any> | null;
+}
+
+export interface TontineFinancialSummary {
+  solde_actuel: number;
+  total_entrees: number;
+  total_sorties: number;
+  total_cotisations: number;
+  total_penalites: number;
+  total_remboursements: number;
+  total_credits_decaisses: number;
+  total_tours_distribues: number;
+}

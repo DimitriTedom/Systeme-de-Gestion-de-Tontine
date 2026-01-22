@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
+import type { Transaction, InsertTransaction, TransactionEnrichie, TontineFinancialSummary } from '@/types/database.types';
 
 export type TransactionType = 
   | 'contribution'      // Money IN: Member contribution during session
@@ -10,90 +12,203 @@ export type TransactionType =
   | 'initial_funding'   // Money IN: Initial tontine funding
   | 'adjustment';       // Manual adjustment (+ or -)
 
-export interface Transaction {
-  id: string;
-  tontineId: string;
-  type: TransactionType;
-  amount: number;        // Positive for IN, Negative for OUT
-  description: string;
-  relatedEntityId?: string; // ID of credit, tour, project, etc.
-  relatedEntityType?: 'credit' | 'tour' | 'project' | 'session' | 'penalty';
-  memberId?: string;     // Member involved in transaction
-  sessionId?: string;    // Session where transaction occurred
-  createdAt: Date;
-  createdBy?: string;    // User who created the transaction
-  metadata?: Record<string, any>; // Additional data
-}
-
 interface TransactionStore {
   transactions: Transaction[];
+  isLoading: boolean;
+  error: string | null;
   
-  // Actions
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => Transaction;
+  // Actions CRUD
+  fetchTransactions: (tontineId?: string) => Promise<void>;
+  fetchTransactionsEnrichies: (tontineId?: string) => Promise<TransactionEnrichie[]>;
+  addTransaction: (transaction: InsertTransaction) => Promise<Transaction | null>;
+  deleteTransaction: (id: string) => Promise<void>;
+  
+  // Actions spécifiques
   getTransactionsByTontine: (tontineId: string) => Transaction[];
   getTransactionsByType: (tontineId: string, type: TransactionType) => Transaction[];
-  getTontineBalance: (tontineId: string) => number;
+  getTontineBalance: (tontineId: string) => Promise<number>;
+  getTontineFinancialSummary: (tontineId: string) => Promise<TontineFinancialSummary | null>;
   getTransactionHistory: (tontineId: string, limit?: number) => Transaction[];
-  canAffordTransaction: (tontineId: string, amount: number) => boolean;
-  deleteTransaction: (id: string) => void;
+  canAffordTransaction: (tontineId: string, amount: number) => Promise<boolean>;
   
   // Utility
-  clearTransactions: () => void;
+  clearError: () => void;
 }
 
 const useTransactionStore = create<TransactionStore>((set, get) => ({
   transactions: [],
+  isLoading: false,
+  error: null,
 
-  addTransaction: (transactionData) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date(),
-    };
+  // Récupérer toutes les transactions (ou par tontine)
+  fetchTransactions: async (tontineId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      let query = supabase
+        .from('transaction')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (tontineId) {
+        query = query.eq('id_tontine', tontineId);
+      }
 
-    set((state) => ({
-      transactions: [...state.transactions, newTransaction],
-    }));
+      const { data, error } = await query;
 
-    return newTransaction;
+      if (error) throw error;
+
+      set({ transactions: data || [], isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement des transactions',
+        isLoading: false 
+      });
+    }
   },
 
+  // Récupérer les transactions enrichies avec toutes les infos
+  fetchTransactionsEnrichies: async (tontineId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      let query = supabase
+        .from('v_transactions_enrichies')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (tontineId) {
+        query = query.eq('id_tontine', tontineId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      set({ isLoading: false });
+      return data || [];
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors du chargement',
+        isLoading: false 
+      });
+      return [];
+    }
+  },
+
+  // Ajouter une transaction
+  addTransaction: async (transactionData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('transaction')
+        .insert(transactionData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set((state) => ({ 
+        transactions: [data, ...state.transactions],
+        isLoading: false 
+      }));
+
+      return data;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de l\'ajout de la transaction',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Supprimer une transaction
+  deleteTransaction: async (id) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase
+        .from('transaction')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        transactions: state.transactions.filter((t) => t.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Erreur lors de la suppression',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Obtenir les transactions d'une tontine (depuis le state local)
   getTransactionsByTontine: (tontineId) => {
-    return get().transactions.filter((txn) => txn.tontineId === tontineId);
+    return get().transactions.filter((txn) => txn.id_tontine === tontineId);
   },
 
+  // Obtenir les transactions par type
   getTransactionsByType: (tontineId, type) => {
     return get().transactions.filter(
-      (txn) => txn.tontineId === tontineId && txn.type === type
+      (txn) => txn.id_tontine === tontineId && txn.type === type
     );
   },
 
-  getTontineBalance: (tontineId) => {
-    const transactions = get().getTransactionsByTontine(tontineId);
-    return transactions.reduce((balance, txn) => balance + txn.amount, 0);
+  // Calculer le solde d'une tontine (depuis la DB avec fonction SQL)
+  getTontineBalance: async (tontineId) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('calculer_solde_tontine', { id_tontine_param: tontineId });
+
+      if (error) throw error;
+
+      return data || 0;
+    } catch (error) {
+      console.error('Erreur calcul solde:', error);
+      return 0;
+    }
   },
 
+  // Obtenir le résumé financier complet d'une tontine
+  getTontineFinancialSummary: async (tontineId) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_tontine_financial_summary', { id_tontine_param: tontineId })
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Erreur résumé financier:', error);
+      return null;
+    }
+  },
+
+  // Historique des transactions (trié par date)
   getTransactionHistory: (tontineId, limit) => {
     const transactions = get().getTransactionsByTontine(tontineId);
     const sorted = [...transactions].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     return limit ? sorted.slice(0, limit) : sorted;
   },
 
-  canAffordTransaction: (tontineId, amount) => {
-    const balance = get().getTontineBalance(tontineId);
+  // Vérifier si une tontine peut se permettre une dépense
+  canAffordTransaction: async (tontineId, amount) => {
+    const balance = await get().getTontineBalance(tontineId);
     return balance >= amount;
   },
 
-  deleteTransaction: (id) => {
-    set((state) => ({
-      transactions: state.transactions.filter((txn) => txn.id !== id),
-    }));
-  },
-
-  clearTransactions: () => {
-    set({ transactions: [] });
+  clearError: () => {
+    set({ error: null });
   },
 }));
 
