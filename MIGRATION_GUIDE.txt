@@ -1,0 +1,124 @@
+================================================================================
+                    GUIDE DE MIGRATION - CRÉDIT REMBOURSEMENT
+================================================================================
+
+Date: 22 janvier 2026
+Migration: 002_fix_credit_repayment_status.sql
+
+PROBLÈMES CORRIGÉS :
+--------------------
+1. ✅ Les crédits ne passaient jamais à l'état "Remboursé"
+2. ✅ Le bouton "Rembourser" n'apparaissait pas pour les crédits décaissés
+3. ✅ La fonction RPC ne gérait pas correctement la transition decaisse → en_cours
+
+CHANGEMENTS EFFECTUÉS :
+-----------------------
+1. Interface utilisateur (Credits.tsx) :
+   - Bouton "Rembourser" maintenant visible pour : decaisse, en_cours, en_retard, defaut
+   - Avant : uniquement en_cours et en_retard
+
+2. Migration base de données (002_fix_credit_repayment_status.sql) :
+   - Fonction rembourser_credit améliorée
+   - Gère correctement : decaisse → en_cours → rembourse
+   - Préserve en_retard et defaut jusqu'au remboursement complet
+   - Validation du montant (ne peut pas dépasser le solde)
+   - Validation que le montant est > 0
+
+POUR APPLIQUER LA MIGRATION SUR SUPABASE :
+-------------------------------------------
+
+MÉTHODE 1 : Via Supabase Dashboard (Recommandé)
+------------------------------------------------
+1. Allez sur https://supabase.com
+2. Connectez-vous à votre projet
+3. Allez dans "SQL Editor"
+4. Cliquez sur "+ New query"
+5. Copiez-collez le contenu du fichier :
+   supabase/migrations/002_fix_credit_repayment_status.sql
+6. Cliquez sur "Run" (ou Ctrl+Enter)
+7. Vérifiez qu'il n'y a pas d'erreurs
+
+MÉTHODE 2 : Via Supabase CLI (Si installé localement)
+------------------------------------------------------
+cd /home/snowdev/Documents/UY1/222/TP\ S1/Systeme-de-Gestion-de-Tontine
+supabase db push
+
+VÉRIFICATION QUE LA MIGRATION A RÉUSSI :
+-----------------------------------------
+1. Dans Supabase SQL Editor, exécutez :
+   
+   SELECT routine_name, routine_type 
+   FROM information_schema.routines 
+   WHERE routine_name = 'rembourser_credit';
+   
+   Résultat attendu : 1 ligne avec routine_type = 'FUNCTION'
+
+2. Testez la fonction avec un crédit de test :
+   
+   -- Créez un crédit de test (ajustez les IDs)
+   INSERT INTO credit (id_membre, montant, solde, taux_interet, 
+                       date_remboursement_prevue, statut)
+   VALUES ('votre-id-membre', 10000, 10000, 5, 
+           CURRENT_DATE + INTERVAL '30 days', 'decaisse');
+   
+   -- Testez le remboursement partiel
+   SELECT * FROM rembourser_credit(
+       'id-du-credit-créé'::uuid, 
+       5000
+   );
+   
+   -- Vérifiez que le statut est passé à 'en_cours'
+   
+   -- Testez le remboursement complet
+   SELECT * FROM rembourser_credit(
+       'id-du-credit-créé'::uuid, 
+       5000
+   );
+   
+   -- Vérifiez que le statut est passé à 'rembourse'
+
+RÈGLE IMPORTANTE : UN SEUL CRÉDIT ACTIF PAR MEMBRE
+---------------------------------------------------
+Cette règle était DÉJÀ implémentée ! La fonction verifier_credit_actif
+existe et est appelée dans addCredit (creditStore.ts ligne 91).
+
+Si vous voyez l'erreur :
+"Ce membre a déjà un crédit actif. Il doit d'abord rembourser son crédit en cours."
+
+C'est NORMAL ! Le système fonctionne correctement.
+
+Les crédits actifs sont : en_attente, approuve, decaisse, en_cours, en_retard
+Un membre doit rembourser complètement son crédit (statut = rembourse) 
+avant de pouvoir en demander un nouveau.
+
+APRÈS LA MIGRATION :
+--------------------
+1. Rechargez l'application web
+2. Allez dans "Crédits"
+3. Décaissez un crédit (le bouton 📤 "Décaisser")
+4. Le bouton 💵 "Rembourser" devrait apparaître immédiatement
+5. Testez un remboursement partiel
+6. Vérifiez que le statut passe à "En cours"
+7. Testez un remboursement complet
+8. Vérifiez que le statut passe à "Remboursé"
+
+ROLLBACK (En cas de problème) :
+--------------------------------
+Si la migration cause des problèmes, vous pouvez revenir à l'ancienne version :
+
+-- Dans Supabase SQL Editor :
+DROP FUNCTION IF EXISTS rembourser_credit(UUID, NUMERIC);
+
+-- Puis copiez-collez l'ancienne fonction depuis :
+-- supabase/migrations/001_init_schema.sql lignes 872-930
+
+SUPPORT :
+---------
+Si vous rencontrez des problèmes, vérifiez :
+1. Les logs Supabase (onglet "Logs" dans le dashboard)
+2. La console du navigateur (F12) pour les erreurs JavaScript
+3. GitHub Issues : https://github.com/DimitriTedom/Systeme-de-Gestion-de-Tontine/issues
+
+================================================================================
+                              FIN DU GUIDE
+================================================================================
