@@ -421,7 +421,7 @@ export default function Credits() {
                           )}
                           
                           {/* Rembourser */}
-                          {['en_cours', 'en_retard'].includes(credit.statut) && (
+                          {['decaisse', 'en_cours', 'en_retard', 'defaut'].includes(credit.statut) && (
                             <Button
                               variant="ghost"
                               size="icon"
