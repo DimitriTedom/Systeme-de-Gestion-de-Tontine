@@ -586,6 +586,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ----------------------------------------------------------------------------
 -- FONCTION: get_statistiques_dashboard
 -- Description: Récupère toutes les statistiques pour le tableau de bord
+-- Utilise la table transaction pour un calcul précis de la caisse
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_statistiques_dashboard()
 RETURNS JSON AS $$
@@ -599,13 +600,19 @@ BEGIN
         -- Statistiques tontines
         'total_tontines', (SELECT COUNT(*) FROM tontine WHERE statut = 'Actif'),
         
-        -- Caisse (total cotisations - total tours distribués)
+        -- Caisse TOTALE (somme de toutes les transactions de toutes les tontines actives)
+        -- Positif = entrée, Négatif = sortie
         'caisse', (
-            SELECT COALESCE(SUM(c.montant), 0) 
-            FROM cotisation c
-        ) - (
-            SELECT COALESCE(SUM(t.montant_distribue), 0) 
-            FROM tour t
+            SELECT COALESCE(SUM(t.montant), 0) 
+            FROM transaction t
+            JOIN tontine ton ON t.id_tontine = ton.id
+            WHERE ton.statut = 'Actif'
+        ),
+        
+        -- Caisse GLOBALE (toutes tontines confondues, même terminées)
+        'cash_in_hand', (
+            SELECT COALESCE(SUM(montant), 0) 
+            FROM transaction
         ),
         
         -- Crédits actifs
@@ -634,12 +641,24 @@ BEGIN
             WHERE statut IN ('planifie', 'collecte_fonds', 'en_cours')
         ),
         
-        -- Cotisations totales
+        -- Statistiques de transactions (pour vérification)
+        'total_entrees', (
+            SELECT COALESCE(SUM(montant), 0) 
+            FROM transaction 
+            WHERE montant > 0
+        ),
+        'total_sorties', (
+            SELECT COALESCE(ABS(SUM(montant)), 0) 
+            FROM transaction 
+            WHERE montant < 0
+        ),
+        
+        -- Cotisations totales (legacy - pour compatibilité)
         'total_cotisations', (
             SELECT COALESCE(SUM(montant), 0) FROM cotisation
         ),
         
-        -- Tours distribués
+        -- Tours distribués (legacy - pour compatibilité)
         'total_tours', (
             SELECT COALESCE(SUM(montant_distribue), 0) FROM tour
         ),
@@ -653,7 +672,11 @@ BEGIN
                 ORDER BY date DESC
                 LIMIT 5
             ) s
-        )
+        ),
+        
+        -- Membres actifs vs total
+        'active_members', (SELECT COUNT(*) FROM membre WHERE statut = 'Actif'),
+        'total_members', (SELECT COUNT(*) FROM membre)
     ) INTO v_stats;
     
     RETURN v_stats;
