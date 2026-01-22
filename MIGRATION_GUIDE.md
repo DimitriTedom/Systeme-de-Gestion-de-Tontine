@@ -9,10 +9,12 @@
 
 ### Étape 2: Exécuter la Migration
 1. Cliquer sur **New Query**
-2. Ouvrir le fichier `supabase/migrations/002_add_transactions_and_fix_cascades.sql`
-3. Copier TOUT le contenu
+2. Ouvrir le fichier `supabase/migrations/001_init_schema.sql`
+3. Copier TOUT le contenu (c'est le fichier complet avec toutes les fonctionnalités)
 4. Coller dans l'éditeur SQL
 5. Cliquer sur **Run** (▶️)
+
+> **Note :** Le fichier `001_init_schema.sql` contient maintenant TOUTES les fonctionnalités incluant la traçabilité financière complète. Il n'y a plus de fichier `002` séparé.
 
 ### Étape 3: Vérifier que ça a marché
 ```sql
