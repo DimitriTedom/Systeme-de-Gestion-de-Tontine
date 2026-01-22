@@ -314,6 +314,7 @@ CREATE TRIGGER update_projet_updated_at
 -- FONCTION: cloturer_seance
 -- Description: Clôture une séance et crée automatiquement les pénalités
 --              pour les membres absents (si tontine de type 'presence')
+-- Pénalité = montant_cotisation + 50% du montant_cotisation
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION cloturer_seance(
     id_seance_param UUID,
@@ -323,6 +324,8 @@ RETURNS JSON AS $$
 DECLARE
     v_tontine_id UUID;
     v_tontine_type VARCHAR(50);
+    v_montant_cotisation DECIMAL(12, 2);
+    v_montant_penalite_calcule DECIMAL(12, 2);
     v_total_cotisations DECIMAL(12, 2);
     v_total_penalites DECIMAL(12, 2);
     v_nombre_presents INTEGER;
@@ -331,8 +334,8 @@ DECLARE
     v_seance_date DATE;
 BEGIN
     -- 1. Vérifier que la séance existe et n'est pas déjà clôturée
-    SELECT s.id_tontine, s.date, t.type
-    INTO v_tontine_id, v_seance_date, v_tontine_type
+    SELECT s.id_tontine, s.date, t.type, t.montant_cotisation
+    INTO v_tontine_id, v_seance_date, v_tontine_type, v_montant_cotisation
     FROM seance s
     JOIN tontine t ON s.id_tontine = t.id
     WHERE s.id = id_seance_param;
@@ -340,6 +343,9 @@ BEGIN
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Séance non trouvée: %', id_seance_param;
     END IF;
+    
+    -- Calculer le montant de pénalité: cotisation + 50%
+    v_montant_penalite_calcule := v_montant_cotisation * 1.5;
 
     -- 2. Compter les présents
     SELECT COUNT(*)
@@ -368,7 +374,7 @@ BEGIN
                   WHERE pr.id_seance = id_seance_param AND pr.present = TRUE
               )
         LOOP
-            -- Insérer la pénalité d'absence
+            -- Insérer la pénalité d'absence (cotisation + 50%)
             INSERT INTO penalite (
                 id_membre, id_seance, id_tontine, montant, raison, 
                 type_penalite, date, statut
@@ -377,8 +383,8 @@ BEGIN
                 v_membre_record.id_membre,
                 id_seance_param,
                 v_tontine_id,
-                montant_penalite_absence,
-                'Absence à la séance du ' || v_seance_date::TEXT,
+                v_montant_penalite_calcule,
+                'Absence à la séance du ' || v_seance_date::TEXT || ' - Pénalité: cotisation + 50%',
                 'absence',
                 v_seance_date,
                 'non_paye'
