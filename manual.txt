@@ -324,14 +324,17 @@ CYCLE DE VIE D'UN CRÉDIT :
   • L'argent a été effectivement versé au membre
   • L'argent sort de la caisse à ce moment ⚠️
   • Le membre peut commencer à rembourser
+  • Le bouton "Rembourser" devient disponible 💵
 
 Étape 4 - EN COURS :
   • Le membre effectue des remboursements
   • L'argent entre progressivement dans la caisse
+  • Le statut passe automatiquement de "Décaissé" à "En cours" au premier remboursement
 
 Étape 5 - REMBOURSÉ :
   • Le crédit est entièrement remboursé
   • Remboursements + intérêts = Solde acquitté
+  • Le statut passe automatiquement à "Remboursé" quand le solde atteint 0
 
 ACTIONS :
 ---------
@@ -347,6 +350,40 @@ Ce processus garantit :
 • Contrôle strict des sorties d'argent
 • Traçabilité complète des opérations
 • Protection contre les erreurs de saisie
+
+⚠️ RÈGLE IMPORTANTE : UN SEUL CRÉDIT ACTIF PAR MEMBRE
+------------------------------------------------------
+Un membre ne peut avoir qu'UN SEUL crédit actif à la fois. Les crédits actifs sont :
+• En attente (en cours de validation)
+• Approuvé (validé mais pas encore décaissé)
+• Décaissé (argent versé au membre)
+• En cours (remboursements en cours)
+• En retard (date de remboursement dépassée)
+
+Le système vérifie automatiquement et affichera une erreur si vous tentez
+de créer un nouveau crédit pour un membre qui a déjà un crédit actif :
+"Ce membre a déjà un crédit actif. Il doit d'abord rembourser son crédit en cours."
+
+Un membre peut obtenir un nouveau crédit uniquement lorsque son crédit
+précédent est dans l'état "Remboursé".
+
+REMBOURSER UN CRÉDIT :
+----------------------
+Le bouton "Rembourser" (💵) apparaît pour les crédits dans les états suivants :
+• Décaissé : Dès que l'argent est versé au membre
+• En cours : Pendant les remboursements
+• En retard : Même si la date est dépassée
+• Défaut : Pour permettre la régularisation
+
+1. Cliquez sur le bouton 💵 à côté du crédit
+2. Entrez le montant du remboursement (partiel ou total possible)
+3. Le système calcule automatiquement le nouveau solde
+4. Le statut change automatiquement :
+   - Décaissé → En cours (au premier remboursement)
+   - En cours → Remboursé (quand solde = 0)
+   - En retard → Remboursé (quand solde = 0)
+   
+⚠️ Le système empêche de rembourser plus que le solde restant.
 
 [📸 CAPTURE D'ÉCRAN : Liste des crédits avec différents statuts]
 
@@ -696,6 +733,9 @@ AUTRES VALIDATIONS AUTOMATIQUES :
 ✅ Solde calculé en temps réel depuis la base de données
 ✅ Workflow de crédit en 3 étapes : Demande → Approbation → Décaissement
 ✅ Protection contre les sorties d'argent non autorisées
+✅ Vérification qu'un membre n'a qu'un seul crédit actif à la fois
+✅ Transition automatique des statuts de crédit lors des remboursements
+✅ Protection contre les sur-remboursements (montant > solde restant)
 
 📚 DOCUMENTATION TECHNIQUE :
 Pour plus de détails techniques sur l'implémentation de ces règles,
@@ -770,6 +810,12 @@ AMÉLIORATIONS RÉCENTES :
 • Filtrage étendu des crédits dans le Dashboard
   - Inclut tous les statuts post-décaissement (décaissé, en cours, en retard, défaut, remboursé)
   - Calcul précis des sorties d'argent
+• CORRECTION : Système de remboursement de crédit (22 janvier 2026)
+  - Bouton "Rembourser" maintenant disponible dès le décaissement
+  - Transition automatique des statuts : décaissé → en_cours → remboursé
+  - Protection contre les sur-remboursements
+  - Validation stricte : un seul crédit actif par membre
+  - Message d'erreur clair si tentative de crédit multiple
 
 ================================================================================
                          FIN DU MANUEL
