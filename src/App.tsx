@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { BookOpen } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Navbar } from '@/components/Navbar';
@@ -42,7 +43,16 @@ const ProtectedLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
               <span className="font-bold text-lg text-emerald-700 dark:text-emerald-400 truncate">NjangiTech</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <a 
+                href="https://drive.google.com/file/d/1MhpltFfbQSDFukUzGDc3yrHhDXfYTKX_/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                title="Télécharger le manuel d'utilisation"
+              >
+                <BookOpen className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              </a>
               <NotificationBell />
             </div>
           </header>
