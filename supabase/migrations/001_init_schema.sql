@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS tour (
     numero INTEGER NOT NULL,
     date DATE NOT NULL,
     montant_distribue DECIMAL(12, 2) NOT NULL CHECK (montant_distribue >= 0),
+    statut VARCHAR(20) DEFAULT 'distribue' CHECK (statut IN ('distribue', 'annule')),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -896,6 +897,44 @@ CREATE TRIGGER trigger_credit_decaissement
     FOR EACH ROW
     EXECUTE FUNCTION enregistrer_transaction_credit_decaissement();
 
+-- Trigger function: Enregistrer transaction lors du remboursement d'un crédit
+CREATE OR REPLACE FUNCTION enregistrer_transaction_credit_remboursement()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Remboursement: argent qui RENTRE (montant_rembourse a augmenté)
+    IF (NEW.montant_rembourse > COALESCE(OLD.montant_rembourse, 0)) THEN
+        INSERT INTO transaction (
+            id_tontine,
+            id_membre,
+            id_credit,
+            type,
+            montant,
+            description
+        ) VALUES (
+            NEW.id_tontine,
+            NEW.id_membre,
+            NEW.id,
+            'credit_repayment',
+            (NEW.montant_rembourse - COALESCE(OLD.montant_rembourse, 0)),
+            CONCAT('Remboursement crédit - ', 
+                   CASE 
+                       WHEN NEW.statut = 'rembourse' THEN 'Soldé'
+                       ELSE 'Partiel (' || NEW.montant_rembourse || '/' || NEW.montant || ')'
+                   END
+            )
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_credit_remboursement ON credit;
+CREATE TRIGGER trigger_credit_remboursement
+    AFTER INSERT OR UPDATE ON credit
+    FOR EACH ROW
+    EXECUTE FUNCTION enregistrer_transaction_credit_remboursement();
+
 -- Trigger function: Enregistrer transaction lors de la distribution d'un tour
 CREATE OR REPLACE FUNCTION enregistrer_transaction_tour()
 RETURNS TRIGGER AS $$
@@ -925,6 +964,68 @@ CREATE TRIGGER trigger_tour_transaction
     AFTER INSERT ON tour
     FOR EACH ROW
     EXECUTE FUNCTION enregistrer_transaction_tour();
+
+-- ============================================================================
+-- SECTION 5B: CONTRAINTES MÉTIER POUR TONTINES OPTIONNELLES
+-- ============================================================================
+
+-- Trigger function: Vérifier la limite de tours pour tontines optionnelles
+-- Règle métier: Un membre avec N parts ne peut recevoir que N tours maximum
+CREATE OR REPLACE FUNCTION verifier_limite_tours_membre()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_tontine_type VARCHAR(50);
+    v_nb_parts INTEGER;
+    v_tours_deja_recus INTEGER;
+BEGIN
+    -- Récupérer le type de tontine
+    SELECT type INTO v_tontine_type
+    FROM tontine
+    WHERE id = NEW.id_tontine;
+    
+    -- Cette contrainte s'applique UNIQUEMENT aux tontines optionnelles
+    IF v_tontine_type = 'optionnelle' THEN
+        -- Récupérer le nombre de parts du membre dans cette tontine
+        SELECT nb_parts INTO v_nb_parts
+        FROM participe
+        WHERE id_membre = NEW.id_beneficiaire
+        AND id_tontine = NEW.id_tontine
+        AND statut = 'actif';
+        
+        IF v_nb_parts IS NULL THEN
+            RAISE EXCEPTION 'Le membre n''est pas inscrit à cette tontine ou son inscription est inactive';
+        END IF;
+        
+        -- Compter le nombre de tours déjà reçus (excluant les tours annulés)
+        SELECT COUNT(*)
+        INTO v_tours_deja_recus
+        FROM tour
+        WHERE id_beneficiaire = NEW.id_beneficiaire
+        AND id_tontine = NEW.id_tontine
+        AND statut != 'annule';
+        
+        -- Vérifier la contrainte: nombre de tours ≤ nombre de parts
+        IF v_tours_deja_recus >= v_nb_parts THEN
+            RAISE EXCEPTION 
+                'CONTRAINTE MÉTIER VIOLÉE: Le membre a déjà reçu % tour(s) pour % part(s). Un membre avec N parts ne peut bénéficier que de N tours maximum dans une tontine optionnelle.',
+                v_tours_deja_recus, v_nb_parts;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_verifier_limite_tours ON tour;
+CREATE TRIGGER trigger_verifier_limite_tours
+    BEFORE INSERT ON tour
+    FOR EACH ROW
+    EXECUTE FUNCTION verifier_limite_tours_membre();
+
+COMMENT ON FUNCTION verifier_limite_tours_membre() IS 
+'Contrainte métier pour tontines optionnelles: Un membre avec N parts ne peut recevoir que N tours maximum. 
+Règle: 1 part = 1 tour. Si un membre a 3 parts, il doit gagner sur 3 tours distincts, pas tout en 1 seul tour.';
+
 
 -- ============================================================================
 -- SECTION 6: ROW LEVEL SECURITY (RLS)
@@ -1113,8 +1214,83 @@ LEFT JOIN cotisation c ON t.id = c.id_tontine
 GROUP BY t.id;
 
 -- ============================================================================
--- SECTION 8: FONCTIONS RPC POUR GESTION DES CRÉDITS
+-- SECTION 8: FONCTIONS RPC POUR GESTION DES CRÉDITS ET TOURS
 -- ============================================================================
+
+-- FONCTION: get_tours_disponibles_membre
+-- Description: Calcule combien de tours restent disponibles pour un membre dans une tontine optionnelle
+-- Retourne: nb_parts - tours_deja_recus
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_tours_disponibles_membre(
+    id_membre_param UUID,
+    id_tontine_param UUID
+)
+RETURNS TABLE (
+    nb_parts INTEGER,
+    tours_recus INTEGER,
+    tours_disponibles INTEGER,
+    peut_recevoir_tour BOOLEAN,
+    type_tontine VARCHAR(50)
+) AS $$
+DECLARE
+    v_nb_parts INTEGER;
+    v_tours_recus INTEGER;
+    v_type_tontine VARCHAR(50);
+BEGIN
+    -- Récupérer le type de tontine
+    SELECT type INTO v_type_tontine
+    FROM tontine
+    WHERE id = id_tontine_param;
+    
+    IF v_type_tontine IS NULL THEN
+        RAISE EXCEPTION 'Tontine non trouvée';
+    END IF;
+    
+    -- Récupérer le nombre de parts du membre
+    SELECT p.nb_parts INTO v_nb_parts
+    FROM participe p
+    WHERE p.id_membre = id_membre_param
+    AND p.id_tontine = id_tontine_param
+    AND p.statut = 'actif';
+    
+    IF v_nb_parts IS NULL THEN
+        -- Membre non inscrit ou inactif
+        RETURN QUERY SELECT 
+            0 AS nb_parts,
+            0 AS tours_recus,
+            0 AS tours_disponibles,
+            FALSE AS peut_recevoir_tour,
+            v_type_tontine AS type_tontine;
+        RETURN;
+    END IF;
+    
+    -- Compter les tours déjà reçus (excluant annulés)
+    SELECT COUNT(*)::INTEGER INTO v_tours_recus
+    FROM tour
+    WHERE id_beneficiaire = id_membre_param
+    AND id_tontine = id_tontine_param
+    AND statut != 'annule';
+    
+    -- Pour tontines de présence: pas de limite stricte (retourne toujours disponible)
+    -- Pour tontines optionnelles: limite = nb_parts
+    RETURN QUERY SELECT 
+        v_nb_parts,
+        v_tours_recus,
+        CASE 
+            WHEN v_type_tontine = 'optionnelle' THEN GREATEST(0, v_nb_parts - v_tours_recus)
+            ELSE 999 -- Pas de limite pour tontines de présence
+        END AS tours_disponibles,
+        CASE 
+            WHEN v_type_tontine = 'optionnelle' THEN (v_tours_recus < v_nb_parts)
+            ELSE TRUE -- Toujours possible pour tontines de présence
+        END AS peut_recevoir_tour,
+        v_type_tontine;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_tours_disponibles_membre(UUID, UUID) IS 
+'Calcule combien de tours restent disponibles pour un membre dans une tontine.
+Pour tontines optionnelles: max = nb_parts. Pour tontines de présence: pas de limite.';
 
 -- FONCTION: verifier_credit_actif
 -- Description: Vérifie si un membre a un crédit actif (en_cours, decaisse, en_retard)
