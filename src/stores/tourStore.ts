@@ -193,14 +193,13 @@ export const useTourStore = create<TourStore>((set, get) => ({
       const { useTransactionStore } = await import('./transactionStore');
       const transactionStore = useTransactionStore.getState();
       transactionStore.addTransaction({
-        tontineId: tourData.tontineId,
+        id_tontine: tourData.tontineId,
         type: 'tour_distribution',
-        amount: -tourData.amount, // Négatif car c'est une sortie d'argent
+        montant: -tourData.amount, // Négatif car c'est une sortie d'argent
         description: `Tour #${tourData.tourNumber} distribué`,
-        relatedEntityId: data.id,
-        relatedEntityType: 'tour',
-        memberId: tourData.beneficiaryId,
-        sessionId: tourData.sessionId,
+        id_tour: data.id,
+        id_membre: tourData.beneficiaryId,
+        id_seance: tourData.sessionId,
       });
 
       const newTour = transformTour(data);

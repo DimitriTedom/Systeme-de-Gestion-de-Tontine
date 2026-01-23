@@ -215,12 +215,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const { useTransactionStore } = await import('./transactionStore');
       const transactionStore = useTransactionStore.getState();
       transactionStore.addTransaction({
-        tontineId: project.id_tontine,
+        id_tontine: project.id_tontine,
         type: 'project_expense',
-        amount: -amount, // Négatif car c'est une sortie d'argent
+        montant: -amount, // Négatif car c'est une sortie d'argent
         description: `Dépense projet: ${project.nom}`,
-        relatedEntityId: project.id,
-        relatedEntityType: 'project',
+        id_projet: project.id,
       });
     }
   },

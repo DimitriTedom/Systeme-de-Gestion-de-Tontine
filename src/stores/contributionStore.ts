@@ -122,14 +122,12 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
       const { useTransactionStore } = await import('./transactionStore');
       const transactionStore = useTransactionStore.getState();
       transactionStore.addTransaction({
-        tontineId: contributionData.id_tontine,
+        id_tontine: contributionData.id_tontine,
         type: 'contribution',
-        amount: contributionData.montant, // Positif car c'est une entrée d'argent
+        montant: contributionData.montant, // Positif car c'est une entrée d'argent
         description: 'Cotisation membre',
-        relatedEntityId: data.id,
-        relatedEntityType: 'session',
-        memberId: contributionData.id_membre,
-        sessionId: contributionData.id_seance,
+        id_membre: contributionData.id_membre,
+        id_seance: contributionData.id_seance,
       });
 
       set((state) => ({ 
@@ -238,13 +236,12 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
       contributions.forEach((contrib) => {
         if (contrib.amount > 0) {
           transactionStore.addTransaction({
-            tontineId: session.id_tontine,
+            id_tontine: session.id_tontine,
             type: 'contribution',
-            amount: contrib.amount,
+            montant: contrib.amount,
             description: 'Cotisation séance',
-            relatedEntityType: 'session',
-            memberId: contrib.memberId,
-            sessionId: sessionId,
+            id_membre: contrib.memberId,
+            id_seance: sessionId,
           });
         }
       });

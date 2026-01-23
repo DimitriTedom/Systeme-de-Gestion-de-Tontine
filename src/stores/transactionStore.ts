@@ -177,7 +177,7 @@ const useTransactionStore = create<TransactionStore>((set, get) => ({
   },
 
   // Obtenir le résumé financier complet d'une tontine
-  getTontineFinancialSummary: async (tontineId) => {
+  getTontineFinancialSummary: async (tontineId): Promise<TontineFinancialSummary | null> => {
     try {
       const { data, error } = await supabase
         .rpc('get_tontine_financial_summary', { id_tontine_param: tontineId })
@@ -185,7 +185,7 @@ const useTransactionStore = create<TransactionStore>((set, get) => ({
 
       if (error) throw error;
 
-      return data;
+      return data as TontineFinancialSummary;
     } catch (error) {
       console.error('Erreur résumé financier:', error);
       return null;

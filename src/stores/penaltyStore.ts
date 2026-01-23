@@ -121,13 +121,12 @@ export const usePenaltyStore = create<PenaltyStore>((set, get) => ({
       const transactionStore = useTransactionStore.getState();
       if (penaltyData.id_tontine) {
         transactionStore.addTransaction({
-          tontineId: penaltyData.id_tontine,
+          id_tontine: penaltyData.id_tontine,
           type: 'penalty',
-          amount: penaltyData.montant, // Positif car c'est une entrée d'argent
+          montant: penaltyData.montant, // Positif car c'est une entrée d'argent
           description: `Pénalité: ${penaltyData.raison}`,
-          relatedEntityId: data.id,
-          relatedEntityType: 'penalty',
-          memberId: penaltyData.id_membre || undefined,
+          id_penalite: data.id,
+          id_membre: penaltyData.id_membre || undefined,
         });
       }
 

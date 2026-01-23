@@ -290,13 +290,12 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
       const { useTransactionStore } = await import('./transactionStore');
       const transactionStore = useTransactionStore.getState();
       transactionStore.addTransaction({
-        tontineId: credit.id_tontine,
+        id_tontine: credit.id_tontine,
         type: 'credit_granted',
-        amount: -credit.montant, // Négatif car c'est une sortie d'argent
+        montant: -credit.montant, // Négatif car c'est une sortie d'argent
         description: `Crédit décaissé pour ${credit.id}`,
-        relatedEntityId: credit.id,
-        relatedEntityType: 'credit',
-        memberId: credit.id_membre || undefined,
+        id_credit: credit.id,
+        id_membre: credit.id_membre || undefined,
       });
     }
   },

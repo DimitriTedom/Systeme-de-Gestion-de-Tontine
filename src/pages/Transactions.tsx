@@ -60,7 +60,7 @@ export default function Transactions() {
 
   // Filter transactions
   const filteredTransactions = transactions.filter(txn => {
-    const tontineMatch = selectedTontine === 'all' || txn.tontineId === selectedTontine;
+    const tontineMatch = selectedTontine === 'all' || txn.id_tontine === selectedTontine;
     const typeMatch = selectedType === 'all' || txn.type === selectedType;
     return tontineMatch && typeMatch;
   });
@@ -68,9 +68,9 @@ export default function Transactions() {
   // Sort transactions
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     if (sortBy === 'date') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     } else {
-      return Math.abs(b.amount) - Math.abs(a.amount);
+      return Math.abs(b.montant) - Math.abs(a.montant);
     }
   });
 
@@ -122,18 +122,18 @@ export default function Transactions() {
 
   const handleExport = () => {
     const exportData = sortedTransactions.map((txn, index) => {
-      const tontine = tontines.find(t => t.id === txn.tontineId);
-      const member = txn.memberId ? getMemberById(txn.memberId) : null;
+      const tontine = tontines.find(t => t.id === txn.id_tontine);
+      const member = txn.id_membre ? getMemberById(txn.id_membre) : null;
       
       return {
         '#': index + 1,
-        'Date': formatDate(txn.createdAt),
+        'Date': formatDate(txn.created_at),
         'Tontine': tontine?.nom || 'N/A',
         'Type': getTransactionTypeLabel(txn.type),
         'Description': txn.description,
         'Membre': member ? `${member.prenom} ${member.nom}` : 'N/A',
-        'Montant': txn.amount,
-        'Entrée/Sortie': txn.amount > 0 ? 'Entrée' : 'Sortie',
+        'Montant': txn.montant,
+        'Entrée/Sortie': txn.montant > 0 ? 'Entrée' : 'Sortie',
       };
     });
 
@@ -158,13 +158,13 @@ export default function Transactions() {
 
   // Calculate totals
   const totalIn = filteredTransactions
-    .filter(t => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.montant > 0)
+    .reduce((sum, t) => sum + t.montant, 0);
   
   const totalOut = Math.abs(
     filteredTransactions
-      .filter(t => t.amount < 0)
-      .reduce((sum, t) => sum + t.amount, 0)
+      .filter(t => t.montant < 0)
+      .reduce((sum, t) => sum + t.montant, 0)
   );
 
   return (
@@ -228,7 +228,7 @@ export default function Transactions() {
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     <p className="text-xs text-muted-foreground">
-                      {filteredTransactions.filter(t => t.amount > 0).length} transaction(s)
+                      {filteredTransactions.filter(t => t.montant > 0).length} transaction(s)
                     </p>
                     {totalIn > 0 && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
@@ -281,7 +281,7 @@ export default function Transactions() {
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     <p className="text-xs text-muted-foreground">
-                      {filteredTransactions.filter(t => t.amount < 0).length} transaction(s)
+                      {filteredTransactions.filter(t => t.montant < 0).length} transaction(s)
                     </p>
                     {totalOut > 0 && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
@@ -385,14 +385,14 @@ export default function Transactions() {
                   </TableRow>
                 ) : (
                   sortedTransactions.map((txn) => {
-                    const tontine = tontines.find(t => t.id === txn.tontineId);
-                    const member = txn.memberId ? getMemberById(txn.memberId) : null;
-                    const isIncome = txn.amount > 0;
+                    const tontine = tontines.find(t => t.id === txn.id_tontine);
+                    const member = txn.id_membre ? getMemberById(txn.id_membre) : null;
+                    const isIncome = txn.montant > 0;
 
                     return (
                       <TableRow key={txn.id}>
                         <TableCell className="text-sm">
-                          {formatDate(txn.createdAt)}
+                          {formatDate(txn.created_at)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getTransactionTypeColor(txn.type)}>
@@ -414,7 +414,7 @@ export default function Transactions() {
                               <TrendingDown className="h-4 w-4 text-red-500" />
                             )}
                             <span className={`font-semibold ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(txn.amount)}
+                              {formatCurrency(txn.montant)}
                             </span>
                           </div>
                         </TableCell>
